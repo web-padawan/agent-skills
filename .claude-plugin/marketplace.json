@@ -1,0 +1,18 @@
+{
+  "name": "local",
+  "metadata": {
+    "description": "Local marketplace for personal Claude Code skills."
+  },
+  "owner": {
+    "name": "Serhii Kulykov",
+    "url": "https://github.com/web-padawan"
+  },
+  "plugins": [
+    {
+      "name": "agent-skills",
+      "source": "./",
+      "description": "Personal skills: self-review (pre-PR branch review).",
+      "category": "workflow"
+    }
+  ]
+}
