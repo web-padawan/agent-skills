@@ -6,7 +6,7 @@ Private Claude Code plugin with personal skills. The repository is both the plug
 
 | Skill | What it does |
 | --- | --- |
-| `self-review` | Reviews the current branch before opening or updating a PR: general review, scope, direction, simplification, integration, tests + mutation check, slop cleanup. Applies fixes in a single commit and writes a findings report with a ready / needs-work verdict. |
+| `self-review` | Reviews the current branch before opening or updating a PR: general review, scope, direction, integration, tests + coverage check, simplification and slop passes, plus an architecture pass on bigger diffs. Classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste), asks which tiers to apply, and leaves approved fixes staged but never committed, with a findings report and a ready / needs-work verdict. |
 
 ## Install
 
@@ -24,11 +24,15 @@ claude plugin list
 ## Use
 
 ```
-/agent-skills:self-review                      # current branch
+/agent-skills:self-review                       # current branch
 /agent-skills:self-review <parent-PR-or-issue>  # branch extracted from bigger work
+/agent-skills:self-review --arch                # force the architecture pass on
+/agent-skills:self-review --no-arch             # force it off
 ```
 
-Run it on a feature branch with a clean working tree. It refuses on `main` / `master` / `maintenance/*`.
+Run it on a feature branch with no uncommitted changes to tracked files (untracked files are fine and are never touched). It refuses on `main` / `master` / `maintenance/*`.
+
+It never commits: analysis is read-only, a single approval gate asks which severity tiers to apply, and approved fixes end up **staged** for you to review with `git diff --staged` and commit yourself (`git reset` unstages).
 
 ## Updating a skill
 
@@ -36,7 +40,7 @@ Edit the files here and commit — an installed local-path marketplace reads fro
 
 ## Dependencies
 
-`self-review` delegates to [oh-my-claudecode](https://github.com/mikeyobrien/oh-my-claudecode) agents (`code-reviewer`, `test-engineer`, `ai-slop-cleaner`) and the built-in `simplify` skill. Without OMC it falls back to `general-purpose` agents with the same prompts.
+`self-review` delegates to [oh-my-claudecode](https://github.com/mikeyobrien/oh-my-claudecode) agents (`code-reviewer`, `test-engineer`, `architect`, `ai-slop-cleaner`) and the built-in `simplify` skill. Without OMC it falls back to `general-purpose` agents with the same prompts.
 
 Repo-specific commands (lint, test scoping, source globs, commit-message rules) are resolved per repo in phase 0; the defaults are tuned for [vaadin/web-components](https://github.com/vaadin/web-components).
 

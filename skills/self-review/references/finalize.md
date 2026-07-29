@@ -1,48 +1,69 @@
-# Phases 3 & 5 — Commit, report, verdict
+# Phase 7 — Report & verdict
 
-## Commit protocol
+## End-state checks
 
-- At most **one** new commit on top of the head recorded in phase 0. Verify at the end: `git rev-list <recorded-head>..HEAD --count` ≤ 1 (== 1 whenever anything changed).
-- Phase 3 creates it with all fixes; phase 5 amends breaking tests in (`git commit --amend --no-edit`). If phase 3 made no commit but phase 4 produced new tests, phase 5 creates the single commit instead of amending.
-- Message per the repo's commit rules — `.claude/rules/commits-and-prs.md` in vaadin/web-components, else the style of recent `git log`. Subject describes the review fixes, e.g. `refactor: address self-review findings`. Never push, never open a PR.
-- Nothing to fix at all → no commit; say so in the summary.
-- The report is never committed — it goes to the git-ignored location chosen in phase 0.
+- `git rev-parse HEAD` == `<HEAD0>` from phase 0 — proof nothing was committed. If it differs, say so loudly at the top of the chat reply.
+- `git diff --name-only` empty — nothing unstaged, no mutant residue.
+- `git diff --staged --stat` — the change set the user is about to commit. Show this summary in chat.
+- Pre-existing untracked files are untouched and unstaged.
+
+Never commit, amend, push, `stash`, `reset --hard`, or `git clean`. The user commits.
 
 ## Report — phase-0 report location (`.omc/self-review/<branch>.md` in web-components)
 
-```markdown
+````markdown
 # Self-review: <branch> — <date>
 
 **Verdict: ready for PR | needs more work**
+Applied: <tiers approved> · architecture pass: ran | skipped · changes **staged, not committed**
 
-<one-paragraph summary: what was reviewed, what changed, what remains>
+| Tier            | Fixed | Deferred | Accepted |
+| --------------- | ----- | -------- | -------- |
+| A critical      |       |          |          |
+| B follow-up     |       |          |          |
+| C taste         |       |          |          |
+
+<one paragraph: what was reviewed, what changed, what remains>
 
 ## General review
-- [fixed] packages/foo/src/foo.js:42 — <claim>
-- [accepted] <file>:<line> — <claim> — <reason>
+- [A][fixed] packages/foo/src/foo.js:42 — <claim>
+- [B][deferred] <file>:<line> — <claim> — <why deferred>
+- [C][accepted] <file>:<line> — <claim> — <why it is not a problem>
 
+## Architecture
 ## Scope
 ## Direction
 ## Simplification
 ## Integration
 ## Tests
 ## Slop
-```
 
-- Every finding from every phase appears under its category with `[fixed]` or `[accepted]` — including simplify/slop-cleaner changes and surviving-mutant tests.
-- Empty category → `- none`.
-- Mutation stats line under **Tests**: `N mutants, K killed, S survived (S tests added), skipped: <hunks or none>`.
+## Follow-ups
+- [B] <file>:<line> — <claim> — <intended fix>
+
+## Commit
+Suggested subject: `<type>: <summary>` (repo commit rules — `.claude/rules/commits-and-prs.md` in vaadin/web-components, else the style of recent `git log`)
+Review with `git diff --staged`, then commit. `git reset` unstages without losing the edits.
+````
+
+- Every finding from every phase appears under its category, tagged `[tier]` and `[status]`. Statuses: `fixed` (applied), `deferred` (real, not applied now), `accepted` (no action needed — false positive or deliberate choice).
+- Omit the `## Architecture` section when the pass did not run. Empty category → `- none`.
+- Coverage stats line under **Tests**: `N mutants, K killed, S survived (T tests added), skipped: <hunks or none>`.
+- **Follow-ups** repeats every `deferred` finding as a paste-ready list for the follow-up issue or PR.
+- The report itself is never committed — it lives in the git-ignored phase-0 location.
 
 ## Verdict rubric
 
 **needs more work** when any of:
-- unresolved `high` finding in **any** category (accepted with reason ≠ resolved for high severity — only false positives may be accepted at high)
-- surviving mutant without a new breaking test and without an `accepted` rationale
-- lint or the affected tests failing
-- scope check recommends a split and the user has not decided yet
 
-Otherwise **ready for PR**.
+- an A finding is unresolved — `deferred`, or approved but not applied
+- lint or the affected tests fail
+- a surviving A-tier coverage gap has no test
+
+Otherwise **ready for PR**. Unresolved B and C findings never block; they live under Follow-ups.
+
+The verdict describes the **staged** tree, not a commit.
 
 ## Chat reply
 
-Verdict + 3–5 essential bullets + commit SHA + pointer to the report file. Do not restate the full report.
+Verdict + tier counts + 3–5 essential bullets + "staged, not committed" + report path. Name any deferred A finding explicitly. Do not restate the full report.
