@@ -1,0 +1,4 @@
+.DS_Store
+.omc/
+.claude/*.local.*
+CLAUDE.local.md

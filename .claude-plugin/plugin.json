@@ -1,0 +1,10 @@
+{
+  "name": "agent-skills",
+  "description": "Personal Claude Code skills. Currently: self-review, a pre-PR branch review workflow.",
+  "author": {
+    "name": "Serhii Kulykov",
+    "url": "https://github.com/web-padawan"
+  },
+  "license": "UNLICENSED",
+  "keywords": ["review", "workflow", "vaadin"]
+}
