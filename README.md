@@ -6,7 +6,7 @@ Private Claude Code plugin with personal skills. The repository is both the plug
 
 | Skill | What it does |
 | --- | --- |
-| `self-review` | Reviews the current branch before opening or updating a PR: general review, scope, direction, integration, tests + coverage check, simplification and slop passes, plus an architecture pass on bigger diffs. Classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste), asks which tiers to apply, and leaves approved fixes staged but never committed, with a findings report and a ready / needs-work verdict. |
+| `self-review` | Reviews the current branch before opening or updating a PR. Detects the change type and runs the matching profile — a feature also gets API-design, requirements-coverage and architecture passes, a fix gets root-cause, blast-radius and regression-test checks, a chore gets a short pass. Classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste), asks which tiers to apply, and leaves approved fixes staged but never committed, with a findings report and a ready / needs-work verdict. |
 
 ## Install
 
@@ -24,13 +24,24 @@ claude plugin list
 ## Use
 
 ```
-/agent-skills:self-review                       # current branch
+/agent-skills:self-review                       # current branch, type detected
 /agent-skills:self-review <parent-PR-or-issue>  # branch extracted from bigger work
-/agent-skills:self-review --arch                # force the architecture pass on
-/agent-skills:self-review --no-arch             # force it off
+/agent-skills:self-review --feature             # force the change type
+/agent-skills:self-review --fix --no-arch       # type + architecture pass off
 ```
 
 Run it on a feature branch with no uncommitted changes to tracked files (untracked files are fine and are never touched). It refuses on `main` / `master` / `maintenance/*`.
+
+### Review profiles
+
+The change type comes from, in order: an explicit `--fix` / `--feature` / `--refactor` / `--chore` flag, the PR title's conventional prefix, the branch's commit subjects, parent issue labels, the branch name, then the shape of the diff. It decides how much review the branch gets:
+
+| Type | Extra passes | Architecture | Mutants |
+| --- | --- | --- | --- |
+| **feature** | API design, requirements coverage | always | 15 |
+| **fix** | root cause & blast radius, regression test must fail without the fix | only when it adds a module or API | 5, on the fix |
+| **refactor** | behavior preservation | when modules move | 10 |
+| **chore** | — | never | none |
 
 It never commits: analysis is read-only, a single approval gate asks which severity tiers to apply, and approved fixes end up **staged** for you to review with `git diff --staged` and commit yourself (`git reset` unstages).
 
@@ -40,7 +51,7 @@ Edit the files here and commit — an installed local-path marketplace reads fro
 
 ## Dependencies
 
-`self-review` delegates to [oh-my-claudecode](https://github.com/mikeyobrien/oh-my-claudecode) agents (`code-reviewer`, `test-engineer`, `architect`, `ai-slop-cleaner`) and the built-in `simplify` skill. Without OMC it falls back to `general-purpose` agents with the same prompts.
+`self-review` delegates to [oh-my-claudecode](https://github.com/mikeyobrien/oh-my-claudecode) agents (`code-reviewer`, `test-engineer`, `architect`, `debugger`, `ai-slop-cleaner`) and the built-in `simplify` skill. Without OMC it falls back to `general-purpose` agents with the same prompts.
 
 Repo-specific commands (lint, test scoping, source globs, commit-message rules) are resolved per repo in phase 0; the defaults are tuned for [vaadin/web-components](https://github.com/vaadin/web-components).
 

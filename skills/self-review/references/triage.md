@@ -11,11 +11,22 @@ For every finding from phases 1–2:
 
 Make no edits in this phase, including "obvious" ones.
 
+### Type-aware tiering
+
+The change type shifts where the A line sits — apply these on top of the rubric:
+
+- **feature** — anything in the new public surface that a later fix could not correct without a breaking change is A: naming, defaults, event or data shape, missing a11y wiring. A stated requirement with no implementation is A. Internal debt stays B.
+- **fix** — a symptom-only fix is A. A missing or non-failing regression test is A. The same bug left in place elsewhere (blast radius) is A when the sibling is released, B when it is not reachable yet.
+- **refactor** — any unexplained observable behavior change is A, including a weakened or deleted assertion in an existing test. New public API in a refactor is at least B and belongs in a separate PR.
+- **chore** — nothing here is A unless CI would fail.
+
 ## Phase 4 — Approval gate
 
 First in chat, compact and scannable — the full detail belongs in the report:
 
 ```
+Profile: feature (arch pass on) — signal: PR title `feat:`
+
 A (must fix before merge) — 2
   packages/foo/src/foo.js:42 — <claim> → <intended fix>
   …
@@ -44,4 +55,6 @@ Rules:
 - A custom answer ("Other") wins over the preset options — apply exactly what it names.
 - Real findings that are not approved become `deferred` in the report and are listed under Follow-ups.
 - Nothing to apply (no findings, or only ones already `accepted`) → ask Q2 alone.
+- Profile has no mutant budget (**chore**) → ask Q1 alone.
+- On a **fix**, say at the gate that skipping the coverage check also skips the regression-test verification — that is the one check a bug fix most needs.
 - A **deferred A** finding is a legitimate choice, not an error: apply nothing, and the phase-7 verdict becomes *needs more work*. Say so at the gate so the choice is informed.
