@@ -47,7 +47,16 @@ It never commits: analysis is read-only, a single approval gate asks which sever
 
 ## Updating a skill
 
-Edit the files here and commit — an installed local-path marketplace reads from this checkout, so a session restart picks the change up. `claude plugin marketplace update local` refreshes the listing if a manifest changed.
+The installed plugin is a **snapshot** copied to `~/.claude/plugins/cache/local/agent-skills/<sha>/`, pinned to the commit it was installed from — editing this checkout changes nothing until the snapshot is refreshed. Commit first (uncommitted edits are not picked up), then:
+
+```bash
+claude plugin marketplace update local   # re-read the marketplace manifest
+claude plugin update agent-skills@local  # copy the new commit into the cache
+```
+
+The second command prints the sha it moved from and to. Restart the session to load it.
+
+Editing the cache directly is the fastest way to try a change mid-session, but the next update overwrites it — port anything worth keeping back here.
 
 ## Dependencies
 
