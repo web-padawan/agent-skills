@@ -7,6 +7,7 @@ Private Claude Code plugin with personal skills. The repository is both the plug
 | Skill | What it does |
 | --- | --- |
 | `self-review` | Reviews the current branch before opening or updating a PR. Detects the change type and runs the matching profile — a feature also gets API-design, requirements-coverage and architecture passes, a fix gets root-cause, blast-radius and regression-test checks, a chore gets a short pass. Classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste), asks which tiers to apply, and leaves approved fixes staged but never committed, with a findings report and a ready / needs-work verdict. |
+| `mutation-coverage` | Finds code no test asserts on via mutation testing, then closes each gap with a test that fails when the code is broken. Two engines: a zero-setup line-removal runner (default for a single file) and Stryker (`--diff` pre-PR mode, whole packages, or `--stryker`) run via `npx` with config materialized as untracked files — nothing is committed or installed in the target repo. Estimates runtime before mutating, classifies survivors (coverage gap / masked write / self-referential assertion / unkillable), and ends with a report mapping each killed survivor to its new test. |
 
 ## Install
 
@@ -31,6 +32,15 @@ claude plugin list
 ```
 
 Run it on a feature branch with no uncommitted changes to tracked files (untracked files are fine and are never touched). It refuses on `main` / `master` / `maintenance/*`.
+
+```
+/agent-skills:mutation-coverage packages/upload/src/vaadin-upload-mixin.js   # one file, line-removal
+/agent-skills:mutation-coverage <file> --stryker                             # one file, Stryker operators
+/agent-skills:mutation-coverage --diff                                       # branch diff vs origin/main, per package
+/agent-skills:mutation-coverage --package accordion                          # whole package, background job
+```
+
+Mutation runs cost roughly one suite run per mutant; the skill states the estimate before starting and refuses to silently start anything over ~30 minutes.
 
 ### Review profiles
 
@@ -74,4 +84,9 @@ skills/
   self-review/
     SKILL.md         # phase orchestration
     references/      # per-phase detail, read on first use
+  mutation-coverage/
+    SKILL.md         # engine/scope selection + workflow
+    scripts/         # mutate.mjs (line-removal), stryker-diff.mjs (PR-diff mode)
+    assets/stryker/  # config templates materialized into the target repo
+    references/      # stryker procedure, survivor taxonomy
 ```

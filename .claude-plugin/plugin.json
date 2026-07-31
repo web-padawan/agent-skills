@@ -1,6 +1,6 @@
 {
   "name": "agent-skills",
-  "description": "Personal Claude Code skills. Currently: self-review, a pre-PR branch review workflow.",
+  "description": "Personal Claude Code skills. Currently: self-review (pre-PR branch review) and mutation-coverage (mutation testing + test-gap closing).",
   "author": {
     "name": "Serhii Kulykov",
     "url": "https://github.com/web-padawan"

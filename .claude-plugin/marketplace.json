@@ -11,7 +11,7 @@
     {
       "name": "agent-skills",
       "source": "./",
-      "description": "Personal skills: self-review (pre-PR branch review).",
+      "description": "Personal skills: self-review (pre-PR branch review), mutation-coverage (mutation testing + test-gap closing).",
       "category": "workflow"
     }
   ]
