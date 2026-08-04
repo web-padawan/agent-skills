@@ -2,7 +2,24 @@
 
 Everything in these phases is **read-only**. No file changes before the phase-4 gate.
 
-Launch only the agents the phase-0 profile names, plus the phase-2 passes, all in **one message**.
+Launch only the agents the phase-0 profile names, plus the phase-2 passes, all in **one message** so they run concurrently.
+
+## Delivery — how findings reach you
+
+A pass that never reports is worse than a pass you skipped: it looks done. Two launch choices decide whether findings arrive, and the **defaults lose them**:
+
+- **Pass `run_in_background: false` on every agent in this phase.** Phase 3 is a barrier — you need all findings before triage — so a synchronous run is what you actually want, and it makes each agent's report arrive as its tool result. Background agents report through a separate notification channel, and that is where reports vanish.
+- **Do not pass `name`.** A named agent becomes an addressable teammate: it ends its turn *idle and still alive*, and its final text is never returned to you. Name an agent only when you genuinely need to message it mid-run.
+
+Then, whatever the mechanism, put this clause in every agent prompt so a second channel exists:
+
+```
+Your findings are the deliverable. Return them as the CONTENT of your final message.
+If you have a SendMessage tool, ALSO send them to `main` in the same format.
+Do not write them to a file, and do not end your turn without them.
+```
+
+**Recognize a lost report.** A message like `{"type":"idle_notification","idleReason":"available"}`, or a completion carrying no findings, is a **delivery failure** — not a clean pass. Never record it as `NO FINDINGS`.
 
 ## Shared context file
 
@@ -19,6 +36,7 @@ Each agent prompt is then: its own questions, its category, `read <report-dir>/c
 - One line per finding, at most **12** findings, ranked most severe first.
 - No code blocks, no quoted diffs, no restating the file — the claim is one sentence.
 - `NO FINDINGS` explicitly when clean; an empty reply is an error, re-run once.
+- Add the delivery clause from **Delivery** above — the contract says what to report, that clause says where to put it, and a prompt with only one of the two loses findings.
 
 Categories: `general`, `architecture`, `scope`, `intent`, `api`, `requirements`, `root-cause`, `behavior`, `simplification`, `integration`, `tests`, `slop`.
 
@@ -143,6 +161,18 @@ Run each inside its own subagent, so their instructions stay out of the main con
 - Subagent invoking `Skill(simplify)` with an explicit "report findings only, do not edit any file" instruction → `simplification` findings. Skipped for the **chore** profile.
 
 Then assert `git status --porcelain --untracked-files=no` is still empty. If a pass edited anyway: revert those tracked files with `git checkout -- <path>` (safe — the tree was clean at phase 0), delete files it created **by path**, and keep only its output as findings. Never `git clean`; never touch pre-existing untracked files.
+
+## Delivery check — run before triage
+
+Roll call: list every agent you launched and tick the ones whose findings you actually hold. For each that delivered nothing, escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
+
+1. **Ping once**, only if the agent is named and still alive: restate the output contract, name the 2–3 questions you most need answered, and include the facts you have already verified so it does not spend its run re-deriving them.
+2. **Re-spawn once** with `run_in_background: false` and no `name` — a different channel, not a second try down the broken one.
+3. **Self-run the pass**: read the files and answer that pass's questions yourself. Tag every finding it yields `self-run`.
+
+Never drop a pass silently, and never let a lost report pass for a clean one. Carry each pass's status — `agent`, `self-run`, or `missing` — into phase 7.
+
+Treat a self-run pass as **weaker evidence** than an agent pass: you are reviewing with the same context that produced the diff, which makes you the reader least likely to notice what it takes for granted. Say which passes were self-run at the gate, rather than presenting them as independent confirmation.
 
 ## Comment policy — criteria for comment findings in `slop`
 

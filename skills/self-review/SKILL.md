@@ -3,7 +3,7 @@ name: self-review
 description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching review profile: a feature gets API-design, requirements-coverage and architecture passes, a fix gets root-cause and blast-radius passes plus a regression-test check, a chore gets a short pass. Classifies findings A (must fix before merge) / B (follow-up) / C (taste), asks before applying anything, and leaves approved fixes staged but never committed, with a findings report and a ready / needs-work verdict.
 argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--arch|--no-arch]"
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Task, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*)
 ---
 
 You are self-reviewing the current branch before it becomes (or updates) a PR. Optional input `$0` is the parent PR or issue this branch was extracted from. Work the phases in order.
@@ -67,9 +67,13 @@ The type picks the profile. Numbers are the phase-1 agents in analysis.md.
 
 Per analysis.md: write the shared context file first, then launch the profile's agents **and** the phase-2 passes in **one message**. If OMC agents are unavailable, run the same prompts on `general-purpose` agents.
 
+Read analysis.md's **Delivery** section before launching and follow it exactly — `run_in_background: false`, no `name`, and the delivery clause in every prompt. Those three are what decide whether the findings ever reach you; the defaults silently lose them.
+
 ## Phase 2 — Quality passes (reviewer-only)
 
 Per analysis.md: the slop and simplification passes, wrapped in subagents so they cannot edit and their instructions stay out of this context. Afterwards assert tracked files are still clean and revert anything a pass changed regardless — their output is findings, not edits.
+
+Then run analysis.md's **Delivery check** before moving on: roll-call every agent launched, recover the ones that reported nothing by escalating the mechanism, and record each pass as `agent`, `self-run`, or `missing`. A pass that reported nothing has *not* come back clean.
 
 ## Phase 3 — Triage & classify (read-only)
 

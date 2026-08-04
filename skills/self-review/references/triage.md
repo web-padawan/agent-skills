@@ -2,6 +2,8 @@
 
 ## Phase 3 — Triage (still read-only)
 
+First, if you have not already: run the **Delivery check** in analysis.md. Triaging before the roll call means silently triaging a subset — a pass whose report was lost looks exactly like a pass with nothing to say.
+
 For every finding from phases 1–2:
 
 1. **Verify it against the code.** Agents produce false positives. A finding you cannot confirm is `accepted` with a one-line reason and never reaches the gate.
