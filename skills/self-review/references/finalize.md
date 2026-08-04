@@ -16,6 +16,7 @@ Never commit, amend, push, `stash`, `reset --hard`, or `git clean`. The user com
 
 **Verdict: ready for PR | needs more work**
 Type: <feature | fix | refactor | chore> (signal: <what decided it>) · architecture pass: ran | skipped
+Passes: <N>/<M> delivered by agents · self-run: <names or none> · missing: <names or none>
 Applied: <tiers approved> · changes **staged, not committed**
 
 | Tier            | Fixed | Deferred | Accepted |
@@ -50,6 +51,7 @@ Review with `git diff --staged`, then commit. `git reset` unstages without losin
 - Every finding from every phase appears under its category, tagged `[tier]` and `[status]`. Statuses: `fixed` (applied), `deferred` (real, not applied now), `accepted` (no action needed — false positive or deliberate choice).
 - Add the profile's own sections after the shared ones: **feature** → `## API design`, `## Requirements coverage`; **fix** → `## Root cause & blast radius`; **refactor** → `## Behavior preservation`.
 - Omit sections whose agent the profile did not run. Empty category → `- none`.
+- Distinguish "not run" from "ran and lost". Tag findings from a `self-run` pass `[self-run]` after the status, and head that category with `> pass self-run — no independent agent review`. A `missing` category reads `- none delivered — pass not covered`, never `- none`.
 - Coverage stats line under **Tests**: `N mutants, K killed, S survived (T tests added), skipped: <hunks or none>`. On a **fix**, prefix it with the whole-fix revert result: `regression test: <name> fails without the fix | none fails without the fix`.
 - **Follow-ups** repeats every `deferred` finding as a paste-ready list for the follow-up issue or PR.
 - The report itself is never committed — it lives in the git-ignored phase-0 location.
@@ -64,6 +66,7 @@ Review with `git diff --staged`, then commit. `git reset` unstages without losin
 - **fix**: no test fails when the whole fix is reverted, and none was added
 - **feature**: a stated requirement is unimplemented, or new public API ships with a finding that a later fix could not correct without a breaking change
 - **refactor**: an observable behavior change is unexplained
+- a **profile-specific pass** — the bolded one in the phase-0 profile table — is `missing`: the type's defining risk went unexamined, so there is no basis for a verdict
 
 Otherwise **ready for PR**. Unresolved B and C findings never block; they live under Follow-ups.
 
@@ -72,3 +75,5 @@ The verdict describes the **staged** tree, not a commit.
 ## Chat reply
 
 Verdict + detected type and profile + tier counts + 3–5 essential bullets + "staged, not committed" + report path. Name any deferred A finding explicitly. Do not restate the full report.
+
+State the pass tally whenever any pass was `self-run` or `missing`. Reduced coverage changes what the verdict is worth, and leaving it out makes the review look stronger than it was.
