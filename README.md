@@ -6,7 +6,7 @@ Private Claude Code plugin with personal skills. The repository is both the plug
 
 | Skill | What it does |
 | --- | --- |
-| `self-review` | Reviews the current branch before opening or updating a PR. Detects the change type and runs the matching profile — a feature also gets API-design, requirements-coverage and architecture passes, a fix gets root-cause, blast-radius and regression-test checks, a chore gets a short pass. Classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste), asks which tiers to apply, and leaves approved fixes staged but never committed, with a findings report and a ready / needs-work verdict. |
+| `self-review` | Reviews the current branch before opening or updating a PR. Detects the change type and runs the matching profile — a feature also gets a requirements-coverage pass, a fix gets root-cause, blast-radius and regression-test checks, a chore gets a short pass. Then gives every *significant change* three structured reviews: **architectural** (observed behavior, risk, consequences, suggestion), **boundary** (which boundary, whose consumers, what promise, why it is hard to take back), and **change-impact analysis** (ripple effects, propagation paths, mitigation, unblock conditions). **Never edits code**: classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste) and writes a `FINDINGS.md` with a ready / needs-work verdict. Coverage gaps are reported, not closed — `mutation-coverage` closes them. |
 | `mutation-coverage` | Finds code no test asserts on via mutation testing, then closes each gap with a test that fails when the code is broken. Two engines: a zero-setup line-removal runner (default for a single file) and Stryker (`--diff` pre-PR mode, whole packages, or `--stryker`) run via `npx` with config materialized as untracked files — nothing is committed or installed in the target repo. Estimates runtime before mutating, classifies survivors (coverage gap / masked write / self-referential assertion / unkillable), and ends with a report mapping each killed survivor to its new test. |
 
 ## Install
@@ -28,7 +28,8 @@ claude plugin list
 /agent-skills:self-review                       # current branch, type detected
 /agent-skills:self-review <parent-PR-or-issue>  # branch extracted from bigger work
 /agent-skills:self-review --feature             # force the change type
-/agent-skills:self-review --fix --no-arch       # type + architecture pass off
+/agent-skills:self-review --deep 2              # cap the deep review at 2 significant changes
+/agent-skills:self-review --fix --no-coverage   # type + skip the mutation coverage check
 ```
 
 Run it on a feature branch with no uncommitted changes to tracked files (untracked files are fine and are never touched). It refuses on `main` / `master` / `maintenance/*`.
@@ -46,14 +47,16 @@ Mutation runs cost roughly one suite run per mutant; the skill states the estima
 
 The change type comes from, in order: an explicit `--fix` / `--feature` / `--refactor` / `--chore` flag, the PR title's conventional prefix, the branch's commit subjects, parent issue labels, the branch name, then the shape of the diff. It decides how much review the branch gets:
 
-| Type | Extra passes | Architecture | Mutants |
+| Type | Extra pass | Deep review | Mutants |
 | --- | --- | --- | --- |
-| **feature** | API design, requirements coverage | always | 15 |
-| **fix** | root cause & blast radius, regression test must fail without the fix | only when it adds a module or API | 5, on the fix |
-| **refactor** | behavior preservation | when modules move | 10 |
-| **chore** | — | never | none |
+| **feature** | requirements coverage | 6 significant changes | 15 |
+| **fix** | root cause & blast radius, regression test must fail without the fix | 3, including the fix's own hunks | 5, on the fix |
+| **refactor** | behavior preservation | 4, weighted to moved boundaries | 10 |
+| **chore** | — | none | none |
 
-It never commits: analysis is read-only, a single approval gate asks which severity tiers to apply, and approved fixes end up **staged** for you to review with `git diff --staged` and commit yourself (`git reset` unstages).
+**Deep review** is the per-change part. A *significant change* is a hunk that touches public surface, adds a module, changes control flow, changes a cross-module contract, or moves logic across a boundary — never tests, docs, config, or formatting. Changes are ranked and capped at the budget; anything below the line is listed in the report rather than dropped quietly.
+
+It never changes anything. Every stage is read-only, the one exception being the coverage check, which comments out a source line at a time and restores it before the next. A single gate asks whether to write the report and whether to run that check — never what to apply, because nothing is ever applied. `HEAD`, the index and the working tree end exactly as they started.
 
 ## Updating a skill
 
@@ -70,9 +73,9 @@ Editing the cache directly is the fastest way to try a change mid-session, but t
 
 ## Dependencies
 
-`self-review` delegates to [oh-my-claudecode](https://github.com/mikeyobrien/oh-my-claudecode) agents (`code-reviewer`, `test-engineer`, `architect`, `debugger`, `ai-slop-cleaner`) and the built-in `simplify` skill. Without OMC it falls back to `general-purpose` agents with the same prompts.
+`self-review` delegates to [oh-my-claudecode](https://github.com/mikeyobrien/oh-my-claudecode) agents (`code-reviewer`, `test-engineer`, `architect`, `critic`, `debugger`, `ai-slop-cleaner`). Without OMC it falls back to `general-purpose` agents with the same prompts.
 
-Repo-specific commands (lint, test scoping, source globs, commit-message rules) are resolved per repo in phase 0; the defaults are tuned for [vaadin/web-components](https://github.com/vaadin/web-components).
+Repo-specific commands (lint, test scoping, source globs) are resolved per repo in stage 0; the defaults are tuned for [vaadin/web-components](https://github.com/vaadin/web-components).
 
 ## Layout
 

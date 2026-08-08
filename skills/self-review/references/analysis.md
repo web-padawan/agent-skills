@@ -1,14 +1,14 @@
-# Phases 1–2 — Analysis
+# Stages 1–2a — Inventory & breadth analysis
 
-Everything in these phases is **read-only**. No file changes before the phase-4 gate.
+Everything in these stages is **read-only**. This skill never edits code; see the top rules in SKILL.md.
 
-Launch only the agents the phase-0 profile names, plus the phase-2 passes, all in **one message** so they run concurrently.
+Stage 1 is one fast agent whose output is the deep review's work list. Stage 2a launches the profile's breadth agents plus the slop pass — in the same message as stage 2b (deep-review.md), so both halves share one barrier.
 
 ## Delivery — how findings reach you
 
 A pass that never reports is worse than a pass you skipped: it looks done. Two launch choices decide whether findings arrive, and the **defaults lose them**:
 
-- **Pass `run_in_background: false` on every agent in this phase.** Phase 3 is a barrier — you need all findings before triage — so a synchronous run is what you actually want, and it makes each agent's report arrive as its tool result. Background agents report through a separate notification channel, and that is where reports vanish.
+- **Pass `run_in_background: false` on every agent in these stages.** Stage 3 is a barrier — you need all findings before triage — so a synchronous run is what you actually want, and it makes each agent's report arrive as its tool result. Background agents report through a separate notification channel, and that is where reports vanish.
 - **Do not pass `name`.** A named agent becomes an addressable teammate: it ends its turn *idle and still alive*, and its final text is never returned to you. Name an agent only when you genuinely need to message it mid-run.
 
 Then, whatever the mechanism, put this clause in every agent prompt so a second channel exists:
@@ -23,11 +23,28 @@ Do not write them to a file, and do not end your turn without them.
 
 ## Shared context file
 
-Write it once before launching, next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` SHA, `git diff --stat <BASE>..HEAD`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, and the severity rubric below.
+Write it once before launching stage 1, next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` SHA, `git diff --stat <BASE>..HEAD`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, and the severity rubric below.
+
+**Append the significant-change inventory to it when stage 1 returns**, before launching stage 2. Every stage-2 agent then reads the same ranked list, and the deep-review agents get their target from the same file as everyone else instead of having it restated per prompt.
 
 Each agent prompt is then: its own questions, its category, `read <report-dir>/context.md first`, and the output contract.
 
-## Output contract — put it in every prompt
+## Stage 1 — Change inventory
+
+One `general-purpose` agent, read-only. Its prompt carries the five significance rules and the exclusion list from SKILL.md verbatim, the profile's deep-review budget, and this contract:
+
+```
+<rank> | <file>:<line-range> | <rule 1-5> | <one sentence: what it changes>
+```
+
+- Ranked most significant first, by public-surface reach, then cross-module reach, then logic density.
+- Exactly the budget's worth of lines, then a `BELOW LINE` header, then every remaining candidate in the same format with the reason it ranked lower. The below-line list is what stage 6 prints under `## Not deep-reviewed`; an agent that omits it has not finished.
+- `NO SIGNIFICANT CHANGES` when the diff is entirely non-significant — a valid answer, and stage 2b is then skipped.
+- Add the delivery clause above.
+
+The inventory is a *selection*, not a review: no severities, no findings, no recommendations. Keeping it cheap is what makes the extra barrier worth its latency.
+
+## Output contract — put it in every stage-2a prompt
 
 ```
 <category> | <file>:<line> | <A|B|C> | <claim>
@@ -38,11 +55,13 @@ Each agent prompt is then: its own questions, its category, `read <report-dir>/c
 - `NO FINDINGS` explicitly when clean; an empty reply is an error, re-run once.
 - Add the delivery clause from **Delivery** above — the contract says what to report, that clause says where to put it, and a prompt with only one of the two loses findings.
 
-Categories: `general`, `architecture`, `scope`, `intent`, `api`, `requirements`, `root-cause`, `behavior`, `simplification`, `integration`, `tests`, `slop`.
+Categories: `general`, `architecture`, `boundary`, `impact`, `scope`, `intent`, `api`, `requirements`, `root-cause`, `behavior`, `integration`, `tests`, `slop`.
+
+`architecture`, `boundary` and `impact` come from the deep review (deep-review.md), which also emits `api` when the boundary in question is public API. The rest come from the breadth agents below.
 
 ## Severity — A / B / C
 
-Agents propose a tier; **phase-3 triage assigns the final one**. Agent-proposed tiers run high.
+Agents propose a tier; **stage-3 triage assigns the final one**. Agent-proposed tiers run high.
 
 - **A — critical, must fix before merge.** Wrong behavior, regression, a test that lets a real bug through, a public API mistake that ships permanently, lint or test failure, a11y or security break, a convention violation a reviewer would block on.
 - **B — should fix soon, a follow-up PR is fine.** Real but not merge-blocking: technical debt, coverage gaps away from the core behavior, naming or structure that will cost later, "this should be split" recommendations.
@@ -92,36 +111,20 @@ Review tests changed/added on this branch:
 - No reaching into implementation details or private APIs (`_underscore` members, internal DOM structure outside the contract) unless no public path exists.
 - Setup/teardown sound; no order dependence.
 
-Category `tests`. Coverage analysis is NOT this agent's job — phase 6 handles it.
+Category `tests`. Coverage analysis is NOT this agent's job — stage 5 handles it.
 
-### 6. Architecture check — `oh-my-claudecode:architect`
+## Retired passes
 
-The question is cost of change, not correctness: **which parts of the new or changed logic will be hard to modify in six months, and why?**
+Two branch-level agents were removed when the per-change deep review took over. Their questions did not go away — do not re-add the agents.
 
-- The 2–3 spots with the highest future cost of change, each with the reason it is sticky: public API surface that ships permanently, event or data-shape contracts, coupling across packages, state duplicated in places that will drift apart.
-- Premature abstractions (a generalization with one caller) and missing ones (copy-paste that will fork).
-- What a maintainer six months from now is most likely to misread.
-- For each: the **smallest** change that lowers the future cost. No rewrites, no speculative extensibility.
-- `NO FINDINGS` when the shape is fine. Expensive debt only, not a wish list.
+| Retired | Where its question lives now |
+| --- | --- |
+| **6. Architecture check** — which parts will be hard to modify in six months, and why | The architectural review's `Risk` + `Consequences` fields, asked per significant change instead of per branch |
+| **7. API design review** — judge new public surface as a consumer who lives with it for years | The boundary review's `Promise created` + `Why hard to change` fields, with `Consumers` naming who lives with it |
 
-Category `architecture`. In a component library a released public API cannot change without a breaking change, so API-shape debt is A; internal debt is normally B.
+Running them alongside the trio produces three phrasings of one finding and burns triage on dedup. If a whole-diff question genuinely has no per-change home — naming consistency *across* several new exports is the real example — raise it from agent 1 or agent 4, not from a resurrected pass.
 
-## Feature-only agents
-
-A feature ships surface that cannot be taken back, so these two run in addition to the shared six.
-
-### 7. API design review — `oh-my-claudecode:architect` (second instance), read-only
-
-Judge the new public surface as a library consumer who will live with it for years. New or changed exports, properties, attributes, methods, events, slots, CSS custom properties, parts, and `.d.ts` entries:
-
-- Naming and shape consistent with the same concept in sibling components — cite the sibling.
-- Defaults: is the unconfigured behavior the one most consumers want, and does it match the existing default elsewhere?
-- Is anything exposed that could stay private, or private that consumers will need? Public surface is the expensive kind.
-- Breaking change smuggled in as an addition: changed default, narrowed accepted values, renamed part or event, altered event detail.
-- Contract completeness: JSDoc with `@param`/`@return`, `@fires` for new events, types matching the runtime, documented `null`/`undefined` handling.
-- a11y contract for new interactive surface: roles, `aria-*` wiring, focus order, keyboard operation.
-
-Category `api`. Anything that would need a breaking change to correct is A.
+## Feature-only agent
 
 ### 8. Requirements coverage — `general-purpose`, read-only
 
@@ -136,7 +139,7 @@ Category `requirements`. A stated requirement with no implementation is A; an im
 ### 9. Root cause & blast radius — `oh-my-claudecode:debugger`, read-only
 
 - **Root cause vs symptom**: name the actual cause, then say whether the diff fixes it or masks it (a guard added at the call site, a value coerced downstream, a timing workaround). A symptom fix is a finding even when the reported bug goes away.
-- **Regression test**: is there a new test that fails without this diff? Name it, or report its absence — phase 6 verifies the claim.
+- **Regression test**: is there a new test that fails without this diff? Name it, or report its absence — stage 5 verifies the claim.
 - **Blast radius**: other places with the same pattern that still have the bug (sibling components, copy-pasted helper, the shared mixin the fix bypassed), and existing behavior that this fix changes for consumers who did not hit the bug.
 
 Category `root-cause`. Symptom-only fix, missing regression test, and behavior changed for unaffected consumers are all A.
@@ -153,24 +156,25 @@ A refactor must not change what the code does.
 
 Category `behavior`. Any unexplained observable change is A.
 
-## Phase 2 — Quality passes, reviewer-only
+## Stage 2a — Slop pass, reviewer-only
 
-Run each inside its own subagent, so their instructions stay out of the main context and their edits cannot reach the tree. Launch them in the phase-1 message.
+Run it inside its own subagent, so its instructions stay out of the main context and its edits cannot reach the tree. Launch it in the stage-2 message.
 
 - Subagent invoking `Skill(oh-my-claudecode:ai-slop-cleaner)` in its reviewer-only mode → `slop` findings, same output contract.
-- Subagent invoking `Skill(simplify)` with an explicit "report findings only, do not edit any file" instruction → `simplification` findings. Skipped for the **chore** profile.
 
-Then assert `git status --porcelain --untracked-files=no` is still empty. If a pass edited anyway: revert those tracked files with `git checkout -- <path>` (safe — the tree was clean at phase 0), delete files it created **by path**, and keep only its output as findings. Never `git clean`; never touch pre-existing untracked files.
+Then assert `git status --porcelain --untracked-files=no` is still empty. If the pass edited anyway: revert those tracked files with `git checkout -- <path>` (safe — the tree was clean at stage 0), delete files it created **by path**, and keep only its output as findings. Never `git clean`; never touch pre-existing untracked files.
+
+This skill has no apply stage, so a modified tracked file at this point is never something to keep — revert first, ask questions after.
 
 ## Delivery check — run before triage
 
-Roll call: list every agent you launched and tick the ones whose findings you actually hold. For each that delivered nothing, escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
+Roll call: list every agent you launched — stage 1's enumerator, the breadth agents, the slop pass, and all three lenses of every deep-reviewed change — and tick the ones whose findings you actually hold. For each that delivered nothing, escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
 
 1. **Ping once**, only if the agent is named and still alive: restate the output contract, name the 2–3 questions you most need answered, and include the facts you have already verified so it does not spend its run re-deriving them.
 2. **Re-spawn once** with `run_in_background: false` and no `name` — a different channel, not a second try down the broken one.
 3. **Self-run the pass**: read the files and answer that pass's questions yourself. Tag every finding it yields `self-run`.
 
-Never drop a pass silently, and never let a lost report pass for a clean one. Carry each pass's status — `agent`, `self-run`, or `missing` — into phase 7.
+Never drop a pass silently, and never let a lost report pass for a clean one. Carry each pass's status — `agent`, `self-run`, or `missing` — into stage 6.
 
 Treat a self-run pass as **weaker evidence** than an agent pass: you are reviewing with the same context that produced the diff, which makes you the reader least likely to notice what it takes for granted. Say which passes were self-run at the gate, rather than presenting them as independent confirmation.
 
