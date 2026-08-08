@@ -1,79 +1,111 @@
-# Phase 7 — Report & verdict
+# Stage 6 — Report & verdict
 
 ## End-state checks
 
-- `git rev-parse HEAD` == `<HEAD0>` from phase 0 — proof nothing was committed. If it differs, say so loudly at the top of the chat reply.
+Three assertions, together proving the working tree, the index and `HEAD` are all exactly as found:
+
+- `git rev-parse HEAD` == `<HEAD0>` from stage 0 — nothing was committed.
 - `git diff --name-only` empty — nothing unstaged, no mutant residue.
-- `git diff --staged --stat` — the change set the user is about to commit. Show this summary in chat.
-- Pre-existing untracked files are untouched and unstaged.
+- `git diff --staged --name-only` empty — nothing was staged.
 
-Never commit, amend, push, `stash`, `reset --hard`, or `git clean`. The user commits.
+If any of the three differs, say so loudly at the top of the chat reply before anything else.
 
-## Report — phase-0 report location (`.omc/self-review/<branch>.md` in web-components)
+Pre-existing untracked files are untouched and unstaged. Never commit, amend, push, `git add`, `stash`, `reset --hard`, or `git clean`.
+
+## Report — stage-0 report location (`.omc/self-review/<branch>-FINDINGS.md` in web-components)
+
+Write it only when the gate approved Q1. When it did not, put the same content in the chat reply instead, compressed — the findings are never lost, only relocated.
 
 ````markdown
 # Self-review: <branch> — <date>
 
 **Verdict: ready for PR | needs more work**
-Type: <feature | fix | refactor | chore> (signal: <what decided it>) · architecture pass: ran | skipped
-Passes: <N>/<M> delivered by agents · self-run: <names or none> · missing: <names or none>
-Applied: <tiers approved> · changes **staged, not committed**
+Type: <feature | fix | refactor | chore> (signal: <what decided it>)
+Deep review: <N> of <M> significant changes · Passes: <N>/<M> delivered by agents · self-run: <names or none> · missing: <names or none>
+**Nothing was changed** — this report is the only output.
 
-| Tier            | Fixed | Deferred | Accepted |
-| --------------- | ----- | -------- | -------- |
-| A critical      |       |          |          |
-| B follow-up     |       |          |          |
-| C taste         |       |          |          |
+| Tier            | Confirmed | Accepted |
+| --------------- | --------- | -------- |
+| A critical      |           |          |
+| B follow-up     |           |          |
+| C taste         |           |          |
 
-<one paragraph: what was reviewed, what changed, what remains>
+<one paragraph: what was reviewed, what the deep review found, what remains>
+
+## Deep review
+
+### 1. <file>:<line-range> — <short name>   [3-lens]
+
+**Architectural**
+Observed behavior: …
+Risk: …
+Consequences: …
+Suggestion: …
+
+**Boundary**
+Boundary affected: …
+Consumers: …
+Promise created: …
+Why hard to change: …
+Proposed alternative: …
+
+**Impact**
+Affected areas: …
+Ripple effects: …
+Propagation paths: …
+Risk criticality: …
+Mitigation path: …
+Unblock conditions: …
+
+### 2. <file>:<line-range> — <short name>
+
+## Not deep-reviewed
+- <file>:<line> — <why it ranked below the budget line>
 
 ## General review
-- [A][fixed] packages/foo/src/foo.js:42 — <claim>
-- [B][deferred] <file>:<line> — <claim> — <why deferred>
+- [A][confirmed] packages/foo/src/foo.js:42 — <claim> → <suggested fix>
 - [C][accepted] <file>:<line> — <claim> — <why it is not a problem>
 
-## Architecture
 ## Scope
 ## Intent
 ## Integration
 ## Tests
-## Simplification
 ## Slop
 
 ## Follow-ups
-- [B] <file>:<line> — <claim> — <intended fix>
+- [B] <file>:<line> — <claim> → <suggested fix>
 
-## Commit
-Suggested subject: `<type>: <summary>` (repo commit rules — `.claude/rules/commits-and-prs.md` in vaadin/web-components, else the style of recent `git log`)
-Review with `git diff --staged`, then commit. `git reset` unstages without losing the edits.
+## Next steps
+Fix the A findings, then re-run. Coverage gaps: `/agent-skills:mutation-coverage <file>`.
 ````
 
-- Every finding from every phase appears under its category, tagged `[tier]` and `[status]`. Statuses: `fixed` (applied), `deferred` (real, not applied now), `accepted` (no action needed — false positive or deliberate choice).
-- Add the profile's own sections after the shared ones: **feature** → `## API design`, `## Requirements coverage`; **fix** → `## Root cause & blast radius`; **refactor** → `## Behavior preservation`.
+- Every finding from every stage appears under its category, tagged `[tier]` and `[status]`. Statuses are exactly two: `confirmed` (real, and still open — this skill fixed nothing) and `accepted` (no action needed — false positive or deliberate choice).
+- The `## Deep review` section carries the three narrative blocks per change **verbatim**, in inventory rank order, with the `[3-lens]` / `[2-lens]` marker from triage when the lenses converged. Their rolled-up finding lines also appear under `architecture`, `boundary` / `api` and `impact` category headings — the blocks are the evidence, the lines are the tally.
+- `## Not deep-reviewed` lists every significant change that ranked below the budget line. Omit the section only when the inventory found nothing below the line. A `chore`, or a branch with no significant changes, gets `## Deep review` → `- none — no significant changes in this diff`.
+- Add the profile's own sections after the shared ones: **feature** → `## Requirements coverage`; **fix** → `## Root cause & blast radius`; **refactor** → `## Behavior preservation`.
 - Omit sections whose agent the profile did not run. Empty category → `- none`.
 - Distinguish "not run" from "ran and lost". Tag findings from a `self-run` pass `[self-run]` after the status, and head that category with `> pass self-run — no independent agent review`. A `missing` category reads `- none delivered — pass not covered`, never `- none`.
-- Coverage stats line under **Tests**: `N mutants, K killed, S survived (T tests added), skipped: <hunks or none>`. On a **fix**, prefix it with the whole-fix revert result: `regression test: <name> fails without the fix | none fails without the fix`.
-- **Follow-ups** repeats every `deferred` finding as a paste-ready list for the follow-up issue or PR.
-- The report itself is never committed — it lives in the git-ignored phase-0 location.
+- Coverage stats line under **Tests**: `N mutants, K killed, S survived, skipped: <hunks or none>`. On a **fix**, prefix it with the whole-fix revert result: `regression test: <name> fails without the fix | none fails without the fix`.
+- **Follow-ups** repeats every `confirmed` B and C finding as a paste-ready list for the follow-up issue or PR. A findings are not follow-ups — they are in the way of the merge and belong in `## Next steps`.
+- The report itself is never committed — it lives in the git-ignored stage-0 location.
 
 ## Verdict rubric
 
 **needs more work** when any of:
 
-- an A finding is unresolved — `deferred`, or approved but not applied
-- lint or the affected tests fail
-- a surviving A-tier coverage gap has no test
-- **fix**: no test fails when the whole fix is reverted, and none was added
-- **feature**: a stated requirement is unimplemented, or new public API ships with a finding that a later fix could not correct without a breaking change
+- any **confirmed A** finding exists — this skill changes nothing, so an A is unresolved by definition
+- **fix**: no test fails when the whole fix is reverted
+- **feature**: a stated requirement is unimplemented
 - **refactor**: an observable behavior change is unexplained
-- a **profile-specific pass** — the bolded one in the phase-0 profile table — is `missing`: the type's defining risk went unexamined, so there is no basis for a verdict
+- a **profile-specific pass** — the bolded one in the stage-0 profile table — is `missing`: the type's defining risk went unexamined, so there is no basis for a verdict
+- the **change inventory** is `missing` on a profile with a non-zero deep-review budget — the deep review is the point of the run, and without the inventory it did not happen
 
-Otherwise **ready for PR**. Unresolved B and C findings never block; they live under Follow-ups.
+Otherwise **ready for PR**. Confirmed B and C findings never block; they live under Follow-ups.
 
-The verdict describes the **staged** tree, not a commit.
+The verdict describes `HEAD` as it stands. Nothing was changed to reach it.
 
 ## Chat reply
 
-Verdict + detected type and profile + tier counts + 3–5 essential bullets + "staged, not committed" + report path. Name any deferred A finding explicitly. Do not restate the full report.
+Verdict + detected type and profile + deep-reviewed count (`N of M`) + tier counts + 3–5 essential bullets + "nothing was changed" + report path. Name every confirmed A finding explicitly — those are what the verdict rests on. Do not restate the full report.
 
 State the pass tally whenever any pass was `self-run` or `missing`. Reduced coverage changes what the verdict is worth, and leaving it out makes the review look stronger than it was.
