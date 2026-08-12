@@ -1,8 +1,8 @@
-# Stages 1–2a — Inventory & breadth analysis
+# Stages 1–2 — Inventory, breadth analysis, deep-review orchestration
 
 Everything in these stages is **read-only**. This skill never edits code; see the top rules in SKILL.md.
 
-Stage 1 is one fast agent whose output is the deep review's work list. Stage 2a launches the profile's breadth agents plus the slop pass — in the same message as stage 2b (deep-review.md), so both halves share one barrier.
+Stage 1 is one fast agent whose output is the deep review's work list. Stage 2a launches the profile's breadth agents plus the slop pass — in the same message as stage 2b (batching below, lens contracts in `../../arch-review/references/lenses.md`), so both halves share one barrier.
 
 ## Delivery — how findings reach you
 
@@ -31,18 +31,27 @@ Each agent prompt is then: its own questions, its category, `read <report-dir>/c
 
 ## Stage 1 — Change inventory
 
-One `general-purpose` agent, read-only. Its prompt carries the five significance rules and the exclusion list from SKILL.md verbatim, the profile's deep-review budget, and this contract:
+One `general-purpose` agent, read-only, built exactly per the **Inventory contract** in `../../arch-review/references/significance.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/significance.md`): its prompt carries that file's five significance rules and exclusion list verbatim, the profile's deep-review budget, and the contract's output format — including the `BELOW LINE` list that stage 6 prints under `## Not deep-reviewed`, and `NO SIGNIFICANT CHANGES` as the valid empty answer that skips stage 2b. Add the delivery clause above.
 
-```
-<rank> | <file>:<line-range> | <rule 1-5> | <one sentence: what it changes>
-```
+## Stage 2b — Deep review: batching & prompt shape
 
-- Ranked most significant first, by public-surface reach, then cross-module reach, then logic density.
-- Exactly the budget's worth of lines, then a `BELOW LINE` header, then every remaining candidate in the same format with the reason it ranked lower. The below-line list is what stage 6 prints under `## Not deep-reviewed`; an agent that omits it has not finished.
-- `NO SIGNIFICANT CHANGES` when the diff is entirely non-significant — a valid answer, and stage 2b is then skipped.
-- Add the delivery clause above.
+The lens contracts, severity mapping, and block→finding rules live in `../../arch-review/references/lenses.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/lenses.md`) — read that file before launching, and put each agent's field contract **and** the finding-line contract from its *Rolling blocks into findings* section in its prompt verbatim. What follows is only the launch mechanics.
 
-The inventory is a *selection*, not a review: no severities, no findings, no recommendations. Keeping it cheap is what makes the extra barrier worth its latency.
+**Batching.** 3 agents per change plus the breadth passes adds up fast: even a refactor at budget 4 is 12 deep agents on top of 6 breadth agents. Cap each message at roughly **6 agents**:
+
+- Message 1 — the breadth passes.
+- Message 2 — the trios for the top 2 ranked changes.
+- Message 3 onward — two more changes per message until the budget is spent.
+
+Do not put every trio in the stage-2 message with the breadth passes. Measured on a real refactor branch, an 18-agent single message is where deep agents start returning surveys instead of reviews, and one lost report costs a whole lens on a change. Three or four messages of six cost some wall-clock and buy every agent a full run. The batch boundary is a launch detail, not a barrier for triage — stage 3 still waits for everything before verifying anything.
+
+**Prompt shape — shared by all three lenses.** Every prompt carries:
+
+- `read <report-dir>/context.md first` — it holds the branch, the literal `<BASE>` SHA, the change type, and the ranked inventory.
+- The one change this agent reviews: its rank, `file:line-range`, and the inventory's one-sentence description. **One change per agent** — an agent handed the whole list writes a survey instead of a review.
+- Its own field contract and the finding-line contract, verbatim, from lenses.md.
+- The delivery clause from the **Delivery** section above. That clause is not optional; a prompt without it loses its report.
+- `run_in_background: false`, no `name`.
 
 ## Output contract — put it in every stage-2a prompt
 
@@ -57,7 +66,7 @@ The inventory is a *selection*, not a review: no severities, no findings, no rec
 
 Categories: `general`, `architecture`, `boundary`, `impact`, `scope`, `intent`, `api`, `requirements`, `root-cause`, `behavior`, `integration`, `tests`, `slop`.
 
-`architecture`, `boundary` and `impact` come from the deep review (deep-review.md), which also emits `api` when the boundary in question is public API. The rest come from the breadth agents below.
+`architecture`, `boundary` and `impact` come from the deep review (lens contracts in `../../arch-review/references/lenses.md`), which also emits `api` when the boundary in question is public API. The rest come from the breadth agents below.
 
 ## Severity — A / B / C
 

@@ -1,6 +1,6 @@
 ---
 name: self-review
-description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching review profile, then gives every significant change three structured reviews: architectural (observed behavior, risk, consequences, suggestion), boundary (which promise the change makes and to whom), and change-impact analysis (ripple effects, propagation paths, unblock conditions). Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict.
+description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching review profile, then gives every significant change the three arch-review lenses: architectural, boundary, and change-impact analysis. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
 argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--deep N] [--no-coverage]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*)
@@ -16,12 +16,13 @@ Three rules outrank everything else:
 
 Every finding ends up in the report as `confirmed` or `accepted`. Nothing is silently dropped.
 
-Detailed instructions live in references — read each one the **first time** a stage needs it, and never twice in a session. They sit next to this file; if a relative read fails, use `${CLAUDE_PLUGIN_ROOT}/skills/self-review/references/<name>.md`.
+Detailed instructions live in references — read each one the **first time** a stage needs it, and never twice in a session. `analysis.md`, `triage.md`, `mutation.md` and `finalize.md` sit next to this file (fallback `${CLAUDE_PLUGIN_ROOT}/skills/self-review/references/<name>.md`); `significance.md` and `lenses.md` belong to the sibling `arch-review` skill (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/<name>.md`).
 
 | Reference | Covers |
 | --- | --- |
-| [`references/analysis.md`](references/analysis.md) | Stages 1–2a: change inventory, breadth-pass prompts per profile, context file, finding format, severity rubric |
-| [`references/deep-review.md`](references/deep-review.md) | Stage 2b: the three per-change reviews — fields, prompts, severity mapping |
+| [`references/analysis.md`](references/analysis.md) | Stages 1–2: change inventory, breadth-pass prompts per profile, deep-review batching, context file, finding format, severity rubric |
+| [`../arch-review/references/significance.md`](../arch-review/references/significance.md) | What counts as a significant change, ranking, the stage-1 inventory contract |
+| [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md) | Stage 2b: the three per-change lens contracts, severity mapping |
 | [`references/triage.md`](references/triage.md) | Stages 3–4: verification, classification, the gate |
 | [`references/mutation.md`](references/mutation.md) | Stage 5: mutant selection per profile, restore safety, survivors as findings |
 | [`references/finalize.md`](references/finalize.md) | Stage 6: FINDINGS.md template, verdict rubric |
@@ -53,21 +54,9 @@ Signals below it may still *disagree*; do not let that silently upgrade the type
 
 Report the type and the signal that decided it in the stage-6 summary, and treat a wrong-looking type as a `scope` finding — a fix that grows an API is a mislabeled feature, and a refactor that removes public API is a mislabeled breaking change.
 
-### Significant change
+### Significant changes
 
-The deep review works per change, not per branch, so the changes have to be named first. A hunk in `git diff <BASE>..HEAD` is a **significant change** when it does any of:
-
-1. **Public surface** — adds or alters an export, public property, attribute, method, event, slot, CSS custom property, CSS part, or `.d.ts` entry.
-2. **New module** — adds a mixin, controller, class file, or helper that others will import.
-3. **Control flow** — changes a decision in existing logic: a new branch, an altered condition, a changed default, a changed early return, a changed lifecycle timing.
-4. **Cross-module contract** — changes a data shape, event detail, callback signature, or a mixin's expectation of its host.
-5. **Boundary move** — logic extracted, inlined, or relocated between modules or packages.
-
-Never significant: test-only hunks, docs, build/config, pure renames with no call-site semantics change, formatting, comment-only edits, generated files.
-
-**Cap and ranking.** Rank candidates by public-surface reach first, then cross-module reach, then logic density. Take the profile's deep-review budget. Every candidate over the budget goes in the report under `## Not deep-reviewed` with its `file:line` and the reason it ranked below the line — silent truncation is forbidden, the same way stage 5 must list skipped mutant hunks.
-
-A branch with **zero** significant changes (a pure chore, a docs-only edit) skips stage 2b and says so in the summary. That is a valid outcome, not a failure.
+The deep review works per change, not per branch. What qualifies, how candidates are ranked, and the inventory contract all live in [`../arch-review/references/significance.md`](../arch-review/references/significance.md) — stage 1 carries its rules verbatim. In short: public surface, new modules, control-flow decisions, cross-module contracts, and boundary moves qualify; tests, docs, config, formatting never do. Candidates over the profile's budget are listed in the report under `## Not deep-reviewed`, never silently dropped. A branch with **zero** significant changes skips stage 2b and says so in the summary — a valid outcome, not a failure.
 
 ### Review profile
 
@@ -86,7 +75,7 @@ The type picks the profile. Numbers are the breadth agents in analysis.md.
 
 ## Stage 1 — Change inventory (read-only)
 
-Per analysis.md: write the shared context file, then run **one** `general-purpose` agent that enumerates and ranks significant changes per the rules above. Its output is stage 2b's work list — a small, fast barrier, not a full review.
+Per analysis.md: write the shared context file, then run **one** `general-purpose` agent that enumerates and ranks significant changes per significance.md. Its output is stage 2b's work list — a small, fast barrier, not a full review.
 
 On a **chore**, skip the agent and record zero significant changes.
 
@@ -95,7 +84,7 @@ On a **chore**, skip the agent and record zero significant changes.
 The inventory is in hand, so both halves launch in the **same message** and share one barrier.
 
 - **Stage 2a — breadth passes**, per analysis.md: the profile's agents plus the slop pass, the latter wrapped in a subagent so it cannot edit and its instructions stay out of this context.
-- **Stage 2b — deep review**, per deep-review.md: the architectural, boundary and CIA reviews for each significant change. Follow its batching rule when the budget exceeds 4 changes.
+- **Stage 2b — deep review**: the three lens agents per significant change, field contracts verbatim from [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md), batching and prompt shape per analysis.md's **Stage 2b** section.
 
 Read analysis.md's **Delivery** section before launching and follow it exactly — `run_in_background: false`, no `name`, and the delivery clause in every prompt. Those three are what decide whether the findings ever reach you; the defaults silently lose them.
 
