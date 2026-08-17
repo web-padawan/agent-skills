@@ -8,7 +8,7 @@ For every finding from stages 1–2:
 
 1. **Verify it against the code.** Agents produce false positives. A finding you cannot confirm is `accepted` with a one-line reason and never reaches the gate.
 2. **Dedup.** Same file, line and claim from several agents = one finding; keep the clearest wording and note which categories raised it.
-3. **Correlate the deep-review lenses.** The three lenses will land on the same change from different angles — that is signal, not noise. Merge them into one finding and mark it `[3-lens]` when all three raised it, `[2-lens]` for two. A change flagged by architectural, boundary *and* impact is the strongest statement this skill can make; do not let dedup flatten it into an ordinary line. The three narrative blocks still go into the report in full — only the finding lines merge.
+3. **Correlate the deep-review lenses.** Skip this step on a **fix**, which runs a single lens — there is nothing to converge. Otherwise: the three lenses will land on the same change from different angles — that is signal, not noise. Merge them into one finding and mark it `[3-lens]` when all three raised it, `[2-lens]` for two. A change flagged by architectural, boundary *and* impact is the strongest statement this skill can make; do not let dedup flatten it into an ordinary line. The three narrative blocks still go into the report in full — only the finding lines merge.
 4. **Assign the final tier** (A/B/C per analysis.md), overriding the agent's proposal. Apply the tie-breaker: can a follow-up PR fix it without a breaking change or a user-visible bug?
 5. **Write the suggested fix** as one line. This skill changes nothing, so that line is the entire actionable output — it is what the user acts on. Make it concrete and specific to the file and line. A report full of "consider refactoring this" is worthless; "move the listener removal into `disconnectedCallback`" is not.
 
@@ -17,7 +17,7 @@ For every finding from stages 1–2:
 The change type shifts where the A line sits — apply these on top of the rubric:
 
 - **feature** — anything in the new public surface that a later fix could not correct without a breaking change is A: naming, defaults, event or data shape, missing a11y wiring. A stated requirement with no implementation is A. Internal debt stays B.
-- **fix** — a symptom-only fix is A. A missing or non-failing regression test is A. The same bug left in place elsewhere (blast radius) is A when the sibling is released, B when it is not reachable yet.
+- **fix** — a symptom-only fix is A. A missing or non-failing regression test is A. The same bug left in place elsewhere (blast radius) is A when the sibling is released, B when it is not reachable yet. A contradicted premise is A and does not reach this stage at all: the run stopped at the premise check, because triaging the implementation of a fix the project did not ask for produces findings about code that is about to be deleted.
 - **refactor** — any unexplained observable behavior change is A, including a weakened or deleted assertion in an existing test. New public API in a refactor is at least B and belongs in a separate PR — the boundary review will normally have caught it first.
 - **chore** — nothing here is A unless CI would fail.
 
@@ -27,6 +27,7 @@ First in chat, compact and scannable — the full detail belongs in the report:
 
 ```
 Profile: refactor · deep-reviewed 3 of 5 significant changes — signal: branch prefix `refactor/`
+Premise: sound — #9239 review kept the filter guard   (fix profile only)
 
 A (must fix before merge) — 2
   packages/foo/src/foo.js:42 — <claim> → <suggested fix>   [3-lens]

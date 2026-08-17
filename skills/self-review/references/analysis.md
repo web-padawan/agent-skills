@@ -43,6 +43,10 @@ The lens contracts, severity mapping, and block→finding rules live in `../../a
 - Message 2 — the trios for the top 2 ranked changes.
 - Message 3 onward — two more changes per message until the budget is spent.
 
+On a **fix** there are no trios and no second message: **four agents in one** — breadth passes
+1, 5 and 9 plus the single lens on the fix's own hunks. Agent 11 has already run before Stage 1
+and cleared the premise (launch order in `fix-profile.md`).
+
 Do not put every trio in the stage-2 message with the breadth passes. Measured on a real refactor branch, an 18-agent single message is where deep agents start returning surveys instead of reviews, and one lost report costs a whole lens on a change. Three or four messages of six cost some wall-clock and buy every agent a full run. The batch boundary is a launch detail, not a barrier for triage — stage 3 still waits for everything before verifying anything.
 
 **Prompt shape — shared by all three lenses.** Every prompt carries:
@@ -64,7 +68,7 @@ Do not put every trio in the stage-2 message with the breadth passes. Measured o
 - `NO FINDINGS` explicitly when clean; an empty reply is an error, re-run once.
 - Add the delivery clause from **Delivery** above — the contract says what to report, that clause says where to put it, and a prompt with only one of the two loses findings.
 
-Categories: `general`, `architecture`, `boundary`, `impact`, `scope`, `intent`, `api`, `requirements`, `root-cause`, `behavior`, `integration`, `tests`, `slop`.
+Categories: `general`, `architecture`, `boundary`, `impact`, `scope`, `intent`, `api`, `requirements`, `premise`, `root-cause`, `behavior`, `integration`, `tests`, `slop`.
 
 `architecture`, `boundary` and `impact` come from the deep review (lens contracts in `../../arch-review/references/lenses.md`), which also emits `api` when the boundary in question is public API. The rest come from the breadth agents below.
 
@@ -84,6 +88,12 @@ Tie-breaker between A and B: **can a follow-up PR fix this without a breaking ch
 
 Review the full branch diff (`git diff <BASE>..HEAD`, literal SHA) for correctness, logic defects, edge cases, and API-contract problems. Category `general`.
 
+On a **fix**, this agent also carries the questions of the passes that profile drops — keep each
+finding under its own category so the report still separates them: the drive-by question from
+agent 2 (`scope`), intent drift and the plausible-nonsense hunt from agent 3 (`intent`), the
+conventions check from agent 4 (`integration`, with the repo's conventions doc named in the
+prompt), and the comment policy at the end of this file (`slop`).
+
 ### 2. Scope check — `general-purpose`, read-only
 
 - Can this branch be split into meaningful independent parts? Name the split if so.
@@ -96,6 +106,10 @@ Category `scope`. A split recommendation is a judgment call for the user, so tie
 ### 3. Intent check — `general-purpose`, read-only
 
 Intent sources, in priority order: `$0` parent PR/issue → PR body + linked issues → `.omc/plans/` files mentioning the branch topic → commit messages. If none exists, ask the user for a one-line intent before launching.
+
+Every one of those sources sits *downstream* of the author's premise: an issue that proposes the
+wrong remedy makes this pass confirm the diff. That is what agent 11 is for on a fix — it reads
+the behavior's history instead, which is the only source that can disagree with the author.
 
 - Does the implemented approach match the stated intent, or has it drifted?
 - **Plausible-nonsense hunt**: tests that pass while pinning wrong behavior — assertions encoding what the code *does* rather than what the intent *requires*. Compare each new test's expectation against the intent, not the implementation.
@@ -110,7 +124,8 @@ Must read the repo's conventions doc in full first — `CONVENTIONS.md` at the r
 - Naming consistent with sibling components/mixins for the same concept.
 - Method and property ordering matching the surrounding file and analogous files in other packages.
 
-Category `integration`.
+Category `integration`. When the profile skips this agent (**fix**), fold the conventions check
+into agent 1's prompt, naming the conventions doc there.
 
 ### 5. Test review — `oh-my-claudecode:test-engineer`
 
@@ -153,6 +168,49 @@ Category `requirements`. A stated requirement with no implementation is A; an im
 
 Category `root-cause`. Symptom-only fix, missing regression test, and behavior changed for unaffected consumers are all A.
 
+## Fix-only agent — runs before every other pass
+
+### 11. Premise & history — `general-purpose`, read-only
+
+The question is not "is this code correct" but "is this the behavior the project chose". A fix
+reviewed on the wrong premise spends the whole run on code that gets deleted.
+
+Establish the following, stopping as soon as a decision is found:
+
+1. **Origin of the behavior.**
+   `git log --oneline -S "<the symbol or guard the fix touches>" -- <component paths>` — the
+   commit that introduced it, plus any earlier fix to it. Squash-merged repos carry the PR
+   number in the subject (`feat: add setFocusSelectedItem to ComboBox (#9239)`).
+2. **That PR's review discussion, not its body.** The body holds the pitch; the inline comments
+   hold the decisions:
+   `gh pr view <n> --json title,body,comments,reviews` and
+   `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate`.
+   Look for a guard, branch, or early return that review **removed** — and the stated reason.
+3. **Follow the references out.** Those threads link earlier attempts, which is where product
+   decisions are usually recorded: a link like `…/pull/9194#discussion_r3147361335` resolves
+   with `gh api repos/<owner>/<repo>/pulls/comments/<comment-id>`.
+4. **Tests that already pin the behavior.** Search the component's suite for a test asserting
+   the opposite of what the fix now does. A test named `…_filterActive_doesNotScrollToSelected`
+   is the project stating the behavior on purpose. **A test the branch adds whose name
+   contradicts an existing test in the same suite is a premise conflict, not a naming
+   coincidence** — check for that pair first, it is the cheapest signal available.
+5. **Guards with history.** `git log -S "<the guard's distinctive expression>"` over the file:
+   a fix that re-adds or deletes a guard someone argued about is a fix with a premise.
+
+First line of the pass, and of the report:
+
+```
+premise: sound | contradicted | unverified — <citation: PR#, comment id, or test name>
+```
+
+Then, on `contradicted`, one finding: what the project decided, where it is recorded, and what
+the fix does instead. Category `premise`, tier **A** — it invalidates the diff rather than a
+line of it, and the run stops (decision rules and the premise-stop gate in `fix-profile.md`).
+
+**Precedence.** An existing test, or a reviewer's recorded product decision, outranks the bug
+report's "expected outcome" — the reporter hit the bug, the reviewer chose the behavior. Report
+the conflict; never resolve it.
+
 ## Refactor-only agent
 
 ### 10. Behavior preservation — `general-purpose`, read-only
@@ -166,6 +224,8 @@ A refactor must not change what the code does.
 Category `behavior`. Any unexplained observable change is A.
 
 ## Stage 2a — Slop pass, reviewer-only
+
+Runs for every type except **fix**, whose five-agent cap folds the comment policy into agent 1.
 
 Run it inside its own subagent, so its instructions stay out of the main context and its edits cannot reach the tree. Launch it in the stage-2 message.
 
