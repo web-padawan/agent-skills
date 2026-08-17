@@ -73,7 +73,7 @@ The change type comes from, in order: an explicit `--fix` / `--feature` / `--ref
 | Type | Extra pass | Deep review | Mutants |
 | --- | --- | --- | --- |
 | **feature** | requirements coverage | 6 significant changes | 15 |
-| **fix** | root cause & blast radius, regression test must fail without the fix | 3, including the fix's own hunks | 5, on the fix |
+| **fix** | premise & history first (a fix contradicting a recorded project decision stops the run), then root cause & blast radius; regression test must fail without the fix; five agents total | 1 — the fix's own hunks, single lens | 5, on the fix |
 | **refactor** | behavior preservation | 4, weighted to moved boundaries | 10 |
 | **chore** | — | none | none |
 
@@ -99,7 +99,7 @@ New skills follow `authoring-skills` — start from `skills/authoring-skills/ass
 ## Dependencies
 
 - **`gh` CLI**, authenticated — required by `guided-review`, `adversarial-review`, `pr-review`, and the PR-context parts of `self-review` / `arch-review`.
-- **oh-my-claudecode** (optional) — `self-review` and `arch-review` delegate to its agents (`code-reviewer`, `test-engineer`, `architect`, `critic`, `debugger`, `ai-slop-cleaner`); without OMC they fall back to `general-purpose` agents with the same prompts.
+- Nothing else: every reviewer agent the pipelines use ships with the plugin in `agents/` — read-only subagents (Write/Edit disallowed) invoked as `agent-skills:<name>`.
 
 Repo-specific commands (lint, test scoping, source globs) are resolved per repo at run time; the defaults are tuned for [vaadin/web-components](https://github.com/vaadin/web-components).
 
@@ -109,13 +109,17 @@ Repo-specific commands (lint, test scoping, source globs) are resolved per repo 
 .claude-plugin/
   plugin.json        # plugin manifest (name: agent-skills)
   marketplace.json   # single-plugin marketplace (name: local)
+agents/              # read-only reviewer subagents (agent-skills:<name>) used by the review pipelines
+  lens-*.md          # the three arch-review lenses
+  *-reviewer.md      # self-review breadth passes, premise check, comment/slop pass
+  change-enumerator.md
 skills/
   self-review/
-    SKILL.md         # stage orchestration; lens/significance contracts live in arch-review
+    SKILL.md         # stage orchestration; lens/significance rules live in arch-review
     references/      # per-stage detail, read on first use
   arch-review/
     SKILL.md         # standalone entry: scope → inventory → trio → triage
-    references/      # lenses.md (field contracts), significance.md (inventory rules)
+    references/      # lenses.md (lens table + severity mapping), significance.md (inventory rules)
   guided-review/
     SKILL.md         # two-phase walkthrough, read-only
   adversarial-review/
@@ -135,6 +139,6 @@ skills/
     references/      # TEMPLATE.md (output skeleton), STYLE.md (bullet voice, anti-patterns)
   authoring-skills/
     SKILL.md         # description-first authoring workflow
-    references/      # descriptions.md, frontmatter.md, skill-types.md
+    references/      # descriptions.md, frontmatter.md, skill-types.md, agents.md
     assets/          # SKILL.template.md
 ```
