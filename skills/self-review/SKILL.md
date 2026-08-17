@@ -23,7 +23,7 @@ Detailed instructions live in references — read each one the **first time** a 
 | [`references/analysis.md`](references/analysis.md) | Stages 1–2: change inventory, breadth-pass prompts per profile (incl. agent 11's procedure), deep-review batching, context file, finding format, severity rubric |
 | [`references/fix-profile.md`](references/fix-profile.md) | Fix only: launch order, premise decision rules, the premise-stop gate, five-agent cap, single-lens choice, size check |
 | [`../arch-review/references/significance.md`](../arch-review/references/significance.md) | What counts as a significant change, ranking, the stage-1 inventory contract |
-| [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md) | Stage 2b: the three per-change lens contracts, severity mapping |
+| [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md) | Stage 2b: the lens agent table, severity mapping, block→finding rules |
 | [`references/triage.md`](references/triage.md) | Stages 3–4: verification, classification, the gate |
 | [`references/mutation.md`](references/mutation.md) | Stage 5: mutant selection per profile, restore safety, survivors as findings |
 | [`references/finalize.md`](references/finalize.md) | Stage 6: FINDINGS.md template, verdict rubric |
@@ -84,7 +84,7 @@ The fix pipeline differs end to end — read [`references/fix-profile.md`](refer
 
 ## Stage 1 — Change inventory (read-only)
 
-Per analysis.md: write the shared context file, then run **one** `general-purpose` agent that enumerates and ranks significant changes per significance.md. Its output is stage 2b's work list — a small, fast barrier, not a full review.
+Per analysis.md: write the shared context file, then run **one** `agent-skills:change-enumerator` agent that enumerates and ranks significant changes. Its output is stage 2b's work list — a small, fast barrier, not a full review.
 
 On a **chore**, skip the agent and record zero significant changes. On a **fix**, skip it too:
 the one deep-reviewed change is the fix's own production hunks, taken straight from
@@ -94,8 +94,8 @@ the one deep-reviewed change is the fix's own production hunks, taken straight f
 
 The inventory is in hand, so both halves launch in the **same message** and share one barrier.
 
-- **Stage 2a — breadth passes**, per analysis.md: the profile's agents plus the slop pass, the latter wrapped in a subagent so it cannot edit and its instructions stay out of this context.
-- **Stage 2b — deep review**: the three lens agents per significant change, field contracts verbatim from [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md), batching and prompt shape per analysis.md's **Stage 2b** section.
+- **Stage 2a — breadth passes**, per analysis.md's pass table: the profile's `agent-skills:*` reviewer agents plus the slop pass (`agent-skills:comment-reviewer`) — every pass's contract lives in its agent definition, so prompts carry only the context file path, the table's run-specific facts, and the delivery clause.
+- **Stage 2b — deep review**: the three `agent-skills:lens-*` agents per significant change — contracts in the agent definitions, severity mapping in [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md), batching and prompt shape per analysis.md's **Stage 2b** section.
 
 On a **fix** this is a single message of **four** agents — breadth passes 1, 5 and 9, plus the
 one lens — and the premise check has already run and returned `sound` or `unverified` (on

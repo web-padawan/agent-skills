@@ -2,6 +2,7 @@
 name: lens-boundary
 description: Boundary lens of the arch-review trio — reviews ONE significant change for the promise it makes, to whom, and how expensive it is to take back. Used exclusively by the agent-skills review skills (arch-review, self-review) — not for general delegation.
 tools: Read, Glob, Grep, Bash
+disallowedTools: Write, Edit
 ---
 
 You are the boundary lens of a three-lens deep review. You review exactly **one**

@@ -32,7 +32,7 @@ A single named change goes straight to step 3. Anything broader goes through the
 
 A multi-change run is not cheap: the inventory agent plus three lens agents per change is up to 13 agents at the default budget. When the user explicitly invoked the skill on that scope (slash command, "arch-review the branch"), proceed; when the skill fired on a passing question, confirm with one `AskUserQuestion` (header `Scope`) before spending the budget — offer the full run and a top-1-change run.
 
-Run one inventory agent per [`references/significance.md`](references/significance.md): the five rules, the ranking, and the output contract, verbatim in the prompt. Budget: **4** changes unless `--deep N` says otherwise. Everything below the line is listed in the report as `Not deep-reviewed`, never silently dropped.
+Run one `agent-skills:change-enumerator` inventory agent per [`references/significance.md`](references/significance.md) — the agent carries the rules and the output contract; the prompt adds the budget, scope context, and delivery clause. Budget: **4** changes unless `--deep N` says otherwise. Everything below the line is listed in the report as `Not deep-reviewed`, never silently dropped.
 
 `NO SIGNIFICANT CHANGES` is a valid answer: report it and stop — no lens run on noise.
 

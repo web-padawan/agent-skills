@@ -9,8 +9,9 @@ rules, the launch order, and the cap.
 
 1. Stage 0 as usual, then write the shared context file (analysis.md's **Shared context
    file** section) *before* the premise check, so agent 11 reads it like every other agent.
-2. **Agent 11 — premise & history**, launched alone, with the delivery clause and
-   `run_in_background: false` from analysis.md's **Delivery** section like every other agent.
+2. **Agent 11 — premise & history** (`agent-skills:premise-reviewer`), launched alone, with
+   the delivery clause and `run_in_background: false` from analysis.md's **Delivery** section
+   like every other agent.
 3. On `sound` or `unverified`: Stage 1 skips the enumerator — the one deep-review target is
    the fix's own production hunks, read straight off `git diff <BASE>..HEAD` — and Stage 2 is
    **one message of four agents**: breadth passes 1, 5 and 9, plus the single lens.
@@ -41,9 +42,10 @@ A fix gets five agents in total — not five plus a trio per change:
   & blast radius · **one lens** on the fix's own hunks.
 - No inventory agent — the deep-review target is the fix's own production hunks, so there is
   nothing for an enumerator to rank.
-- No lens trio, and no separate slop agent. Agents 2, 3 and 4 fold into agent 1's prompt —
-  the drive-by question, intent drift, conventions, and the comment policy — per the fix note
-  under analysis.md's agent 1.
+- No lens trio, and no separate slop agent. Agents 2, 3 and 4 fold into agent 1
+  (`agent-skills:general-reviewer`) — its definition carries the folded drive-by, intent-drift,
+  conventions, and comment-policy questions; the prompt must say the type is **fix** and name
+  the repo's conventions doc.
 
 Pick the **single** lens by what the fix introduces — **boundary** when it adds or changes a
 contract, **impact** when it touches shared or hot code, **architectural** otherwise.
