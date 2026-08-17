@@ -4,7 +4,7 @@ Private Claude Code plugin with personal skills. The repository is both the plug
 
 ## Skills
 
-Five review skills with strict boundaries, one verification skill, one meta skill.
+Five review skills with strict boundaries, one verification skill, one authoring skill, one meta skill.
 
 | Skill | When to use |
 | --- | --- |
@@ -14,6 +14,7 @@ Five review skills with strict boundaries, one verification skill, one meta skil
 | `adversarial-review` | **Someone else's PR (or your own, pre-review), one skeptical pass.** Severity-bucketed report (🔴 High / 🟠 Medium / 🟡 Low / ✅ Done well + one-line summary), posted as a **single PR comment** after confirmation. |
 | `pr-review` | **Full reviewer pass with inline comments.** Rubric review (correctness / security / maintainability / performance, P0–P3), findings presented in chat, then **positioned line comments** posted after confirmation. |
 | `mutation-coverage` | Finds code no test asserts on via mutation testing (line-removal or Stryker), then closes each gap with a test that fails when the code is broken. Estimates runtime before mutating; nothing committed or installed in the target repo. |
+| `pr-description` | **Writes** the PR body, doesn't review it. Turns the branch diff into the Vaadin PR template as short bullet lists — issue links, one bullet per behavior change, a `Type of change` label, and numbered `How to test` steps naming a real dev page. Scaffolds `Before / After` for visual changes. Drafts in chat; `gh pr edit` only after you confirm. |
 | `authoring-skills` | Meta: create or improve a skill in this plugin — trigger-shaped descriptions, body archetypes, references split, frontmatter conventions. |
 
 ## Install
@@ -47,6 +48,9 @@ claude plugin list
 
 /agent-skills:mutation-coverage packages/upload/src/vaadin-upload-mixin.js   # one file, line-removal
 /agent-skills:mutation-coverage --diff                                       # branch diff, per package
+
+/agent-skills:pr-description                    # current branch → draft body, apply after you confirm
+/agent-skills:pr-description 9042               # rewrite an existing PR's description
 ```
 
 Run `self-review` on a feature branch with no uncommitted changes to tracked files (untracked files are fine and are never touched). It refuses on `main` / `master` / `maintenance/*`. Mutation runs cost roughly one suite run per mutant; the skill states the estimate before starting and refuses to silently start anything over ~30 minutes.
@@ -58,8 +62,9 @@ Run `self-review` on a feature branch with no uncommitted changes to tracked fil
 - **Understanding someone's PR** before judging it, posting nothing → `guided-review`.
 - A **first-cut skeptical pass**, one summary comment on the PR → `adversarial-review`.
 - A **full review leaving actionable line comments** on the PR → `pr-review`.
+- **Describing** the branch rather than judging it → `pr-description` (the only one that writes a PR body).
 
-Everything that posts (`adversarial-review`, `pr-review`) asks for confirmation first and prefixes comments with `:robot: AI-generated`. Everything else never writes outside the machine.
+Everything that posts (`adversarial-review`, `pr-review`) asks for confirmation first and prefixes comments with `:robot: AI-generated`. `pr-description` also asks first, but writes the body without any AI attribution — the descriptions it imitates carry none. Everything else never writes outside the machine.
 
 ### Review profiles (`self-review`)
 
@@ -125,6 +130,9 @@ skills/
     scripts/         # mutate.mjs (line-removal), stryker-diff.mjs (PR-diff mode)
     assets/stryker/  # config templates materialized into the target repo
     references/      # stryker procedure, survivor taxonomy
+  pr-description/
+    SKILL.md         # gather → classify → draft → deliver (confirmation-gated)
+    references/      # TEMPLATE.md (output skeleton), STYLE.md (bullet voice, anti-patterns)
   authoring-skills/
     SKILL.md         # description-first authoring workflow
     references/      # descriptions.md, frontmatter.md, skill-types.md
