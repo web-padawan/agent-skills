@@ -11,7 +11,7 @@ This skill is also the deep-review engine `self-review` runs per significant cha
 
 | Reference | Covers |
 | --- | --- |
-| [`references/lenses.md`](references/lenses.md) | The three field contracts, severity mapping, rolling blocks into findings |
+| [`references/lenses.md`](references/lenses.md) | The lens agent table, severity mapping, rolling blocks into findings — field contracts live in the `agents/lens-*.md` definitions |
 | [`references/significance.md`](references/significance.md) | What counts as a significant change, ranking, inventory contract |
 
 References sit next to this file; if a relative read fails, use `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/<name>.md`.
@@ -38,7 +38,7 @@ Run one inventory agent per [`references/significance.md`](references/significan
 
 ## 3 — Run the trio per change
 
-Per [`references/lenses.md`](references/lenses.md): three separate agents per change — architectural, boundary, CIA — each with its field contract verbatim, each handed exactly one change.
+Per [`references/lenses.md`](references/lenses.md): three separate agents per change — `agent-skills:lens-architectural`, `agent-skills:lens-boundary`, `agent-skills:lens-impact` — each handed exactly one change; the agents carry their own field contracts.
 
 **Delivery** — the defaults lose reports; all three are mandatory:
 
