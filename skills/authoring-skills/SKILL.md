@@ -102,6 +102,14 @@ post outside the machine. Full field reference and a linting checklist:
 To start from a skeleton, copy [assets/SKILL.template.md](assets/SKILL.template.md)
 — it has frontmatter stubs and commented section placeholders for each archetype.
 
+## Step 5b — Agents (plugin subagents)
+
+A pass with a static contract reused across runs belongs in `agents/` at the plugin root,
+not in skill prose — the definition carries the questions and output contract, the skill's
+prompt carries only run-specific facts. Conventions (frontmatter shape, the mandatory
+exclusive-use description clause, read-only tool rules, the fallback clause):
+[references/agents.md](references/agents.md).
+
 ## Step 6 — Verify before shipping
 
 1. **Trigger test:** write 3–5 prompts that should fire the skill and 2–3 that
