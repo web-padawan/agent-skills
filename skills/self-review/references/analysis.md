@@ -2,7 +2,9 @@
 
 Everything in these stages is **read-only**. This skill never edits code; see the top rules in SKILL.md.
 
-Stage 1 is one fast agent whose output is the deep review's work list. Stage 2a launches the profile's breadth agents plus the slop pass — in the same message as stage 2b (batching below, lens contracts in `../../arch-review/references/lenses.md`), so both halves share one barrier.
+Stage 1 is one fast agent whose output is the deep review's work list. Stage 2a launches the profile's breadth agents plus the slop pass — in the same message as stage 2b (batching below), so both halves share one barrier.
+
+Every pass runs as a plugin agent (`agents/` at the plugin root). Each agent's definition carries its questions, category, output contract, and verification rules — the invoking prompt adds only run-specific facts: the context file path, the delivery clause, and whatever the pass table below names. **Fallback**, only when the plugin's agents are unavailable (this file copied out of the plugin): use `general-purpose` and paste the full body of the corresponding `agents/<name>.md` into the prompt.
 
 ## Delivery — how findings reach you
 
@@ -23,19 +25,19 @@ Do not write them to a file, and do not end your turn without them.
 
 ## Shared context file
 
-Write it once before launching stage 1, next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` SHA, `git diff --stat <BASE>..HEAD`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, and the severity rubric below.
+Write it once before launching stage 1 (on a **fix**, before the premise check), next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` SHA, `git diff --stat <BASE>..HEAD`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, and the severity rubric below.
 
 **Append the significant-change inventory to it when stage 1 returns**, before launching stage 2. Every stage-2 agent then reads the same ranked list, and the deep-review agents get their target from the same file as everyone else instead of having it restated per prompt.
 
-Each agent prompt is then: its own questions, its category, `read <report-dir>/context.md first`, and the output contract.
+Each agent prompt is then: `read <report-dir>/context.md first`, the run-specific facts from the pass table below, and the delivery clause — questions, categories, and output contracts live in the agent definitions.
 
 ## Stage 1 — Change inventory
 
-One `general-purpose` agent, read-only, built exactly per the **Inventory contract** in `../../arch-review/references/significance.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/significance.md`): its prompt carries that file's five significance rules and exclusion list verbatim, the profile's deep-review budget, and the contract's output format — including the `BELOW LINE` list that stage 6 prints under `## Not deep-reviewed`, and `NO SIGNIFICANT CHANGES` as the valid empty answer that skips stage 2b. Add the delivery clause above.
+One `agent-skills:change-enumerator` agent, read-only. Its definition ([`../../agents/change-enumerator.md`](../../agents/change-enumerator.md)) carries the five significance rules, the exclusion list, and the inventory contract — including the `BELOW LINE` list that stage 6 prints under `## Not deep-reviewed`, and `NO SIGNIFICANT CHANGES` as the valid empty answer that skips stage 2b. The prompt adds the context file path, the profile's deep-review budget, and the delivery clause.
 
 ## Stage 2b — Deep review: batching & prompt shape
 
-The lens contracts, severity mapping, and block→finding rules live in `../../arch-review/references/lenses.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/lenses.md`) — read that file before launching, and put each agent's field contract **and** the finding-line contract from its *Rolling blocks into findings* section in its prompt verbatim. What follows is only the launch mechanics.
+The three lens agents — `agent-skills:lens-architectural`, `agent-skills:lens-boundary`, `agent-skills:lens-impact` — carry their field contracts and finding-line contracts in their definitions. Read `../../arch-review/references/lenses.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/lenses.md`) before launching — it holds the severity mapping and block→finding rules that stage 3 and stage 6 apply. What follows is only the launch mechanics.
 
 **Batching.** 3 agents per change plus the breadth passes adds up fast: even a refactor at budget 4 is 12 deep agents on top of 6 breadth agents. Cap each message at roughly **6 agents**:
 
@@ -53,24 +55,22 @@ Do not put every trio in the stage-2 message with the breadth passes. Measured o
 
 - `read <report-dir>/context.md first` — it holds the branch, the literal `<BASE>` SHA, the change type, and the ranked inventory.
 - The one change this agent reviews: its rank, `file:line-range`, and the inventory's one-sentence description. **One change per agent** — an agent handed the whole list writes a survey instead of a review.
-- Its own field contract and the finding-line contract, verbatim, from lenses.md.
 - The delivery clause from the **Delivery** section above. That clause is not optional; a prompt without it loses its report.
 - `run_in_background: false`, no `name`.
 
-## Output contract — put it in every stage-2a prompt
+## Output contract — carried by the agent definitions
+
+Every reviewer agent's definition carries the shared finding-line contract:
 
 ```
 <category> | <file>:<line> | <A|B|C> | <claim>
 ```
 
-- One line per finding, at most **12** findings, ranked most severe first.
-- No code blocks, no quoted diffs, no restating the file — the claim is one sentence.
-- `NO FINDINGS` explicitly when clean; an empty reply is an error, re-run once.
-- Add the delivery clause from **Delivery** above — the contract says what to report, that clause says where to put it, and a prompt with only one of the two loses findings.
+One line per finding, at most **12** per agent, ranked most severe first, `NO FINDINGS` explicitly when clean — an empty reply is an error, re-run once. The prompt adds the delivery clause: the contract says what to report, the clause says where to put it, and an agent with only one of the two loses findings.
 
 Categories: `general`, `architecture`, `boundary`, `impact`, `scope`, `intent`, `api`, `requirements`, `premise`, `root-cause`, `behavior`, `integration`, `tests`, `slop`.
 
-`architecture`, `boundary` and `impact` come from the deep review (lens contracts in `../../arch-review/references/lenses.md`), which also emits `api` when the boundary in question is public API. The rest come from the breadth agents below.
+`architecture`, `boundary` and `impact` come from the deep review, which also emits `api` when the boundary in question is public API. The rest come from the breadth passes below.
 
 ## Severity — A / B / C
 
@@ -82,60 +82,23 @@ Agents propose a tier; **stage-3 triage assigns the final one**. Agent-proposed 
 
 Tie-breaker between A and B: **can a follow-up PR fix this without a breaking change or a user-visible bug?** No → A.
 
-## Shared agents
+## The breadth passes
 
-### 1. General review — `oh-my-claudecode:code-reviewer`
+Numbers are the ones the profile table in SKILL.md uses. Each agent's definition holds its full contract; the **prompt adds** column is what the invoker must supply beyond the context file path and delivery clause.
 
-Review the full branch diff (`git diff <BASE>..HEAD`, literal SHA) for correctness, logic defects, edge cases, and API-contract problems. Category `general`.
+| # | Pass | Agent | Profiles | Prompt adds |
+| --- | --- | --- | --- | --- |
+| 1 | General review | `agent-skills:general-reviewer` | all | On a **fix**: say the type is fix and name the repo's conventions doc — the definition then carries the folded scope/intent/integration/slop questions, each finding under its own category |
+| 2 | Scope check | `agent-skills:scope-reviewer` | feature, refactor | any type-signal disagreement recorded in stage 0 |
+| 3 | Intent check | `agent-skills:intent-reviewer` | feature | — (reads the intent from the context file) |
+| 4 | Integration check | `agent-skills:integration-reviewer` | feature, refactor, chore | — |
+| 5 | Test review | `agent-skills:test-reviewer` | all | — |
+| 8 | Requirements coverage | `agent-skills:requirements-reviewer` | feature | the best requirements source, named |
+| 9 | Root cause & blast radius | `agent-skills:root-cause-reviewer` | fix | — |
+| 10 | Behavior preservation | `agent-skills:behavior-reviewer` | refactor | — |
+| 11 | Premise & history | `agent-skills:premise-reviewer` | fix, **before every other pass** | the behavior the fix changes; launch order and decision rules in `fix-profile.md` |
 
-On a **fix**, this agent also carries the questions of the passes that profile drops — keep each
-finding under its own category so the report still separates them: the drive-by question from
-agent 2 (`scope`), intent drift and the plausible-nonsense hunt from agent 3 (`intent`), the
-conventions check from agent 4 (`integration`, with the repo's conventions doc named in the
-prompt), and the comment policy at the end of this file (`slop`).
-
-### 2. Scope check — `general-purpose`, read-only
-
-- Can this branch be split into meaningful independent parts? Name the split if so.
-- Are files/hunks touched that are not needed for the stated goal (drive-by changes)?
-- With a parent PR/issue: does this extraction stand alone, and what of the parent does it silently depend on?
-- Does the diff match its declared change type, or is a "fix" really a feature?
-
-Category `scope`. A split recommendation is a judgment call for the user, so tier it B at most — never A. When the profile skips this agent (**fix**, **chore**), fold the drive-by question into agent 1's prompt.
-
-### 3. Intent check — `general-purpose`, read-only
-
-Intent sources, in priority order: `$0` parent PR/issue → PR body + linked issues → `.omc/plans/` files mentioning the branch topic → commit messages. If none exists, ask the user for a one-line intent before launching.
-
-Every one of those sources sits *downstream* of the author's premise: an issue that proposes the
-wrong remedy makes this pass confirm the diff. That is what agent 11 is for on a fix — it reads
-the behavior's history instead, which is the only source that can disagree with the author.
-
-- Does the implemented approach match the stated intent, or has it drifted?
-- **Plausible-nonsense hunt**: tests that pass while pinning wrong behavior — assertions encoding what the code *does* rather than what the intent *requires*. Compare each new test's expectation against the intent, not the implementation.
-
-Category `intent`.
-
-### 4. Integration check — `general-purpose`, read-only
-
-Must read the repo's conventions doc in full first — `CONVENTIONS.md` at the repo root (that is the one in vaadin/web-components), else the conventions part of `CLAUDE.md` / `AGENTS.md`, else the dominant patterns of the touched packages — then check the diff for:
-
-- Convention violations (cite the convention).
-- Naming consistent with sibling components/mixins for the same concept.
-- Method and property ordering matching the surrounding file and analogous files in other packages.
-
-Category `integration`. When the profile skips this agent (**fix**), fold the conventions check
-into agent 1's prompt, naming the conventions doc there.
-
-### 5. Test review — `oh-my-claudecode:test-engineer`
-
-Review tests changed/added on this branch:
-
-- Each assertion validates observable expected behavior, not incidental output.
-- No reaching into implementation details or private APIs (`_underscore` members, internal DOM structure outside the contract) unless no public path exists.
-- Setup/teardown sound; no order dependence.
-
-Category `tests`. Coverage analysis is NOT this agent's job — stage 5 handles it.
+**Intent for pass 3** — sources in priority order: `$0` parent PR/issue → PR body + linked issues → `.omc/plans/` files mentioning the branch topic → commit messages. Put the one-line intent and its source in the context file; if none exists, ask the user for one before launching.
 
 ## Retired passes
 
@@ -146,111 +109,26 @@ Two branch-level agents were removed when the per-change deep review took over. 
 | **6. Architecture check** — which parts will be hard to modify in six months, and why | The architectural review's `Risk` + `Consequences` fields, asked per significant change instead of per branch |
 | **7. API design review** — judge new public surface as a consumer who lives with it for years | The boundary review's `Promise created` + `Why hard to change` fields, with `Consumers` naming who lives with it |
 
-Running them alongside the trio produces three phrasings of one finding and burns triage on dedup. If a whole-diff question genuinely has no per-change home — naming consistency *across* several new exports is the real example — raise it from agent 1 or agent 4, not from a resurrected pass.
+Running them alongside the trio produces three phrasings of one finding and burns triage on dedup. If a whole-diff question genuinely has no per-change home — naming consistency *across* several new exports is the real example — raise it from pass 1 or pass 4, not from a resurrected pass.
 
-## Feature-only agent
+## Stage 2a — Slop pass
 
-### 8. Requirements coverage — `general-purpose`, read-only
+Runs for every type except **fix**, whose five-agent cap folds the comment policy into pass 1.
 
-Enumerate the feature's requirements from the best available source — `$0` parent issue/PR, the PR body, a `packages/*/spec/*.md` spec for the component, else the linked issue's acceptance criteria — then produce one finding per requirement that is **not** fully implemented **or** not covered by a test, and a `NO FINDINGS` line if all are.
+Launch `agent-skills:comment-reviewer` in the stage-2 message — its definition carries the comment policy and the comment-accuracy checks, and it cannot edit.
 
-Also flag: states the feature ignores that the component already supports (`disabled`, `readonly`, `required`, RTL, i18n/localized strings, theme variants, dark mode, keyboard-only use, screen reader), and interactions with existing features that no test exercises.
-
-Category `requirements`. A stated requirement with no implementation is A; an implemented one with no test is A when it is the feature's core behavior, otherwise B.
-
-## Fix-only agent
-
-### 9. Root cause & blast radius — `oh-my-claudecode:debugger`, read-only
-
-- **Root cause vs symptom**: name the actual cause, then say whether the diff fixes it or masks it (a guard added at the call site, a value coerced downstream, a timing workaround). A symptom fix is a finding even when the reported bug goes away.
-- **Regression test**: is there a new test that fails without this diff? Name it, or report its absence — stage 5 verifies the claim.
-- **Blast radius**: other places with the same pattern that still have the bug (sibling components, copy-pasted helper, the shared mixin the fix bypassed), and existing behavior that this fix changes for consumers who did not hit the bug.
-
-Category `root-cause`. Symptom-only fix, missing regression test, and behavior changed for unaffected consumers are all A.
-
-## Fix-only agent — runs before every other pass
-
-### 11. Premise & history — `general-purpose`, read-only
-
-The question is not "is this code correct" but "is this the behavior the project chose". A fix
-reviewed on the wrong premise spends the whole run on code that gets deleted.
-
-Establish the following, stopping as soon as a decision is found:
-
-1. **Origin of the behavior.**
-   `git log --oneline -S "<the symbol or guard the fix touches>" -- <component paths>` — the
-   commit that introduced it, plus any earlier fix to it. Squash-merged repos carry the PR
-   number in the subject (`feat: add setFocusSelectedItem to ComboBox (#9239)`).
-2. **That PR's review discussion, not its body.** The body holds the pitch; the inline comments
-   hold the decisions:
-   `gh pr view <n> --json title,body,comments,reviews` and
-   `gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate`.
-   Look for a guard, branch, or early return that review **removed** — and the stated reason.
-3. **Follow the references out.** Those threads link earlier attempts, which is where product
-   decisions are usually recorded: a link like `…/pull/9194#discussion_r3147361335` resolves
-   with `gh api repos/<owner>/<repo>/pulls/comments/<comment-id>`.
-4. **Tests that already pin the behavior.** Search the component's suite for a test asserting
-   the opposite of what the fix now does. A test named `…_filterActive_doesNotScrollToSelected`
-   is the project stating the behavior on purpose. **A test the branch adds whose name
-   contradicts an existing test in the same suite is a premise conflict, not a naming
-   coincidence** — check for that pair first, it is the cheapest signal available.
-5. **Guards with history.** `git log -S "<the guard's distinctive expression>"` over the file:
-   a fix that re-adds or deletes a guard someone argued about is a fix with a premise.
-
-First line of the pass, and of the report:
-
-```
-premise: sound | contradicted | unverified — <citation: PR#, comment id, or test name>
-```
-
-Then, on `contradicted`, one finding: what the project decided, where it is recorded, and what
-the fix does instead. Category `premise`, tier **A** — it invalidates the diff rather than a
-line of it, and the run stops (decision rules and the premise-stop gate in `fix-profile.md`).
-
-**Precedence.** An existing test, or a reviewer's recorded product decision, outranks the bug
-report's "expected outcome" — the reporter hit the bug, the reviewer chose the behavior. Report
-the conflict; never resolve it.
-
-## Refactor-only agent
-
-### 10. Behavior preservation — `general-purpose`, read-only
-
-A refactor must not change what the code does.
-
-- Any observable behavior difference: timing, event order, event count, property reflection, rendered DOM, error messages thrown.
-- Changed or deleted assertions in existing tests — the strongest signal that behavior moved. Each one needs an equivalence argument, otherwise it is a finding.
-- Public API touched at all (a refactor should not) and dropped edge-case handling that had no test.
-
-Category `behavior`. Any unexplained observable change is A.
-
-## Stage 2a — Slop pass, reviewer-only
-
-Runs for every type except **fix**, whose five-agent cap folds the comment policy into agent 1.
-
-Run it inside its own subagent, so its instructions stay out of the main context and its edits cannot reach the tree. Launch it in the stage-2 message.
-
-- Subagent invoking `Skill(oh-my-claudecode:ai-slop-cleaner)` in its reviewer-only mode → `slop` findings, same output contract.
-
-Then assert `git status --porcelain --untracked-files=no` is still empty. If the pass edited anyway: revert those tracked files with `git checkout -- <path>` (safe — the tree was clean at stage 0), delete files it created **by path**, and keep only its output as findings. Never `git clean`; never touch pre-existing untracked files.
+Then assert `git status --porcelain --untracked-files=no` is still empty. If any pass edited anyway: revert those tracked files with `git checkout -- <path>` (safe — the tree was clean at stage 0), delete files it created **by path**, and keep only its output as findings. Never `git clean`; never touch pre-existing untracked files.
 
 This skill has no apply stage, so a modified tracked file at this point is never something to keep — revert first, ask questions after.
 
 ## Delivery check — run before triage
 
-Roll call: list every agent you launched — stage 1's enumerator, the breadth agents, the slop pass, and all three lenses of every deep-reviewed change — and tick the ones whose findings you actually hold. For each that delivered nothing, escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
+Roll call: list every agent you launched — stage 1's enumerator, the breadth passes, the slop pass, and all three lenses of every deep-reviewed change — and tick the ones whose findings you actually hold. For each that delivered nothing, escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
 
 1. **Ping once**, only if the agent is named and still alive: restate the output contract, name the 2–3 questions you most need answered, and include the facts you have already verified so it does not spend its run re-deriving them.
 2. **Re-spawn once** with `run_in_background: false` and no `name` — a different channel, not a second try down the broken one.
-3. **Self-run the pass**: read the files and answer that pass's questions yourself. Tag every finding it yields `self-run`.
+3. **Self-run the pass**: read the files and answer that pass's questions yourself (the questions are in the pass's `agents/<name>.md` definition). Tag every finding it yields `self-run`.
 
 Never drop a pass silently, and never let a lost report pass for a clean one. Carry each pass's status — `agent`, `self-run`, or `missing` — into stage 6.
 
 Treat a self-run pass as **weaker evidence** than an agent pass: you are reviewing with the same context that produced the diff, which makes you the reader least likely to notice what it takes for granted. Say which passes were self-run at the gate, rather than presenting them as independent confirmation.
-
-## Comment policy — criteria for comment findings in `slop`
-
-- Comments in code and tests are findings unless they are JSDoc or state a constraint the code cannot show (a browser-bug workaround with a link, a non-obvious ordering requirement).
-- Comments that narrate what the next line does, restate the diff, or justify the change to a reviewer: always a finding.
-- CSS files: any comment longer than 1 line, and decorative section banners.
-
-Tier comment findings C, unless a comment is actively wrong about the code — that is B.

@@ -2,6 +2,7 @@
 name: lens-architectural
 description: Architectural lens of the arch-review trio — reviews ONE significant change for what it does to the shape of the code and what that costs later. Used exclusively by the agent-skills review skills (arch-review, self-review) — not for general delegation.
 tools: Read, Glob, Grep, Bash
+disallowedTools: Write, Edit
 ---
 
 You are the architectural lens of a three-lens deep review. You review exactly **one**

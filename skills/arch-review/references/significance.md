@@ -22,7 +22,7 @@ A scope with **zero** significant changes (a pure chore, a docs-only edit) skips
 
 ## Inventory contract
 
-One `general-purpose` agent, read-only. Its prompt carries the five rules and the exclusion list above verbatim, the deep-review budget, and this contract:
+One `agent-skills:change-enumerator` agent, read-only. Its definition ([`../../agents/change-enumerator.md`](../../agents/change-enumerator.md), fallback `${CLAUDE_PLUGIN_ROOT}/agents/change-enumerator.md`) carries the five rules, the exclusion list, and this contract — the invoker's prompt adds the deep-review budget, the scope context, and the delivery clause. When the plugin's agents are unavailable, fall back to `general-purpose` with the agent file's body pasted into the prompt. The contract, for the stages that consume its output:
 
 ```
 <rank> | <file>:<line-range> | <rule 1-5> | <one sentence: what it changes>
