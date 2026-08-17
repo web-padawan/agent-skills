@@ -1,6 +1,6 @@
 ---
 name: self-review
-description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching review profile, then gives every significant change the three arch-review lenses: architectural, boundary, and change-impact analysis. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
+description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching review profile: a bug fix first has its premise checked against the history of the behavior it changes, then gets five agents; other types give every significant change the three arch-review lenses — architectural, boundary, and change-impact analysis. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
 argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--deep N] [--no-coverage]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*)
@@ -12,15 +12,16 @@ Three rules outrank everything else:
 
 - **Never edit code.** Every stage is read-only. The single carve-out is stage 5's coverage mutants: one line at a time, restored with `git checkout -- <path>` before the next, and the stage ends only when `git status --porcelain --untracked-files=no` is empty again. Nothing else in this skill writes to a tracked file. (`Edit` is in `allowed-tools` for that carve-out alone — do not remove it, and do not use it anywhere else.)
 - **Never commit or stage.** No commit, amend, push, `git add`, `stash`, `reset --hard`, or `git clean` — ever. `HEAD` and the index end exactly as found.
-- **The only files this skill creates are the shared context file and the report**, both in the git-ignored report directory, and the report only after the stage-4 gate approves it.
+- **The only files this skill creates are the shared context file and the report**, both in the git-ignored report directory, and the report only after the stage-4 gate — or, on a premise-stopped fix, the premise-stop question that stands in for it — approves it.
 
 Every finding ends up in the report as `confirmed` or `accepted`. Nothing is silently dropped.
 
-Detailed instructions live in references — read each one the **first time** a stage needs it, and never twice in a session. `analysis.md`, `triage.md`, `mutation.md` and `finalize.md` sit next to this file (fallback `${CLAUDE_PLUGIN_ROOT}/skills/self-review/references/<name>.md`); `significance.md` and `lenses.md` belong to the sibling `arch-review` skill (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/<name>.md`).
+Detailed instructions live in references — read each one the **first time** a stage needs it, and never twice in a session. `analysis.md`, `fix-profile.md`, `triage.md`, `mutation.md` and `finalize.md` sit next to this file (fallback `${CLAUDE_PLUGIN_ROOT}/skills/self-review/references/<name>.md`); `significance.md` and `lenses.md` belong to the sibling `arch-review` skill (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/<name>.md`).
 
 | Reference | Covers |
 | --- | --- |
-| [`references/analysis.md`](references/analysis.md) | Stages 1–2: change inventory, breadth-pass prompts per profile, deep-review batching, context file, finding format, severity rubric |
+| [`references/analysis.md`](references/analysis.md) | Stages 1–2: change inventory, breadth-pass prompts per profile (incl. agent 11's procedure), deep-review batching, context file, finding format, severity rubric |
+| [`references/fix-profile.md`](references/fix-profile.md) | Fix only: launch order, premise decision rules, the premise-stop gate, five-agent cap, single-lens choice, size check |
 | [`../arch-review/references/significance.md`](../arch-review/references/significance.md) | What counts as a significant change, ranking, the stage-1 inventory contract |
 | [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md) | Stage 2b: the three per-change lens contracts, severity mapping |
 | [`references/triage.md`](references/triage.md) | Stages 3–4: verification, classification, the gate |
@@ -65,19 +66,29 @@ The type picks the profile. Numbers are the breadth agents in analysis.md.
 | Type | Breadth agents | Deep-review budget | Mutant budget |
 | --- | --- | --- | --- |
 | **feature** | 1 general · 2 scope · 3 intent · 4 integration · 5 tests · **8 requirements coverage** | 6 significant changes | 15 |
-| **fix** | 1 general · 3 intent · 4 integration · 5 tests · **9 root cause & blast radius** | 3, must include the fix's own hunks | 5, concentrated on the fix |
+| **fix** | 1 general · 5 tests · **9 root cause & blast radius** · one lens on the fix's own hunks — plus **11 premise & history** before Stage 1; **5 agents total, hard cap** | 1 change, 1 lens: the fix's own hunks | 5, concentrated on the fix |
 | **refactor** | 1 general · 2 scope · 4 integration · 5 tests · **10 behavior preservation** | 4, weighted to moved boundaries | 10 |
 | **chore** | 1 general · 4 integration · 5 tests | 0 — skip stage 2b | none — skip stage 5 |
 
 - `--deep N` overrides the deep-review budget. `--no-coverage` zeroes the mutant budget and skips the gate's coverage question.
-- The **slop** quality pass runs for every type, including chore.
+- The **slop** quality pass runs for every type except **fix**, where the comment policy folds into agent 1 instead.
 - Say in the summary which profile ran, and how many significant changes were deep-reviewed out of how many were found.
+
+### Fix profile — premise first, five agents total
+
+The fix pipeline differs end to end — read [`references/fix-profile.md`](references/fix-profile.md) before Stage 1 on a fix. In short:
+
+- **Agent 11 (premise & history) runs before Stage 1**, after the context file is written, and answers one question: does the project already have a decision about this behavior? `sound` / `unverified` → continue. **`contradicted` → stop the review**: report the citation and ask the user with `AskUserQuestion` — that question stands in for the stage-4 gate, and Stages 1–5 never run.
+- **Five agents total, hard cap**: agent 11, then a single stage-2 message of **four** — agent 1 (carrying the folded scope, intent, integration and slop questions), 5, 9, and one lens on the fix's own hunks, chosen per fix-profile.md.
+- No inventory agent and no separate slop pass; fix-profile.md's size check replaces the enumerator.
 
 ## Stage 1 — Change inventory (read-only)
 
 Per analysis.md: write the shared context file, then run **one** `general-purpose` agent that enumerates and ranks significant changes per significance.md. Its output is stage 2b's work list — a small, fast barrier, not a full review.
 
-On a **chore**, skip the agent and record zero significant changes.
+On a **chore**, skip the agent and record zero significant changes. On a **fix**, skip it too:
+the one deep-reviewed change is the fix's own production hunks, taken straight from
+`git diff <BASE>..HEAD`, so there is nothing for an enumerator to rank.
 
 ## Stage 2 — Analysis (read-only)
 
@@ -85,6 +96,10 @@ The inventory is in hand, so both halves launch in the **same message** and shar
 
 - **Stage 2a — breadth passes**, per analysis.md: the profile's agents plus the slop pass, the latter wrapped in a subagent so it cannot edit and its instructions stay out of this context.
 - **Stage 2b — deep review**: the three lens agents per significant change, field contracts verbatim from [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md), batching and prompt shape per analysis.md's **Stage 2b** section.
+
+On a **fix** this is a single message of **four** agents — breadth passes 1, 5 and 9, plus the
+one lens — and the premise check has already run and returned `sound` or `unverified` (on
+`contradicted` the run stopped before this stage; see fix-profile.md).
 
 Read analysis.md's **Delivery** section before launching and follow it exactly — `run_in_background: false`, no `name`, and the delivery clause in every prompt. Those three are what decide whether the findings ever reach you; the defaults silently lose them.
 
