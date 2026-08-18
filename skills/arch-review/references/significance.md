@@ -1,6 +1,6 @@
 # Significant changes — rules, ranking, inventory contract
 
-The deep review works per change, not per branch, so the changes have to be named first. These rules define what qualifies, how candidates are ranked against a budget, and the output contract for the inventory agent. `arch-review` uses them when given a multi-change scope; `self-review` uses them in its stage-1 inventory.
+The deep review works per change, not per branch, so the changes have to be named first. These rules define what qualifies, how candidates are ranked against a budget, and the output contract for the inventory agent. `arch-review` uses them when given a multi-change scope — including when `self-review --deep` delegates here.
 
 ## The five significance rules
 

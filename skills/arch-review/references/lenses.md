@@ -18,7 +18,7 @@ Every prompt carries: the context the agent needs (branch, base SHA, the change'
 
 ## Severity mapping
 
-The trio's own severity words map onto A/B/C. These are proposals — the invoking workflow's triage assigns the final tier (self-review does this in its stage 3; a standalone arch-review run verifies and assigns it itself).
+The trio's own severity words map onto A/B/C. These are proposals — the invoking workflow's triage assigns the final tier (self-review does this in its stage-2 triage when --deep ran; a standalone arch-review run verifies and assigns it itself).
 
 - **Architectural `Severity`** — **A** when the consequence is wrong behavior, or a change a follow-up could not make without a breaking change. **B** for cost-of-change debt. **C** for taste.
 - **Boundary `Severity`** — a promise that cannot be walked back without a breaking change is **A**, always. `Consumers: none yet` drops it to **B**: an unreleased boundary is still cheap to move. Nothing else discriminates as sharply, so apply it literally.

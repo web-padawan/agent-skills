@@ -1,6 +1,6 @@
 ---
 name: change-enumerator
-description: Stage-1 inventory of the review pipeline — enumerates and ranks a branch's significant changes against a deep-review budget. A selection, not a review. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Inventory stage of arch-review — enumerates and ranks a scope's significant changes against a deep-review budget. A selection, not a review. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
