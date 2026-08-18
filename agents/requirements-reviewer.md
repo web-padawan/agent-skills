@@ -1,6 +1,6 @@
 ---
 name: requirements-reviewer
-description: Feature-only breadth pass 8 of the self-review pipeline — enumerates the feature's requirements and reports each one unimplemented or untested, plus ignored component states. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Feature-only requirements-coverage pass of the self-review pipeline — enumerates the feature's requirements and reports each one unimplemented or untested, plus ignored component states. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---

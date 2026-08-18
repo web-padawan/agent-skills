@@ -1,6 +1,6 @@
 ---
 name: behavior-reviewer
-description: Refactor-only breadth pass 10 of the self-review pipeline — hunts for observable behavior changes a refactor must not make, including weakened test assertions. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Refactor-only behavior-preservation pass of the self-review pipeline — hunts for observable behavior changes a refactor must not make, including weakened test assertions. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---

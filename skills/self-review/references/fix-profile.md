@@ -1,25 +1,26 @@
 # Fix profile — premise check, five-agent cap
 
 A bug fix runs a reduced pipeline: one extra agent before Stage 1, no inventory, no lens
-trio, no separate slop pass — **five agents in total**. Agent 11's investigative procedure
-and precedence rules live in [`analysis.md`](analysis.md); this file holds the decision
-rules, the launch order, and the cap.
+trio, no separate slop pass — **five agents in total**. The premise pass's investigative
+procedure and precedence rules live in [`analysis.md`](analysis.md); this file holds the
+decision rules, the launch order, and the cap.
 
 ## Launch order
 
 1. Stage 0 as usual, then write the shared context file (analysis.md's **Shared context
-   file** section) *before* the premise check, so agent 11 reads it like every other agent.
-2. **Agent 11 — premise & history** (`agent-skills:premise-reviewer`), launched alone, with
+   file** section) *before* the premise check, so that pass reads it like every other agent.
+2. **Premise & history** (`agent-skills:premise-reviewer`), launched alone, with
    the delivery clause and `run_in_background: false` from analysis.md's **Delivery** section
    like every other agent.
-3. On `sound` or `unverified`: Stage 1 skips the enumerator — the one deep-review target is
-   the fix's own production hunks, read straight off `git diff <BASE>..HEAD` — and Stage 2 is
-   **one message of four agents**: breadth passes 1, 5 and 9, plus the single lens.
+3. On `sound` or `unverified`: append its citations to the context file's **Settled facts**,
+   then Stage 1 skips the enumerator — the one deep-review target is the fix's own production
+   hunks, read straight off `git diff <BASE>..HEAD` — and Stage 2 is **one message of four
+   agents**: the general, tests and root-cause passes, plus the single lens.
 4. On `contradicted`: the run stops — see the next section.
 
 ## The premise decision
 
-Agent 11 answers one question: **does the project already have a decision about this
+The premise pass answers one question: **does the project already have a decision about this
 behavior?** A bug fix can be right in every detail and still be the wrong fix; reviewing the
 implementation first is how a run spends its whole budget on code that should not exist.
 
@@ -38,14 +39,14 @@ otherwise the same content goes in the chat reply.
 
 A fix gets five agents in total — not five plus a trio per change:
 
-- **11** premise & history (before Stage 1) · **1** general · **5** tests · **9** root cause
-  & blast radius · **one lens** on the fix's own hunks.
+- **premise & history** (before Stage 1) · **general** · **tests** · **root cause & blast
+  radius** · **one lens** on the fix's own hunks.
 - No inventory agent — the deep-review target is the fix's own production hunks, so there is
   nothing for an enumerator to rank.
-- No lens trio, and no separate slop agent. Agents 2, 3 and 4 fold into agent 1
-  (`agent-skills:general-reviewer`) — its definition carries the folded drive-by, intent-drift,
-  conventions, and comment-policy questions; the prompt must say the type is **fix** and name
-  the repo's conventions doc.
+- No lens trio, and no separate slop agent. The scope, intent and integration passes fold
+  into general (`agent-skills:general-reviewer`) — its definition carries the folded drive-by,
+  intent-drift, conventions, and comment-policy questions; the prompt must say the type is
+  **fix** and name the repo's conventions doc.
 
 Pick the **single** lens by what the fix introduces — **boundary** when it adds or changes a
 contract, **impact** when it touches shared or hot code, **architectural** otherwise.

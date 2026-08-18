@@ -1,6 +1,6 @@
 ---
 name: scope-reviewer
-description: Breadth pass 2 of the self-review pipeline — checks whether the branch should be split, carries drive-by changes, or mismatches its declared change type. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Scope pass of the self-review pipeline — checks whether the branch should be split, carries drive-by changes, or mismatches its declared change type. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---

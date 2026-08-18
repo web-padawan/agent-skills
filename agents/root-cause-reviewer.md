@@ -1,6 +1,6 @@
 ---
 name: root-cause-reviewer
-description: Fix-only breadth pass 9 of the self-review pipeline — judges whether a bug fix addresses the root cause or masks a symptom, verifies a regression test exists, and maps the blast radius. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Fix-only root-cause & blast-radius pass of the self-review pipeline — judges whether a bug fix addresses the root cause or masks a symptom, verifies a regression test exists, and maps the blast radius. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---

@@ -1,6 +1,6 @@
 ---
 name: premise-reviewer
-description: Fix-only pass 11 of the self-review pipeline, run before every other pass — checks a bug fix's premise against the recorded history of the behavior it changes. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Fix-only premise & history pass of the self-review pipeline, run before every other pass — checks a bug fix's premise against the recorded history of the behavior it changes. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---

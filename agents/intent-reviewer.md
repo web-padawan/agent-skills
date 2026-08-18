@@ -1,6 +1,6 @@
 ---
 name: intent-reviewer
-description: Breadth pass 3 of the self-review pipeline — checks the implementation against the stated intent and hunts for tests that pin wrong behavior. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Intent pass of the self-review pipeline — checks the implementation against the stated intent and hunts for tests that pin wrong behavior. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---

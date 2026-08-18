@@ -1,6 +1,6 @@
 ---
 name: test-reviewer
-description: Breadth pass 5 of the self-review pipeline — reviews tests changed or added on the branch for assertion quality, implementation reaching, and order dependence. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Test review pass of the self-review pipeline — reviews tests changed or added on the branch for assertion quality, implementation reaching, and order dependence. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---

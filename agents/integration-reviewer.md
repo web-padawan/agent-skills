@@ -1,6 +1,6 @@
 ---
 name: integration-reviewer
-description: Breadth pass 4 of the self-review pipeline — checks the branch diff against the repo's conventions doc, sibling naming, and member ordering. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Integration pass of the self-review pipeline — checks the branch diff against the repo's conventions doc, sibling naming, and member ordering. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
