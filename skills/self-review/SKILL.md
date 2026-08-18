@@ -20,7 +20,7 @@ Detailed instructions live in references — read each one the **first time** a 
 
 | Reference | Covers |
 | --- | --- |
-| [`references/analysis.md`](references/analysis.md) | Stages 1–2: change inventory, breadth-pass prompts per profile (incl. agent 11's procedure), deep-review batching, context file, finding format, severity rubric |
+| [`references/analysis.md`](references/analysis.md) | Stages 1–2: change inventory, breadth-pass prompts per profile (incl. the premise pass's procedure), deep-review batching, context file, finding format, severity rubric |
 | [`references/fix-profile.md`](references/fix-profile.md) | Fix only: launch order, premise decision rules, the premise-stop gate, five-agent cap, single-lens choice, size check |
 | [`../arch-review/references/significance.md`](../arch-review/references/significance.md) | What counts as a significant change, ranking, the stage-1 inventory contract |
 | [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md) | Stage 2b: the lens agent table, severity mapping, block→finding rules |
@@ -61,26 +61,28 @@ The deep review works per change, not per branch. What qualifies, how candidates
 
 ### Review profile
 
-The type picks the profile. Numbers are the breadth agents in analysis.md.
+The type picks the profile. Passes are named, never numbered — analysis.md's pass table maps each name to its agent, and every pass's contract lives in that agent's definition.
 
-| Type | Breadth agents | Deep-review budget | Mutant budget |
+| Type | Breadth passes | Deep-review budget | Mutant budget |
 | --- | --- | --- | --- |
-| **feature** | 1 general · 2 scope · 3 intent · 4 integration · 5 tests · **8 requirements coverage** | 6 significant changes | 15 |
-| **fix** | 1 general · 5 tests · **9 root cause & blast radius** · one lens on the fix's own hunks — plus **11 premise & history** before Stage 1; **5 agents total, hard cap** | 1 change, 1 lens: the fix's own hunks | 5, concentrated on the fix |
-| **refactor** | 1 general · 2 scope · 4 integration · 5 tests · **10 behavior preservation** | 4, weighted to moved boundaries | 10 |
-| **chore** | 1 general · 4 integration · 5 tests | 0 — skip stage 2b | none — skip stage 5 |
+| **feature** | general · scope · intent · integration · tests · **requirements coverage** | 6 significant changes | 15 |
+| **fix** | general · tests · **root cause & blast radius** · one lens on the fix's own hunks — plus **premise & history** before Stage 1; **5 agents total, hard cap** | 1 change, 1 lens: the fix's own hunks | 5, concentrated on the fix |
+| **refactor** | general · scope · integration · tests · **behavior preservation** | 4, weighted to moved boundaries | 10 |
+| **chore** | general · integration · tests | 0 — skip stage 2b | none — skip stage 5 |
 
 - `--deep N` overrides the deep-review budget. `--no-coverage` zeroes the mutant budget and skips the gate's coverage question.
-- The **slop** quality pass runs for every type except **fix**, where the comment policy folds into agent 1 instead.
+- The **slop** quality pass runs for every type except **fix**, where the comment policy folds into the general pass instead.
 - Say in the summary which profile ran, and how many significant changes were deep-reviewed out of how many were found.
+- Budgets are per change type, not per diff size. The agent counts are floors for coverage, not targets to trim: on a small diff the saving comes from passes not re-deriving each other's work (analysis.md's **Settled facts** and **Open leads** rules), not from dropping a pass. The one exception is the repo-wide work — the root-cause/blast-radius pass and the change-enumerator scale with the repo, not the diff, and are never the place to economise.
 
 ### Fix profile — premise first, five agents total
 
 The fix pipeline differs end to end — read [`references/fix-profile.md`](references/fix-profile.md) before Stage 1 on a fix. In short:
 
-- **Agent 11 (premise & history) runs before Stage 1**, after the context file is written, and answers one question: does the project already have a decision about this behavior? `sound` / `unverified` → continue. **`contradicted` → stop the review**: report the citation and ask the user with `AskUserQuestion` — that question stands in for the stage-4 gate, and Stages 1–5 never run.
-- **Five agents total, hard cap**: agent 11, then a single stage-2 message of **four** — agent 1 (carrying the folded scope, intent, integration and slop questions), 5, 9, and one lens on the fix's own hunks, chosen per fix-profile.md.
+- **The premise & history pass runs before Stage 1**, after the context file is written, and answers one question: does the project already have a decision about this behavior? `sound` / `unverified` → continue. **`contradicted` → stop the review**: report the citation and ask the user with `AskUserQuestion` — that question stands in for the stage-4 gate, and Stages 1–5 never run.
+- **Five agents total, hard cap**: premise & history, then a single stage-2 message of **four** — general (carrying the folded scope, intent, integration and slop questions), tests, root cause & blast radius, and one lens on the fix's own hunks, chosen per fix-profile.md.
 - No inventory agent and no separate slop pass; fix-profile.md's size check replaces the enumerator.
+- The premise pass runs alone and first, so its evidence is available to every later pass — append its citations to the context file's **Settled facts** before launching Stage 2, or the four that follow will each re-derive them.
 
 ## Stage 1 — Change inventory (read-only)
 
@@ -97,15 +99,15 @@ The inventory is in hand, so both halves launch in the **same message** and shar
 - **Stage 2a — breadth passes**, per analysis.md's pass table: the profile's `agent-skills:*` reviewer agents plus the slop pass (`agent-skills:comment-reviewer`) — every pass's contract lives in its agent definition, so prompts carry only the context file path, the table's run-specific facts, and the delivery clause.
 - **Stage 2b — deep review**: the three `agent-skills:lens-*` agents per significant change — contracts in the agent definitions, severity mapping in [`../arch-review/references/lenses.md`](../arch-review/references/lenses.md), batching and prompt shape per analysis.md's **Stage 2b** section.
 
-On a **fix** this is a single message of **four** agents — breadth passes 1, 5 and 9, plus the
-one lens — and the premise check has already run and returned `sound` or `unverified` (on
-`contradicted` the run stopped before this stage; see fix-profile.md).
+On a **fix** this is a single message of **four** agents — the general, tests and root-cause
+passes, plus the one lens — and the premise check has already run and returned `sound` or
+`unverified` (on `contradicted` the run stopped before this stage; see fix-profile.md).
 
 Read analysis.md's **Delivery** section before launching and follow it exactly — `run_in_background: false`, no `name`, and the delivery clause in every prompt. Those three are what decide whether the findings ever reach you; the defaults silently lose them.
 
 Afterwards assert `git status --porcelain --untracked-files=no` is still empty, and revert anything a pass changed regardless — with no apply stage, any tracked-file modification here is a bug, not a judgement call.
 
-Then run analysis.md's **Delivery check**: roll-call every agent launched, recover the ones that reported nothing by escalating the mechanism, and record each pass as `agent`, `self-run`, or `missing`. A pass that reported nothing has *not* come back clean.
+Then run analysis.md's **Delivery check**: roll-call every agent launched — in analysis.md's named format, never by number — recover the ones that reported nothing by escalating the mechanism, and record each pass as `agent`, `self-run`, or `missing`. A pass that reported nothing has *not* come back clean.
 
 ## Stage 3 — Triage & classify (read-only)
 

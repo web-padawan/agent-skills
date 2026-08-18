@@ -1,6 +1,6 @@
 ---
 name: general-reviewer
-description: Breadth pass 1 of the self-review pipeline — reviews the full branch diff for correctness, logic defects, edge cases, API-contract problems, and silent error-handling failures. Used exclusively by the agent-skills review skills — not for general delegation.
+description: General review pass of the self-review pipeline — reviews the full branch diff for correctness, logic defects, edge cases, API-contract problems, and silent error-handling failures. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---

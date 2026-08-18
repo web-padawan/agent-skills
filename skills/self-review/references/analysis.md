@@ -25,11 +25,36 @@ Do not write them to a file, and do not end your turn without them.
 
 ## Shared context file
 
-Write it once before launching stage 1 (on a **fix**, before the premise check), next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` SHA, `git diff --stat <BASE>..HEAD`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, and the severity rubric below.
+Write it once before launching stage 1 (on a **fix**, before the premise check), next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` SHA, `git diff --stat <BASE>..HEAD`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, the severity rubric below, and the three sections that follow.
 
 **Append the significant-change inventory to it when stage 1 returns**, before launching stage 2. Every stage-2 agent then reads the same ranked list, and the deep-review agents get their target from the same file as everyone else instead of having it restated per prompt.
 
 Each agent prompt is then: `read <report-dir>/context.md first`, the run-specific facts from the pass table below, and the delivery clause — questions, categories, and output contracts live in the agent definitions.
+
+### Conventions docs
+
+Name the repo's conventions sources, in priority order, with paths — the canonical conventions file, the guideline chapters that cover what this diff touches, and any topic-specific rules doc that governs the change (a signals/bindings rules file for a change to `bind*` methods, for example). Agents that have to find these themselves spend tool calls doing it, and each one finds a different subset.
+
+### Settled facts
+
+Facts you verified in stage 0, plus the citations the premise pass returns on a **fix**. Each entry is a one-line claim with its evidence — `file:line`, a SHA, an issue number, or the command that produced it.
+
+Head the section with this instruction, verbatim:
+
+> Each entry is authoritative. Do not open the file it came from. If a finding of yours depends on an entry being wrong, report that as a finding with your reasoning — one line, no re-investigation.
+
+Do **not** invite agents to re-check the ledger. Measured on a real fix branch, a ledger headed "do not re-derive, *do challenge*" was re-derived from source by three of four agents: the invitation is what licenses the spend, and the sceptical reading of a settled fact costs as much as establishing it.
+
+### Open leads
+
+Suspicions worth chasing that you deliberately have not resolved. **Every lead names exactly one owner pass**:
+
+```
+- [owner: tests] The append branch is never exercised with an already-added component.
+- [owner: root cause] `removeAll()` may still bypass the guard the fix restored.
+```
+
+Other passes do not investigate a lead they do not own; triage inherits the owner's verdict. An unowned lead is chased once per agent — on the same measured branch, three unowned leads handed to four agents produced four independent verifications of one non-issue, the single largest waste in the run. If a lead matters enough to want two verdicts, say so on the lead and name both owners.
 
 ## Stage 1 — Change inventory
 
@@ -45,9 +70,9 @@ The three lens agents — `agent-skills:lens-architectural`, `agent-skills:lens-
 - Message 2 — the trios for the top 2 ranked changes.
 - Message 3 onward — two more changes per message until the budget is spent.
 
-On a **fix** there are no trios and no second message: **four agents in one** — breadth passes
-1, 5 and 9 plus the single lens on the fix's own hunks. Agent 11 has already run before Stage 1
-and cleared the premise (launch order in `fix-profile.md`).
+On a **fix** there are no trios and no second message: **four agents in one** — the general,
+tests and root-cause passes plus the single lens on the fix's own hunks. The premise pass has
+already run before Stage 1 and cleared the premise (launch order in `fix-profile.md`).
 
 Do not put every trio in the stage-2 message with the breadth passes. Measured on a real refactor branch, an 18-agent single message is where deep agents start returning surveys instead of reviews, and one lost report costs a whole lens on a change. Three or four messages of six cost some wall-clock and buy every agent a full run. The batch boundary is a launch detail, not a barrier for triage — stage 3 still waits for everything before verifying anything.
 
@@ -84,21 +109,21 @@ Tie-breaker between A and B: **can a follow-up PR fix this without a breaking ch
 
 ## The breadth passes
 
-Numbers are the ones the profile table in SKILL.md uses. Each agent's definition holds its full contract; the **prompt adds** column is what the invoker must supply beyond the context file path and delivery clause.
+Passes are identified by name — the same names the profile table in SKILL.md uses, and the same ones the roll call and the report print. Each agent's definition holds its full contract; the **prompt adds** column is what the invoker must supply beyond the context file path and delivery clause.
 
-| # | Pass | Agent | Profiles | Prompt adds |
-| --- | --- | --- | --- | --- |
-| 1 | General review | `agent-skills:general-reviewer` | all | On a **fix**: say the type is fix and name the repo's conventions doc — the definition then carries the folded scope/intent/integration/slop questions, each finding under its own category |
-| 2 | Scope check | `agent-skills:scope-reviewer` | feature, refactor | any type-signal disagreement recorded in stage 0 |
-| 3 | Intent check | `agent-skills:intent-reviewer` | feature | — (reads the intent from the context file) |
-| 4 | Integration check | `agent-skills:integration-reviewer` | feature, refactor, chore | — |
-| 5 | Test review | `agent-skills:test-reviewer` | all | — |
-| 8 | Requirements coverage | `agent-skills:requirements-reviewer` | feature | the best requirements source, named |
-| 9 | Root cause & blast radius | `agent-skills:root-cause-reviewer` | fix | — |
-| 10 | Behavior preservation | `agent-skills:behavior-reviewer` | refactor | — |
-| 11 | Premise & history | `agent-skills:premise-reviewer` | fix, **before every other pass** | the behavior the fix changes; launch order and decision rules in `fix-profile.md` |
+| Pass | Agent | Profiles | Prompt adds |
+| --- | --- | --- | --- |
+| **general** | `agent-skills:general-reviewer` | all | On a **fix**: say the type is fix and name the repo's conventions doc — the definition then carries the folded scope/intent/integration/slop questions, each finding under its own category |
+| **scope** | `agent-skills:scope-reviewer` | feature, refactor | any type-signal disagreement recorded in stage 0 |
+| **intent** | `agent-skills:intent-reviewer` | feature | — (reads the intent from the context file) |
+| **integration** | `agent-skills:integration-reviewer` | feature, refactor, chore | — |
+| **tests** | `agent-skills:test-reviewer` | all | — |
+| **requirements coverage** | `agent-skills:requirements-reviewer` | feature | the best requirements source, named |
+| **root cause & blast radius** | `agent-skills:root-cause-reviewer` | fix | — |
+| **behavior preservation** | `agent-skills:behavior-reviewer` | refactor | — |
+| **premise & history** | `agent-skills:premise-reviewer` | fix, **before every other pass** | the behavior the fix changes; launch order and decision rules in `fix-profile.md` |
 
-**Intent for pass 3** — sources in priority order: `$0` parent PR/issue → PR body + linked issues → `.omc/plans/` files mentioning the branch topic → commit messages. Put the one-line intent and its source in the context file; if none exists, ask the user for one before launching.
+**Intent for the intent pass** — sources in priority order: `$0` parent PR/issue → PR body + linked issues → `.omc/plans/` files mentioning the branch topic → commit messages. Put the one-line intent and its source in the context file; if none exists, ask the user for one before launching.
 
 ## Retired passes
 
@@ -106,14 +131,14 @@ Two branch-level agents were removed when the per-change deep review took over. 
 
 | Retired | Where its question lives now |
 | --- | --- |
-| **6. Architecture check** — which parts will be hard to modify in six months, and why | The architectural review's `Risk` + `Consequences` fields, asked per significant change instead of per branch |
-| **7. API design review** — judge new public surface as a consumer who lives with it for years | The boundary review's `Promise created` + `Why hard to change` fields, with `Consumers` naming who lives with it |
+| **Architecture check** — which parts will be hard to modify in six months, and why | The architectural review's `Risk` + `Consequences` fields, asked per significant change instead of per branch |
+| **API design review** — judge new public surface as a consumer who lives with it for years | The boundary review's `Promise created` + `Why hard to change` fields, with `Consumers` naming who lives with it |
 
-Running them alongside the trio produces three phrasings of one finding and burns triage on dedup. If a whole-diff question genuinely has no per-change home — naming consistency *across* several new exports is the real example — raise it from pass 1 or pass 4, not from a resurrected pass.
+Running them alongside the trio produces three phrasings of one finding and burns triage on dedup. If a whole-diff question genuinely has no per-change home — naming consistency *across* several new exports is the real example — raise it from the general or integration pass, not from a resurrected pass.
 
 ## Stage 2a — Slop pass
 
-Runs for every type except **fix**, whose five-agent cap folds the comment policy into pass 1.
+Runs for every type except **fix**, whose five-agent cap folds the comment policy into the general pass.
 
 Launch `agent-skills:comment-reviewer` in the stage-2 message — its definition carries the comment policy and the comment-accuracy checks, and it cannot edit.
 
@@ -123,7 +148,22 @@ This skill has no apply stage, so a modified tracked file at this point is never
 
 ## Delivery check — run before triage
 
-Roll call: list every agent you launched — stage 1's enumerator, the breadth passes, the slop pass, and all three lenses of every deep-reviewed change — and tick the ones whose findings you actually hold. For each that delivered nothing, escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
+Roll call: list every agent you launched — stage 1's enumerator, the breadth passes, the slop pass, and all three lenses of every deep-reviewed change — and tick the ones whose findings you actually hold.
+
+**Print it by pass name, one per line, with the finding count.** Never by number: a line like `11 ✅ · 5 ✅ · boundary ✅` mixes two identifier systems and tells the reader nothing about what was checked.
+
+```
+Delivery roll call
+  premise & history   ✅ agent · no findings · premise: sound
+  general             ✅ agent · 8 findings
+  tests               ✅ agent · 8 findings
+  root cause          ✅ agent · 6 findings (1 proposed A)
+  boundary lens       ✅ agent · 3 findings + narrative block
+```
+
+Markers: `✅ agent` · `⚠️ self-run` · `❌ missing` · `⏳ running`. The finding count makes the roll call double as a yield tally, which is what tells you later whether a pass earns its place in the profile. Use the same names in any mid-run status line — `Done: premise & history, general, tests. Waiting on: root cause, boundary lens.` — so the reader never has to map a digit to a purpose.
+
+For each pass that delivered nothing, escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
 
 1. **Ping once**, only if the agent is named and still alive: restate the output contract, name the 2–3 questions you most need answered, and include the facts you have already verified so it does not spend its run re-deriving them.
 2. **Re-spawn once** with `run_in_background: false` and no `name` — a different channel, not a second try down the broken one.
