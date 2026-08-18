@@ -11,10 +11,10 @@ Review a GitHub pull request. Read the diffs, analyze the changes against a rubr
 
 ## Helper Scripts
 
-The skill provides two helper scripts. Determine `SKILL_DIR` — the directory holding this SKILL.md, normally `${CLAUDE_PLUGIN_ROOT}/skills/pr-review` — and substitute it as a resolved literal path in every call below: the shell's cwd is the user's repo, not this folder, and shell variables do not persist between tool calls.
+Two helper scripts. Determine the plugin root (`${CLAUDE_PLUGIN_ROOT}`) and substitute it as a resolved literal path in every call below: the shell's cwd is the user's repo, not this folder, and shell variables do not persist between tool calls.
 
-- **`$SKILL_DIR/scripts/get-pr-context.sh`** — Gathers PR metadata, branch state, review instructions, and diffs in one call.
-- **`$SKILL_DIR/scripts/post-comment.sh`** — Posts a review comment on the PR (positioned diff comment, general comment, or reply).
+- **`${CLAUDE_PLUGIN_ROOT}/scripts/get-pr-context.sh`** — shared context script: PR metadata, branch state, ANCHORS (literal merge-base/head SHAs), review instructions, and optionally diffs in one call.
+- **`${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh`** — posts a review comment on the PR (positioned diff comment, general comment, or reply).
 
 ## Workflow
 
@@ -23,7 +23,7 @@ The skill provides two helper scripts. Determine `SKILL_DIR` — the directory h
 Run the context script. Pass `--pr <number-or-url>` if the user provided one, otherwise omit it and the script uses the current branch:
 
 ```bash
-$SKILL_DIR/scripts/get-pr-context.sh --pr <number>
+${CLAUDE_PLUGIN_ROOT}/scripts/get-pr-context.sh --pr <number>
 ```
 
 The script outputs structured sections (`=== PR_METADATA ===`, `=== BRANCH_STATE ===`, `=== REVIEW_INSTRUCTIONS ===`, `=== DIFFS ===`). Read the output and follow any `hint:` instructions — the script tells you when data is missing and what to do (e.g. ask the user to choose a diff source, re-run with `--diff-source local` or `--diff-source remote`).
@@ -118,28 +118,28 @@ Use the post-comment script. It automatically prepends `:robot: AI-generated` to
 
 ```bash
 # Inline diff comment on an added/modified line (new side)
-$SKILL_DIR/scripts/post-comment.sh --pr <number> --file path/to/file.ext --line 42 \
+${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh --pr <number> --file path/to/file.ext --line 42 \
   --message "**[P1] Title**
 
 Description of the issue."
 
 # Inline diff comment on a removed line (old side)
-$SKILL_DIR/scripts/post-comment.sh --pr <number> --file path/to/file.ext --old-line 10 \
+${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh --pr <number> --file path/to/file.ext --old-line 10 \
   --message "**[P2] Title**
 
 Description."
 
 # Multiline comment (range on new side)
-$SKILL_DIR/scripts/post-comment.sh --pr <number> --file path/to/file.ext --line 42:48 \
+${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh --pr <number> --file path/to/file.ext --line 42:48 \
   --message "**[P1] Title**
 
 Description."
 
 # General (non-positioned) comment
-$SKILL_DIR/scripts/post-comment.sh --pr <number> --message "Overall: looks good!"
+${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh --pr <number> --message "Overall: looks good!"
 
 # Reply to an existing review-comment thread
-$SKILL_DIR/scripts/post-comment.sh --pr <number> --reply <comment-id> --message "Fixed, thanks."
+${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh --pr <number> --reply <comment-id> --message "Fixed, thanks."
 ```
 
 Line selection rules:
