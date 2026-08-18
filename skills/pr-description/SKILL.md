@@ -36,7 +36,7 @@ cat PULL_REQUEST_TEMPLATE.md                          # repo root, not .github/
 
 Collect the issue links from, in order: the existing PR body, commit trailers
 (`Fixes #NNNN`), the branch name, and what the user said. Read the linked issue
-(`gh issue view <n>`) when the diff alone does not explain the *why*.
+(`gh issue view <n>`) when the diff alone does not explain the _why_.
 
 If the change is not self-explanatory, read the surrounding source — a description built
 from the diff alone tends to list files instead of behavior.
@@ -46,13 +46,14 @@ from the diff alone tends to list files instead of behavior.
 Pick exactly one type from the five values these repos use. Map the conventional-commit
 prefix of the PR title, falling back to the commit subjects, then to the diff shape:
 
-| Prefix | Type of change |
-| --- | --- |
-| `feat` | Feature |
-| `fix` | Bugfix |
-| `refactor` | Refactor |
-| `docs` | Documentation |
-| `chore`, `test`, `build`, `ci`, `style` | Internal change |
+| Prefix     | Type of change  |
+| ---------- | --------------- |
+| `feat`     | Feature         |
+| `fix`      | Bugfix          |
+| `refactor` | Refactor        |
+| `docs`     | Documentation   |
+| `test`     | Tests           |
+| `chore`    | Internal change |
 
 Mixed branches take the type of the change a reviewer cares about most — a `fix` with
 supporting test cleanup is still a Bugfix.
