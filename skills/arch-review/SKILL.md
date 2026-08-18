@@ -2,7 +2,7 @@
 name: arch-review
 description: Deep-review a change through three lenses - architectural shape (observed behavior, risk, consequences), boundary/API promise (what it commits to, whose consumers, why hard to take back), and change-impact analysis (ripple effects, propagation paths, unblock conditions). Use when asked whether a change is architecturally safe, what a new API commits to, what a change's blast radius or impact is, or before making a breaking change. Takes a file, a diff range, a PR, or the current branch. Report-only, never edits. Not for a full pre-PR review with tests/scope/intent passes (self-review) or for posting PR comments (pr-review, adversarial-review).
 argument-hint: "[<file>[:<lines>] | --diff <range> | <PR number or URL>] [--deep N]"
-allowed-tools: Read, Grep, Glob, Task, Agent, AskUserQuestion, Bash(git:*), Bash(gh pr view:*), Bash(gh pr diff:*)
+allowed-tools: Read, Grep, Glob, Task, Agent, AskUserQuestion, Bash(git:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(*/scripts/get-pr-context.sh:*)
 ---
 
 You are deep-reviewing one or more changes through three structured lenses. Everything is **read-only**: no edits, no commits, no staging, no posting. The output is a report in chat.
@@ -25,7 +25,7 @@ References sit next to this file; if a relative read fails, use `${CLAUDE_PLUGIN
 - PR number or URL — run the shared context script (read-only): `${CLAUDE_PLUGIN_ROOT}/scripts/get-pr-context.sh --pr <number-or-url> --no-diff`, with the plugin root resolved to a literal path. Its `=== ANCHORS ===` section carries the literal merge-base and head SHAs (fetching `pull/<n>/head` when the PR is not checked out) plus the changed-file list — one call instead of separate `gh pr view` / `gh pr diff` plumbing, and the diff itself stays out of your context: the agents read it via the SHAs.
 - No argument — the current branch's diff vs `git merge-base origin/main HEAD`.
 
-Record the base and head SHAs as literals — shell variables do not persist between tool calls, and subagents never see them.
+Record the base and head SHAs as literals — shell variables do not persist between tool calls, and subagents never see them. If ANCHORS printed `error: cannot resolve merge base`, fall back to `git merge-base origin/<base-branch> HEAD` (base branch from PR metadata, else the repo's default branch) and record that SHA as the base.
 
 A single named change goes straight to step 3. Anything broader goes through the inventory first.
 

@@ -8,11 +8,11 @@ Every pass runs as a plugin agent (`agents/` at the plugin root). Each agent's d
 
 ## Delivery — how findings reach you
 
-The launch rules, the delivery clause, the roll call, and the escalation ladder for lost reports live in `../../arch-review/references/delivery.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/delivery.md`) — read it before launching and follow it exactly. The one stage-specific note: stage 2 is a barrier — you need all findings before triage — which is exactly why every agent runs with `run_in_background: false` and no `name`.
+The launch rules, the delivery clause, the roll call, and the escalation ladder for lost reports live in `../../arch-review/references/delivery.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/delivery.md`) — read it before launching and follow it exactly. The one stage-specific note: stage 2 (triage) is a barrier — it needs every pass's findings before it starts — which is exactly why every agent runs with `run_in_background: false` and no `name`.
 
 ## Shared context file
 
-Write it once before launching stage 1 (on a **fix**, before the premise check), next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` SHA, `git diff --stat <BASE>..HEAD`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, the severity rubric below, and the three sections that follow.
+Write it once before launching stage 1 (on a **fix**, before the premise check), next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` and `<HEAD>` SHAs from stage 0 (with the note that the diff under review is `git diff <BASE>..<HEAD>`), `git diff --stat <BASE>..<HEAD>`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, the severity rubric below, and the three sections that follow.
 
 Each agent prompt is then: `read <report-dir>/context.md first`, the run-specific facts from the pass table below, and the delivery clause — questions, categories, and output contracts live in the agent definitions.
 

@@ -18,6 +18,10 @@ first. You are **read-only**: never edit, create, stage, or commit anything.
   that only log and continue, returning null/defaults on error without logging or surfacing,
   optional chaining that silently skips an operation that had to happen, retry logic that
   exhausts without informing anyone, catch clauses broad enough to swallow unrelated errors.
+- **Security**: injection, auth bypass, secrets in code, unvalidated input, open redirects,
+  non-parameterized SQL.
+- **Performance**: N+1 queries, unnecessary allocations, missing indexes, unbounded loops,
+  blocking I/O on hot paths.
 - Severity discipline: order findings by real user impact, not by how easy they were to spot.
 
 Category `general`.

@@ -44,12 +44,13 @@ A fix gets five agents in total:
   (`agent-skills:general-reviewer`) — its definition carries the folded drive-by,
   intent-drift and conventions questions; the prompt must say the type is **fix** and name
   the repo's conventions doc.
-- No deep review: measured on a real fix branch, the old full profile ran 16 agents and
-  reported the same two A findings from two and three lenses each, in a 1000-line report
-  whose findings were 60% about code that the accepted fix does not contain. The lens
-  machinery now lives entirely in `arch-review` — when a fix changes a contract or touches
-  shared code, recommend `/agent-skills:arch-review <file:lines>` on the fix's hunks in the
-  report instead of spending agents here.
+- No deep review, and **`--deep` is ignored on a fix** — the five-agent cap wins; say so in
+  one line when the flag was passed. Measured on a real fix branch, the old full profile ran
+  16 agents and reported the same two A findings from two and three lenses each, in a
+  1000-line report whose findings were 60% about code that the accepted fix does not
+  contain. The lens machinery now lives entirely in `arch-review` — when a fix changes a
+  contract or touches shared code, recommend `/agent-skills:arch-review <file:lines>` on the
+  fix's hunks in the report instead of spending agents here.
 
 If the fix looks too big for five agents, that is the finding — see the size check below.
 
