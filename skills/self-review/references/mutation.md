@@ -1,4 +1,4 @@
-# Stage 5 — Coverage check (report-only)
+# Stage 4 — Coverage check (report-only)
 
 Purpose: verify the branch's tests pin its invariants. A mutant that survives — tests stay green while the change is broken — is a coverage gap, and here it becomes a **finding**. This skill never writes the missing test. Skip this stage entirely when the gate chose `Skip it`, when `--no-coverage` was passed, or when the profile has no budget (**chore**).
 
@@ -19,7 +19,7 @@ Candidates: added/changed source lines in `git diff <BASE>..HEAD` (`<BASE>` = li
 
 Skip lines that cannot produce a meaningful mutant: imports/exports, CSS/template-literal styling, JSDoc/comments, pure renames, lines whose removal is a syntax error that cannot be isolated.
 
-Prioritize by logic density: conditionals and early returns > event listener add/remove > calculations and assignments > everything else. Weight toward the lines the stage-1 inventory ranked as significant changes — a mutant on a line the deep review already called out is worth more than one on an incidental line. List skipped hunks in the report — silent truncation is forbidden.
+Prioritize by logic density: conditionals and early returns > event listener add/remove > calculations and assignments > everything else. Weight toward the lines the stage-1 findings already called out — a mutant on a line a pass flagged is worth more than one on an incidental line. List skipped hunks in the report — silent truncation is forbidden.
 
 ### Budget and targeting per profile
 
@@ -45,7 +45,7 @@ Closing these gaps is `/agent-skills:mutation-coverage`'s job; it writes the tes
 
 ## End of stage
 
-Assert all three, and say so in stage 6:
+Assert all three, and say so in stage 5:
 
 - `git diff --name-only` empty — no mutant left anywhere.
 - `git diff --staged --name-only` empty — nothing was staged.
