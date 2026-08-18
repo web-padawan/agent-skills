@@ -25,8 +25,8 @@ implementation first is how a run spends its whole budget on code that should no
 
 - **No decision found** → record `premise: unverified` and continue.
 - **Decision agrees with the fix** → record `premise: sound` with the citation, continue.
-- **Decision contradicts the fix** → **stop the review.** Do not run stages 1–4: their
-  findings would describe code that the user's answer may delete.
+- **Decision contradicts the fix** → **stop the review.** Do not run the rest of stage 1
+  or stages 2–4: their findings would describe code that the user's answer may delete.
 
 On `contradicted`, report the citation in chat, then ask a single `AskUserQuestion`: how to
 proceed, plus triage.md's Q1 (`Report`) options. **That question stands in for the stage-3
