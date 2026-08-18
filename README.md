@@ -8,11 +8,11 @@ Five review skills with strict boundaries, one verification skill, one authoring
 
 | Skill | When to use |
 | --- | --- |
-| `self-review` | **Your own branch**, before opening or updating a PR. Detects the change type (feature / fix / refactor / chore), runs the matching profile of breadth passes, then gives every *significant change* the three `arch-review` lenses. Never edits code — classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste) and writes a `FINDINGS.md` with a ready / needs-work verdict. Coverage gaps are reported, not closed — `mutation-coverage` closes them. |
-| `arch-review` | **One change, deep.** Three lenses — architectural (observed behavior, risk, consequences, suggestion), boundary (which promise the change makes, to whom, why it is hard to take back), change-impact analysis (ripple effects, propagation paths, unblock conditions). Takes a file, a diff range, a PR, or the current branch. Answers "is this API safe to ship?", "what's the blast radius?". Report-only. Also the deep-review engine inside `self-review`. |
+| `self-review` | **Your own branch**, before opening or updating a PR. Detects the change type (feature / fix / refactor / chore) and runs the matching profile of breadth passes — the comment/slop pass always included — in one parallel batch. Never edits code — classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste) and writes a `FINDINGS.md` with a ready / needs-work verdict. Coverage gaps are reported, not closed — `mutation-coverage` closes them. Per-change deep review lives in `arch-review`; `--deep N` opts in from here. |
+| `arch-review` | **One change, deep.** Three lenses — architectural (observed behavior, risk, consequences, suggestion), boundary (which promise the change makes, to whom, why it is hard to take back), change-impact analysis (ripple effects, propagation paths, unblock conditions). Takes a file, a diff range, a PR, or the current branch. Answers "is this API safe to ship?", "what's the blast radius?". Report-only. The plugin's only home of the lens deep review — `self-review --deep` delegates here. |
 | `guided-review` | **Someone else's PR, interactively.** Phase 1 explains the PR's goal and mechanism with a concrete example, then gates on your confirmation before Phase 2 reviews thoroughly. Read-only — never posts; you post any feedback yourself. |
 | `adversarial-review` | **Someone else's PR (or your own, pre-review), one skeptical pass.** Severity-bucketed report (🔴 High / 🟠 Medium / 🟡 Low / ✅ Done well + one-line summary), posted as a **single PR comment** after confirmation. |
-| `pr-review` | **Full reviewer pass with inline comments.** Rubric review (correctness / security / maintainability / performance, P0–P3), findings presented in chat, then **positioned line comments** posted after confirmation. |
+| `pr-review` | **Full reviewer pass with inline comments.** One context-script call, then the plugin's reviewer agents in parallel (correctness, tests, comment slop, conventions) — the diff never enters the orchestrator's context. Findings triaged onto P0–P3, presented in chat, then **positioned line comments** posted after confirmation. |
 | `mutation-coverage` | Finds code no test asserts on via mutation testing (line-removal or Stryker), then closes each gap with a test that fails when the code is broken. Estimates runtime before mutating; nothing committed or installed in the target repo. |
 | `pr-description` | **Writes** the PR body, doesn't review it. Turns the branch diff into the Vaadin PR template as short bullet lists — issue links, one bullet per behavior change, a `Type of change` label, and numbered `How to test` steps naming a real dev page. Scaffolds `Before / After` for visual changes. Drafts in chat; `gh pr edit` only after you confirm. |
 | `authoring-skills` | Meta: create or improve a skill in this plugin — trigger-shaped descriptions, body archetypes, references split, frontmatter conventions. |
@@ -35,7 +35,7 @@ claude plugin list
 ```
 /agent-skills:self-review                       # current branch, type detected
 /agent-skills:self-review <parent-PR-or-issue>  # branch extracted from bigger work
-/agent-skills:self-review --feature --deep 2    # force type, cap the deep review
+/agent-skills:self-review --feature --deep 2    # force type, opt into arch-review deep review (top 2 changes)
 /agent-skills:self-review --fix --no-coverage   # type + skip the mutation coverage check
 
 /agent-skills:arch-review packages/overlay/src/vaadin-overlay-mixin.js:120-180
@@ -70,14 +70,14 @@ Everything that posts (`adversarial-review`, `pr-review`) asks for confirmation 
 
 The change type comes from, in order: an explicit `--fix` / `--feature` / `--refactor` / `--chore` flag, the PR title's conventional prefix, the branch's commit subjects, parent issue labels, the branch name, then the shape of the diff. It decides how much review the branch gets:
 
-| Type | Extra pass | Deep review | Mutants |
+| Type | Extra pass | Agents | Mutants |
 | --- | --- | --- | --- |
-| **feature** | requirements coverage | 6 significant changes | 15 |
-| **fix** | premise & history first (a fix contradicting a recorded project decision stops the run), then root cause & blast radius; regression test must fail without the fix; five agents total | 1 — the fix's own hunks, single lens | 5, on the fix |
-| **refactor** | behavior preservation | 4, weighted to moved boundaries | 10 |
-| **chore** | — | none | none |
+| **feature** | requirements coverage | 7 | 15 |
+| **fix** | premise & history first (a fix contradicting a recorded project decision stops the run), then root cause & blast radius; regression test must fail without the fix | 5, hard cap | 5, on the fix |
+| **refactor** | behavior preservation | 6 | 10 |
+| **chore** | — | 4 | none |
 
-**Deep review** is the per-change part, powered by `arch-review`'s lens contracts. A *significant change* is a hunk that touches public surface, adds a module, changes control flow, changes a cross-module contract, or moves logic across a boundary — never tests, docs, config, or formatting. Changes are ranked and capped at the budget; anything below the line is listed in the report rather than dropped quietly.
+Every profile includes the comment/slop pass. **Deep review** — the per-change lens analysis — is `arch-review`'s job: by default `self-review` reports breadth findings only and points at `/agent-skills:arch-review` for architectural questions; `--deep N` runs arch-review's inventory and lens trios on the branch's top N significant changes and merges their findings into the report.
 
 `self-review` never changes anything. Every stage is read-only, the one exception being the coverage check, which comments out a source line at a time and restores it before the next. A single gate asks whether to write the report and whether to run that check — never what to apply, because nothing is ever applied. `HEAD`, the index and the working tree end exactly as they started.
 
@@ -111,23 +111,25 @@ Repo-specific commands (lint, test scoping, source globs) are resolved per repo 
   marketplace.json   # single-plugin marketplace (name: local)
 agents/              # read-only reviewer subagents (agent-skills:<name>) used by the review pipelines
   lens-*.md          # the three arch-review lenses
-  *-reviewer.md      # self-review breadth passes, premise check, comment/slop pass
+  *-reviewer.md      # breadth passes (self-review + pr-review), premise check, comment/slop pass
   change-enumerator.md
+scripts/
+  get-pr-context.sh  # shared context script: PR metadata, branch state, ANCHORS SHAs, diffs
 skills/
   self-review/
-    SKILL.md         # stage orchestration; lens/significance rules live in arch-review
+    SKILL.md         # stage orchestration; deep review delegated to arch-review via --deep
     references/      # per-stage detail, read on first use
   arch-review/
     SKILL.md         # standalone entry: scope → inventory → trio → triage
-    references/      # lenses.md (lens table + severity mapping), significance.md (inventory rules)
+    references/      # lenses.md, significance.md, delivery.md (shared launch/roll-call rules)
   guided-review/
     SKILL.md         # two-phase walkthrough, read-only
   adversarial-review/
     SKILL.md         # skeptical pass → one severity-bucketed comment
     references/      # canonical output format
   pr-review/
-    SKILL.md         # rubric review → inline comments
-    scripts/         # get-pr-context.sh, post-comment.sh (gh)
+    SKILL.md         # agent-pipeline review → inline comments
+    scripts/         # post-comment.sh (gh)
     references/      # comment wording guidelines
   mutation-coverage/
     SKILL.md         # engine/scope selection + workflow
