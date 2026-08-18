@@ -67,16 +67,21 @@ else
   fi
 fi
 
-json_field() {
-  # json_field <key> — extract a top-level string field from PR_JSON without jq.
-  # `|| true` keeps a missing field from killing the script under pipefail+errexit.
-  echo "$PR_JSON" | grep -o "\"$1\":\"[^\"]*\"" | head -1 | cut -d'"' -f4 || true
-}
-
-SOURCE_BRANCH=$(json_field headRefName)
-TARGET_BRANCH=$(json_field baseRefName)
-HEAD_OID=$(json_field headRefOid)
-PR_NUMBER=$(echo "$PR_JSON" | grep -o '"number":[0-9]*' | head -1 | cut -d: -f2 || true)
+# Extract fields with gh's own --jq, never by grepping PR_JSON: the body field
+# precedes several keys alphabetically, so a PR body containing crafted JSON
+# text could otherwise pre-empt them (these values feed git fetch/diff).
+SOURCE_BRANCH=""
+TARGET_BRANCH=""
+HEAD_OID=""
+PR_NUMBER=""
+if [ -n "$PR_JSON" ]; then
+  META=$(gh pr view ${PR_ARGS[@]+"${PR_ARGS[@]}"} --json number,headRefName,baseRefName,headRefOid \
+    --jq '[.number, .headRefName, .baseRefName, .headRefOid] | @tsv' 2>/dev/null || true)
+  IFS=$'\t' read -r PR_NUMBER SOURCE_BRANCH TARGET_BRANCH HEAD_OID <<< "$META"
+  # Validate before use — these reach git fetch / git diff.
+  case "$PR_NUMBER" in *[!0-9]*|"") PR_NUMBER="" ;; esac
+  case "$HEAD_OID" in *[!0-9a-f]*|"") HEAD_OID="" ;; esac
+fi
 
 # ── Section: branch state ────────────────────────────────────────────
 echo ""
@@ -150,8 +155,12 @@ if [ -n "$HEAD_OID" ]; then
   if git cat-file -e "$HEAD_OID^{commit}" 2>/dev/null; then
     ANCHOR_HEAD="$HEAD_OID"
   fi
-elif git rev-parse --verify HEAD >/dev/null 2>&1; then
+fi
+HEAD_SOURCE="pr"
+if [ -z "$ANCHOR_HEAD" ] && git rev-parse --verify HEAD >/dev/null 2>&1; then
+  # No PR head available (no PR, offline, or deleted head ref) — anchor on local HEAD.
   ANCHOR_HEAD=$(git rev-parse HEAD)
+  HEAD_SOURCE="local"
 fi
 
 # Resolve the base branch: the PR's base when known, else origin/main|master.
@@ -174,8 +183,13 @@ if [ -n "$MERGE_BASE" ]; then
   echo "base_branch: $ANCHOR_BASE_BRANCH"
   echo "merge_base: $MERGE_BASE"
   echo "head: $ANCHOR_HEAD"
+  if [ -n "$HEAD_OID" ] && [ "$HEAD_SOURCE" = "local" ]; then
+    echo "head_source: local (PR head unavailable)"
+  fi
   echo "changed_files:"
-  git diff --stat "$MERGE_BASE..$ANCHOR_HEAD" | sed 's/^/  /'
+  git diff --name-only --no-renames "$MERGE_BASE..$ANCHOR_HEAD" 2>/dev/null | sed 's/^/  /' || true
+  echo "diffstat:"
+  git diff --stat "$MERGE_BASE..$ANCHOR_HEAD" 2>/dev/null | sed 's/^/  /' || true
 else
   echo "error: cannot resolve merge base"
   echo "hint: fetch the PR head (git fetch origin pull/<n>/head) or check the base branch, then re-run"
@@ -205,6 +219,9 @@ echo "=== DIFFS ==="
 if [ "$NO_DIFF" = true ]; then
   echo "skipped: true"
   echo "reason: --no-diff — subagents read the diff via the ANCHORS SHAs"
+  if [ "$DIFF_SOURCE_EXPLICIT" = true ]; then
+    echo "note: --diff-source is ignored with --no-diff"
+  fi
   exit 0
 fi
 

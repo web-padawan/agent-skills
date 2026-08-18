@@ -12,7 +12,7 @@ If any of the three differs, say so loudly at the top of the chat reply before a
 
 Pre-existing untracked files are untouched and unstaged. Never commit, amend, push, `git add`, `stash`, `reset --hard`, or `git clean`.
 
-## Report — stage-0 report location (`.omc/self-review/<branch>-FINDINGS.md` in web-components)
+## Report — stage-0 report location (`.omc/self-review/<slug>-FINDINGS.md` in web-components; `<slug>` per stage 0, `/` → `-`)
 
 Write it only when the gate approved Q1. When it did not, put the same content in the chat reply instead, compressed — the findings are never lost, only relocated.
 

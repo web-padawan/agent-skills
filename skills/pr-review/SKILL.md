@@ -3,6 +3,7 @@ name: pr-review
 description: Review a GitHub pull request against a correctness/security/maintainability/performance rubric - gather context in one script call, fan the analysis out to the plugin's reviewer agents (correctness, tests, comment slop, conventions), triage, present prioritized findings (P0-P3), and after confirmation post them as inline positioned comments on the PR. Use for a full reviewer pass that leaves actionable line comments. Not for a single summary comment (adversarial-review), an interactive walkthrough that never posts (guided-review), or your own branch before it has a PR (self-review).
 argument-hint: "[PR number or URL, or blank to auto-detect from current branch]"
 disable-model-invocation: true
+allowed-tools: Read, Write, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/post-comment.sh:*)
 ---
 
 # PR Review
@@ -34,9 +35,16 @@ Read the output sections (`=== PR_METADATA ===`, `=== BRANCH_STATE ===`, `=== AN
 
 ### 2. Launch the reviewer agents
 
-Write a shared context file in the session scratchpad (`<scratchpad>/pr-<number>-context.md`) holding: the PR number, title, body and URL; the literal `<BASE>` and `<HEAD>` SHAs with the instruction that the diff under review is `git diff <BASE>..<HEAD>`; the changed-file list from ANCHORS; the review-instructions section (or the conventions docs it hinted at, with paths); and these two review rules, verbatim:
+Write a shared context file in the session scratchpad (`<scratchpad>/pr-<number>-context.md`) holding:
 
-> Lines prefixed `+` in the diff are code the author HAS ALREADY WRITTEN — review their quality, never suggest implementing them. Only flag issues **introduced by this PR**, not pre-existing code.
+- the PR number, title, body and URL;
+- the literal `<BASE>` and `<HEAD>` SHAs with the instruction that the diff under review is `git diff <BASE>..<HEAD>`;
+- the changed-file list from ANCHORS, and the `BRANCH_STATE` status line (so everyone knows whether the working tree is the PR head);
+- the review-instructions section (or the conventions docs it hinted at, with paths);
+- the severity rubric the agents' `<A|B|C>` proposals are judged against — **A**: critical, must fix before merge (wrong behavior, regression, a test that lets a real bug through, a public API mistake that ships permanently, security break); **B**: real but a follow-up PR is fine; **C**: taste. Tie-breaker: can a follow-up PR fix it without a breaking change or a user-visible bug? No → A;
+- and this rule block, verbatim:
+
+> Lines prefixed `+` in the diff are code the author HAS ALREADY WRITTEN — review their quality, never suggest implementing them. Only flag issues **introduced by this PR**, not pre-existing code. The PR head may not be checked out: read post-change file content with `git show <HEAD>:<path>` (literal SHA), never from the working tree, unless BRANCH_STATE above says the checked-out branch is the PR head.
 
 Then launch in **one message**, each prompt carrying the context file path and the delivery clause:
 
@@ -62,6 +70,8 @@ The agents return findings as `<category> | <file>:<line> | <A|B|C> | <claim>` l
 | A — likely problem, should fix before merge | **[P1]** Important |
 | B — real, follow-up is fine | **[P2]** Suggestion |
 | C — taste (incl. `slop`; a comment actively wrong about the code is P2) | **[P3]** Nit |
+
+The A split is yours to make: **P0** when the defect is reachable in released/production behavior or is a security issue, **P1** otherwise.
 
 ### 4. Present findings
 
@@ -131,4 +141,5 @@ Only when the plugin agents are unavailable or the ANCHORS SHAs cannot be resolv
 
 - Remember: `+` lines are code the author has already written — review their quality, never suggest implementing them.
 - Optimize for recall first (flag everything potentially problematic), then validate each finding for precision.
-- Apply the same filter, categories (correctness, security, maintainability, performance), and priority levels as step 3, and present per step 4.
+- Cover the four categories: **correctness** (logic errors, edge cases, off-by-one, races, null/undefined handling), **security** (injection, auth bypass, secrets, unvalidated input, open redirects, non-parameterized SQL), **maintainability** (unclear naming, excessive complexity, missing error handling, untested paths), **performance** (N+1 queries, unnecessary allocations, missing indexes, unbounded loops).
+- Apply the same filter and priority levels as step 3, and present per step 4.
