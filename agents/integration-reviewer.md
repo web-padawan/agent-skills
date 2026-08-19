@@ -15,7 +15,9 @@ root (that is the one in vaadin/web-components), else the conventions part of `C
 
 ## What to check
 
-- Convention violations — cite the convention you are applying.
+- Convention violations — only when you can quote the exact rule and the exact line that
+  breaks it; name the doc in the claim. No style preferences, no "spirit of the doc"
+  inferences.
 - Naming consistent with sibling components/mixins for the same concept.
 - Method and property ordering matching the surrounding file and analogous files in other
   packages.

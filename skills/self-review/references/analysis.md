@@ -51,7 +51,7 @@ Every reviewer agent's definition carries the shared finding-line contract:
 
 One line per finding, at most **12** per agent, ranked most severe first, `NO FINDINGS` explicitly when clean — an empty reply is an error, re-run once. The prompt adds the delivery clause: the contract says what to report, the clause says where to put it, and an agent with only one of the two loses findings.
 
-Categories: `general`, `scope`, `intent`, `requirements`, `premise`, `root-cause`, `behavior`, `integration`, `tests`, `slop` — plus `architecture`, `boundary`, `impact` and `api`, which only appear when `--deep` ran arch-review's lenses.
+Categories: `general`, `scope`, `intent`, `requirements`, `premise`, `root-cause`, `behavior`, `integration`, `tests`, `slop`, `cleanup` — plus `architecture`, `boundary`, `impact` and `api`, which only appear when `--deep` ran arch-review's lenses.
 
 ## Severity — A / B / C
 
@@ -62,6 +62,12 @@ Agents propose a tier; **stage-2 triage assigns the final one**. Agent-proposed 
 - **C — opinionated / taste.** Style, comment noise, member ordering, phrasing, micro-simplifications, subjective structure preferences.
 
 Tie-breaker between A and B: **can a follow-up PR fix this without a breaking change or a user-visible bug?** No → A.
+
+Two rules ride with the rubric into the context file, verbatim:
+
+> **Report, don't self-censor.** Every candidate with a nameable failure scenario or concrete cost goes in the report — `unverified` when you cannot verify it. Triage verifies and dedups; a finder that silently drops half-believed candidates bypasses triage and is the dominant cause of misses.
+>
+> **C findings are wanted.** The PR-side CI review deliberately drops low-value findings; this review is where nits surface, judged by the author at zero round-trip cost.
 
 ## The breadth passes
 
@@ -75,6 +81,7 @@ Passes are identified by name — the same names the profile table in SKILL.md u
 | **integration** | `agent-skills:integration-reviewer` | feature, refactor, chore | — |
 | **tests** | `agent-skills:test-reviewer` | all | — |
 | **slop** | `agent-skills:comment-reviewer` | all | — |
+| **cleanup** | `agent-skills:cleanup-reviewer` | feature, refactor | — |
 | **requirements coverage** | `agent-skills:requirements-reviewer` | feature | the best requirements source, named |
 | **root cause & blast radius** | `agent-skills:root-cause-reviewer` | fix | — |
 | **premise & history** | `agent-skills:premise-reviewer` | fix, **before every other pass** | the behavior the fix changes; launch order and decision rules in `fix-profile.md` |
