@@ -44,6 +44,7 @@ Passes: <pass name> ✅ · <pass name> ✅ · <pass name> ⚠️ self-run · <pa
 ## Integration
 ## Tests
 ## Slop
+## Cleanup
 
 ## Follow-ups
 - [B] <file>:<line> — <claim> → <suggested fix>

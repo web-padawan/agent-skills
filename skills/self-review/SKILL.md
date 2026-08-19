@@ -30,7 +30,7 @@ Detailed instructions live in references — read each one the **first time** a 
 ## Stage 0 — Setup & guards
 
 - Refuse to run on `main`, `master`, or a `maintenance/*` branch — stop with a one-line message.
-- **Tracked files must be clean**: `git status --porcelain --untracked-files=no` empty. If not, stop and ask the user to commit or stash first. Untracked files are fine — never touch them, never stage them. This is not tidiness: stage 4 restores a mutant with `git checkout -- <path>`, which resets the file to the **index**. Because this skill never stages anything, the index equals `HEAD`, so that restore is exact and total. A dirty tree breaks the invariant the carve-out rests on.
+- **Tracked files must be clean**: `git status --porcelain --untracked-files=no` empty. If not, stop and ask the user to commit or stash first. Untracked files are fine — never touch them, never stage them. This is not tidiness: stage 4 restores mutants with `git checkout -- <path>`, which resets to the **index**; since this skill never stages, the index equals `HEAD` and the restore is exact. A dirty tree breaks that invariant.
 - **Context in one call**: run the shared context script — `${CLAUDE_PLUGIN_ROOT}/scripts/get-pr-context.sh --no-diff`, with the plugin root resolved to a literal path. It returns the branch's open PR (title/body feed the intent check), the branch state, and the `=== ANCHORS ===` section with the merge-base SHA and the changed-file list. Record `<BASE>` and `<HEAD>` as literal SHAs (shell variables do not persist between tool calls, and subagents never see them). **This skill reviews the local branch**, so `<HEAD>` = `git rev-parse HEAD`; take `<BASE>` from ANCHORS only when its `head` equals that SHA — when they differ (unpushed or rebased commits), or ANCHORS printed an error, recompute `<BASE>` = `git merge-base origin/<base_branch> HEAD`, or the review diff would include base-branch commits from before the rebase. Fetch `$0` (parent PR/issue) with `gh` when given.
 - Record `<HEAD0>` = `git rev-parse HEAD`. Stage 5 asserts `HEAD` still equals it and that the index is still empty — that is the proof nothing was committed or staged.
 - **Command map** — record once, used by stage 4. In `vaadin/web-components`: lint `yarn lint`; tests `yarn test --group <package>`; source glob `packages/*/src/*.js`; affected packages = unique `packages/<name>` prefixes of the changed files. In another repo, take lint/test commands from `CLAUDE.md` / `AGENTS.md` / `package.json` scripts and note the equivalent source glob and test-scoping unit.
@@ -49,7 +49,7 @@ Decide the type once, from the first signal that resolves — do not spend a sub
 
 Take the **first signal that resolves** and stop — that is the declared type, and it is what the profile runs on. `perf:` maps to refactor.
 
-Signals below it may still *disagree*; do not let that silently upgrade the type. Instead, when a lower signal is more demanding than the one that won (`feat` beats `fix` beats `refactor` beats `chore`), keep the declared type and hand the disagreement to the scope pass as an explicit question. A branch whose PR title says `refactor:` while two of its three commits say `fix:` is exactly that case. Two reasons to keep the declared type rather than auto-upgrading: the declared type is what the author is asking reviewers to believe, so reviewing against it is what tests the claim; and the more demanding profile would examine a *different* risk instead of the mislabel itself.
+Signals below it may still *disagree*; do not let that silently upgrade the type. Instead, when a lower signal is more demanding than the one that won (`feat` beats `fix` beats `refactor` beats `chore`), keep the declared type and hand the disagreement to the scope pass as an explicit question. A branch whose PR title says `refactor:` while two of its three commits say `fix:` is exactly that case. Keep the declared type rather than auto-upgrading: reviewing against the author's claim is what tests it, and the more demanding profile would examine a *different* risk instead of the mislabel itself.
 
 Report the type and the signal that decided it in the stage-5 summary, and treat a wrong-looking type as a `scope` finding — a fix that grows an API is a mislabeled feature, and a refactor that removes public API is a mislabeled breaking change.
 
@@ -59,13 +59,14 @@ The type picks the profile. Passes are named, never numbered — analysis.md's p
 
 | Type | Breadth passes | Agents | Mutant budget |
 | --- | --- | --- | --- |
-| **feature** | general · scope · intent · integration · tests · slop · **requirements coverage** | 7 | 15 |
+| **feature** | general · scope · intent · integration · tests · slop · cleanup · **requirements coverage** | 8 | 15 |
 | **fix** | **premise & history** first, then general · tests · slop · **root cause & blast radius** — **5 agents total, hard cap** | 5 | 5, concentrated on the fix |
-| **refactor** | general · scope · integration · tests · slop · **behavior preservation** | 6 | 10 |
+| **refactor** | general · scope · integration · tests · slop · cleanup · **behavior preservation** | 7 | 10 |
 | **chore** | general · integration · tests · slop | 4 | none — skip stage 4 |
 
 - `--no-coverage` zeroes the mutant budget and skips the gate's coverage question.
 - Say in the summary which profile ran.
+- **This is the full-scale review — C findings are the point, not noise.** The CI review bot on the PR is a final gate that deliberately drops low-value findings; this skill is where nits, taste, and cleanup surface, judged by the author at zero round-trip cost. The cleanup pass exists for the same reason: reuse/simplification/efficiency moved here when the bot dropped them.
 - The agent counts are floors for coverage, not targets to trim: on a small diff the saving comes from passes not re-deriving each other's work (analysis.md's **Settled facts** and **Open leads** rules), not from dropping a pass. The one exception is repo-wide work — the root-cause/blast-radius pass scales with the repo, not the diff, and is never the place to economise.
 
 ### Deep review — arch-review's job, opt-in here

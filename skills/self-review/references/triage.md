@@ -12,6 +12,14 @@ For every finding from stage 1 (and the `--deep` lens run, when one happened):
 4. **Assign the final tier** (A/B/C per analysis.md), overriding the agent's proposal. Apply the tie-breaker: can a follow-up PR fix it without a breaking change or a user-visible bug?
 5. **Write the suggested fix** as one line. This skill changes nothing, so that line is the entire actionable output — it is what the user acts on. Make it concrete and specific to the file and line. A report full of "consider refactoring this" is worthless; "move the listener removal into `disconnectedCallback`" is not.
 
+### Wording — claims and suggested fixes
+
+The gate listing and the report reuse these lines verbatim, so fix the wording here, once:
+
+- Every identifier, method, type, and compared literal in backticks — `resolveLabel`, `"No matching option"`.
+- Plain developer words; no invented labels ("foot-gun", "split-brain").
+- One short sentence per claim: keep the one detail that makes the problem concrete, drop call chains and mechanism retellings.
+
 ### Type-aware tiering
 
 The change type shifts where the A line sits — apply these on top of the rubric:

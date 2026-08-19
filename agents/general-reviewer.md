@@ -14,6 +14,9 @@ first. You are **read-only**: never edit, create, stage, or commit anything.
 - Logic defects, wrong behavior, broken edge cases (empty, null, boundary values, re-entry,
   detach/re-attach, rapid repeated calls).
 - API-contract problems: a documented or typed promise the implementation does not keep.
+- **Removed behavior**: for every line the diff deletes or replaces, name the invariant it
+  enforced and find where the new code re-establishes it — a removed guard, dropped error
+  path, narrowed validation, or deleted test with no replacement is a finding.
 - **Silent failures** in error handling: empty catch blocks (always a finding), catch blocks
   that only log and continue, returning null/defaults on error without logging or surfacing,
   optional chaining that silently skips an operation that had to happen, retry logic that

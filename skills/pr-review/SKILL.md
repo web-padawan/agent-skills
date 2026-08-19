@@ -44,7 +44,7 @@ Write a shared context file in the session scratchpad (`<scratchpad>/pr-<number>
 - the severity rubric the agents' `<A|B|C>` proposals are judged against — **A**: critical, must fix before merge (wrong behavior, regression, a test that lets a real bug through, a public API mistake that ships permanently, security break); **B**: real but a follow-up PR is fine; **C**: taste. Tie-breaker: can a follow-up PR fix it without a breaking change or a user-visible bug? No → A;
 - and this rule block, verbatim:
 
-> Lines prefixed `+` in the diff are code the author HAS ALREADY WRITTEN — review their quality, never suggest implementing them. Only flag issues **introduced by this PR**, not pre-existing code. The PR head may not be checked out: read post-change file content with `git show <HEAD>:<path>` (literal SHA), never from the working tree, unless BRANCH_STATE above says the checked-out branch is the PR head.
+> Lines prefixed `+` in the diff are code the author HAS ALREADY WRITTEN — review their quality, never suggest implementing them. Only flag issues **introduced by this PR**, not pre-existing code. The PR head may not be checked out: read post-change file content with `git show <HEAD>:<path>` (literal SHA), never from the working tree, unless BRANCH_STATE above says the checked-out branch is the PR head. Report every candidate with a nameable failure scenario, `unverified` when you cannot verify it — the invoker's triage filters; a finder that silently drops half-believed candidates bypasses triage and is the dominant cause of misses.
 
 Then launch in **one message**, each prompt carrying the context file path and the delivery clause:
 

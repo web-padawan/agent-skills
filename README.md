@@ -72,12 +72,12 @@ The change type comes from, in order: an explicit `--fix` / `--feature` / `--ref
 
 | Type | Extra pass | Agents | Mutants |
 | --- | --- | --- | --- |
-| **feature** | requirements coverage | 7 | 15 |
+| **feature** | cleanup + requirements coverage | 8 | 15 |
 | **fix** | premise & history first (a fix contradicting a recorded project decision stops the run), then root cause & blast radius; regression test must fail without the fix | 5, hard cap | 5, on the fix |
-| **refactor** | behavior preservation | 6 | 10 |
+| **refactor** | cleanup + behavior preservation | 7 | 10 |
 | **chore** | — | 4 | none |
 
-Every profile includes the comment/slop pass. **Deep review** — the per-change lens analysis — is `arch-review`'s job: by default `self-review` reports breadth findings only and points at `/agent-skills:arch-review` for architectural questions; `--deep N` runs arch-review's inventory and lens trios on the branch's top N significant changes and merges their findings into the report.
+Every profile includes the comment/slop pass. Feature and refactor also run a cleanup pass (reuse / simplification / efficiency) — `self-review` is the full-scale review that surfaces even C-tier nits, because the CI review bot on the PR is a final gate that deliberately drops low-value findings. **Deep review** — the per-change lens analysis — is `arch-review`'s job: by default `self-review` reports breadth findings only and points at `/agent-skills:arch-review` for architectural questions; `--deep N` runs arch-review's inventory and lens trios on the branch's top N significant changes and merges their findings into the report.
 
 `self-review` never changes anything. Every stage is read-only, the one exception being the coverage check, which comments out a source line at a time and restores it before the next. A single gate asks whether to write the report and whether to run that check — never what to apply, because nothing is ever applied. `HEAD`, the index and the working tree end exactly as they started.
 
