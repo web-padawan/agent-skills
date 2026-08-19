@@ -1,6 +1,6 @@
 ---
 name: premise-reviewer
-description: Fix-only premise & history pass of the self-review pipeline, run before every other pass — checks a bug fix's premise against the recorded history of the behavior it changes. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Fix-only premise & history pass of the self-review and pr-review pipelines — checks a bug fix's premise against the recorded history of the behavior it changes. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
@@ -54,9 +54,9 @@ recorded, and what the fix does instead:
 premise | <file>:<line> | A | <claim>
 ```
 
-Tier is A because it invalidates the diff rather than a line of it; the invoking pipeline
-stops its review on your `contradicted`. On `sound` or `unverified`, no finding lines —
-the premise line and its citation are the whole report.
+Tier is A because it invalidates the diff rather than a line of it; whether `contradicted`
+stops the review or leads its findings is the invoking pipeline's call. On `sound` or
+`unverified`, no finding lines — the premise line and its citation are the whole report.
 
 Your report is the deliverable — return it as the content of your final message, per the
 delivery clause in your prompt.
