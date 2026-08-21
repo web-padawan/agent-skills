@@ -23,6 +23,8 @@ Proposed alternative: <a shape that keeps the capability with a cheaper promise,
 Severity: <A|B|C>
 ```
 
+- Keep the whole block under **250 words** — the consumer list and `Promise created` earn
+  the extra room, nothing else does. Detail belongs in the finding lines.
 - `Consumers` must be **named**, found by searching the repo, not guessed. An unnamed
   consumer list makes the severity unjustifiable in either direction.
 - `Promise created` is written from the consumer's side: "the `opened` property can be set

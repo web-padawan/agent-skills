@@ -27,13 +27,19 @@ References sit next to this file; if a relative read fails, use `${CLAUDE_PLUGIN
 
 Record the base and head SHAs as literals — shell variables do not persist between tool calls, and subagents never see them. If ANCHORS printed `error: cannot resolve merge base`, fall back to `git merge-base origin/<base-branch> HEAD` (base branch from PR metadata, else the repo's default branch) and record that SHA as the base.
 
+**Write the shared context file.** Save the scope facts to `<scratchpad>/arch-review-context.md` — the script's output for a PR scope, the equivalent few lines for a file or range scope — and pass that **path** to every agent instead of restating the context inline. The lens and enumerator definitions already expect a context file. Without one you retype the same paragraph into every prompt, the wording drifts between them, and any correction reaches only the agents launched after you found it. When you discover something the context gets wrong, append it under an `## Orchestrator notes` heading (e.g. "the PR description is stale: it documents X, the code does Y") so every later agent reads the correction once, identically.
+
 A single named change goes straight to step 3. Anything broader goes through the inventory first.
 
 ## 2 — Inventory (multi-change scopes only)
 
 A multi-change run is not cheap: the inventory agent plus three lens agents per change is up to 13 agents at the default budget. When the user explicitly invoked the skill on that scope (slash command, "arch-review the branch"), proceed; when the skill fired on a passing question, confirm with one `AskUserQuestion` (header `Scope`) before spending the budget — offer the full run and a top-1-change run.
 
-Run one `agent-skills:change-enumerator` inventory agent per [`references/significance.md`](references/significance.md) — the agent carries the rules and the output contract; the prompt adds the budget, scope context, and delivery clause. Budget: **4** changes unless `--deep N` says otherwise. Everything below the line is listed in the report as `Not deep-reviewed`, never silently dropped.
+**Skip the inventory agent on small scopes.** When the scope touches one module and fewer than ~15 changed files, cluster the changes yourself from the ANCHORS file list per [`references/significance.md`](references/significance.md) and go straight to step 3. The inventory is a selection, not a review, and you can already see the whole file list — a separate agent earns its latency only on multi-module scopes where the ranking is genuinely unclear.
+
+Otherwise run one `agent-skills:change-enumerator` inventory agent per [`references/significance.md`](references/significance.md) — the agent carries the rules and the output contract; the prompt adds the budget, the context file path, and the delivery clause. Budget: **4** clustered changes unless `--deep N` says otherwise. Everything below the line is listed in the report as `Not deep-reviewed`, never silently dropped.
+
+Cluster before you count against the budget: several new files that exist only to serve one new public surface are **one** change, and a one-line `implements`/export addition belongs to the surface it adopts. Four files is often one trio, not four.
 
 `NO SIGNIFICANT CHANGES` is a valid answer: report it and stop — no lens run on noise.
 
@@ -41,17 +47,26 @@ Run one `agent-skills:change-enumerator` inventory agent per [`references/signif
 
 Per [`references/lenses.md`](references/lenses.md): three separate agents per change — `agent-skills:lens-architectural`, `agent-skills:lens-boundary`, `agent-skills:lens-impact` — each handed exactly one change; the agents carry their own field contracts.
 
-**Delivery** — follow [`references/delivery.md`](references/delivery.md) exactly: `run_in_background: false`, no `name`, the delivery clause verbatim in every prompt. Those three decide whether the reports ever reach you.
+**Delivery** — follow [`references/delivery.md`](references/delivery.md) exactly: synchronous launch where the harness supports it, no `name`, the delivery clause verbatim in every prompt. Those decide whether the reports ever reach you.
 
 **Batching**: cap each message at ~6 agents — trios for two changes per message, next batch only after the previous returns. A single overloaded message is where agents start returning surveys instead of reviews.
+
+**While a batch is in flight**, pre-verify rather than poll — see delivery.md's waiting rule. Reading the changed files and checking the claims you expect (does that API actually exist, does the cited test actually cover that path, do sibling files really set that precedent) is triage work done early, and it is what lets you correct an overstated finding instead of forwarding it.
 
 **Roll call**: after each batch, run delivery.md's roll call — tick every agent whose block you actually hold, escalate the ones that delivered nothing per its ladder, and mark any lens you had to run yourself `self-run`.
 
 ## 4 — Triage and report
 
 1. Verify every finding line against the code — agents produce false positives. Unconfirmed → `accepted` with a one-line reason, kept in the report.
-2. Dedup across the three lenses: lenses converging on one change is signal — merge the finding lines, mark `[3-lens]` / `[2-lens]`, keep all three blocks intact.
+2. Dedup across the three lenses: lenses converging on one change is signal — merge the finding lines, mark `[3-lens]` / `[2-lens]`. Where a lens overstated a claim, say so in one clause and keep the corrected version; a lens whose framing you had to fix is more useful reported as corrected than as confirmed.
 3. Assign the final tier: **A** — must fix before merge (wrong behavior, or a promise a follow-up could not walk back without a breaking change), **B** — real, follow-up is fine, **C** — taste. Tie-breaker: can a follow-up PR fix it without a breaking change or a user-visible bug? No → A.
-4. Report in chat, per change in rank order: the three blocks **verbatim** under the change's heading, the merged finding lines with tiers, then `Not deep-reviewed` and a closing tally (`A: n · B: n · C: n`, lenses `agent`/`self-run`). A clean change shows its blocks and `NO FINDINGS` — that record is the point.
+4. Report **in chat**, per change in rank order. This skill's deliverable is the chat message: never publish an artifact, never write a report file, never post to the PR — those are other skills' jobs, and a second copy of the report is a liability, not a record.
+
+   Scale the block prose to the finding, so the report stays readable at any budget:
+   - **A-tier change** — its three blocks in full, close to verbatim.
+   - **B/C-only change** — one condensed line per lens (`Risk` + `Suggestion`), because the finding lines already carry the claim.
+   - **Clean change** — `NO FINDINGS` plus each lens's one-line summary, so the clean verdict is still on the record.
+
+   Then the merged finding lines with tiers, `Not deep-reviewed` (every below-the-line candidate, with `covered by rank N` where that is the reason), and a closing tally (`A: n · B: n · C: n`, lenses `agent`/`self-run`). If the report would not fit a terminal read, cut block prose — never findings, never the tally.
 
 Nothing was changed to produce the report; say so at the end.

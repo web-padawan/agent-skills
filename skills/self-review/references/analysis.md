@@ -8,7 +8,7 @@ Every pass runs as a plugin agent (`agents/` at the plugin root). Each agent's d
 
 ## Delivery — how findings reach you
 
-The launch rules, the delivery clause, the roll call, and the escalation ladder for lost reports live in `../../arch-review/references/delivery.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/delivery.md`) — read it before launching and follow it exactly. The one stage-specific note: stage 2 (triage) is a barrier — it needs every pass's findings before it starts — which is exactly why every agent runs with `run_in_background: false` and no `name`.
+The launch rules, the delivery clause, the roll call, and the escalation ladder for lost reports live in `../../arch-review/references/delivery.md` (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/delivery.md`) — read it before launching and follow it exactly. The one stage-specific note: stage 2 (triage) is a barrier — it needs every pass's findings before it starts — which is exactly why every agent runs synchronously where the harness allows it, and never with a `name`.
 
 ## Shared context file
 

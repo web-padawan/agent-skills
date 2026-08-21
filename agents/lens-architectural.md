@@ -22,6 +22,9 @@ Suggestion: <the smallest change that lowers the risk>
 Severity: <A|B|C>
 ```
 
+- Keep the whole block under **200 words**, `Observed behavior` to two sentences. The
+  finding lines are where detail belongs; a block that outgrows this gets cut by the
+  invoker instead of read.
 - `Observed behavior` is descriptive, not evaluative. Editorialising here means you have
   already decided the verdict and will bend the other four fields to it.
 - `Suggestion` is the **smallest** change that helps. No rewrites, no speculative

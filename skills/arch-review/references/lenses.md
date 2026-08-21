@@ -32,6 +32,6 @@ Each agent returns its **block**, then **one or more finding lines** in the stan
 <category> | <file>:<line> | <A|B|C> | <claim>
 ```
 
-The block is the evidence and goes into the report verbatim under the change's own heading. The lines are what triage verifies, dedups and tiers.
+The block is the evidence; the lines are what triage verifies, dedups and tiers. Every block is always **returned** by its agent — the invoker decides how much of it reaches the report, per SKILL.md step 4: full prose for an A-tier change, one condensed line per lens for a B/C-only or clean one. The agent never pre-trims on the invoker's behalf, and the invoker never drops a finding to save room.
 
-A block with no finding lines is an unfinished report, not a clean one. When a change genuinely reviews clean, the agent returns the block **and** a `NO FINDINGS` line — a clean boundary review is exactly the record worth having six months later, so the block is never optional.
+A block with no finding lines is an unfinished report, not a clean one. When a change genuinely reviews clean, the agent returns the block **and** a `NO FINDINGS` line — a clean boundary verdict is exactly the record worth having six months later, so the block is never optional.

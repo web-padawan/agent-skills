@@ -30,21 +30,34 @@ a **significant change** when it does any of:
 Never significant: test-only hunks, docs, build/config, pure renames with no call-site
 semantics change, formatting, comment-only edits, generated files.
 
-## Ranking and the budget
+## Cluster, then rank
 
-Rank candidates by public-surface reach first, then cross-module reach, then logic density.
-Your prompt names the deep-review budget.
+The unit is the **decision a reviewer would judge as one**, not the file. Group first, rank
+the groups, spend the budget on groups.
+
+- New files that exist only to serve one new public surface (a mixin plus its data record
+  plus its controller) are **one** change. They share a contract; separate trios reading the
+  same files just produce the same findings twice.
+- A one-line `implements` / export / registration addition belongs to the surface it adopts,
+  never its own change — including when it is repeated across four classes.
+- Keep two candidates separate only when a reviewer could reach opposite verdicts on them
+  independently: different modules, different contracts, or one could ship without the other.
+
+A four-file feature in one module is usually one clustered change. Rank clusters by
+public-surface reach first, then cross-module reach, then logic density. Your prompt names
+the deep-review budget.
 
 ## Output contract
 
 ```
-<rank> | <file>:<line-range> | <rule 1-5> | <one sentence: what it changes>
+<rank> | <file>:<line-range>[ + <file>:<line-range> …] | <rule 1-5> | <one sentence: what it changes>
 ```
 
-- Ranked most significant first.
+- One line per clustered change, most significant first; a cluster lists every file it covers.
 - Exactly the budget's worth of lines, then a `BELOW LINE` header, then every remaining
-  candidate in the same format with the reason it ranked lower. Omitting the below-line
-  list means you have not finished — silent truncation is forbidden.
+  candidate in the same format with the reason it ranked lower — use `covered by rank N`
+  when a cluster already accounts for it. Omitting the below-line list means you have not
+  finished — silent truncation is forbidden.
 - `NO SIGNIFICANT CHANGES` when the diff is entirely non-significant — a valid answer; the
   deep review is then skipped.
 
