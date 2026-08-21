@@ -67,24 +67,34 @@ Run `self-review` on a feature branch with no uncommitted changes to tracked fil
 
 Everything that posts (`adversarial-review`, `pr-review`) asks for confirmation first and prefixes comments with `:robot: AI-generated`. `pr-description` also asks first, but writes the body without any AI attribution — the descriptions it imitates carry none. Everything else never writes outside the machine.
 
-### Review profiles (`self-review`)
+### Review profiles (`self-review`, `pr-review`)
 
-The change type comes from, in order: an explicit `--fix` / `--feature` / `--refactor` / `--chore` flag, the PR title's conventional prefix, the branch's commit subjects, parent issue labels, the branch name, then the shape of the diff. It decides how much review the branch gets:
+The pass list is data, not prose: `references/profiles.md` holds the pass table and the
+change type × scale matrix, and `scripts/review-plan.sh` resolves them into a launch plan
+(type + signal, scale tier + counts, each pass with its agent, folds and model, the mutant
+budget, the report paths, and the guard verdict). One script call, nothing for a skill to
+re-derive — read that file rather than a copy of it here.
 
-| Type | Extra pass | Agents | Mutants |
-| --- | --- | --- | --- |
-| **feature** | cleanup + requirements coverage | 8 | 15 |
-| **fix** | premise & history first (a fix contradicting a recorded project decision stops the run), then root cause & blast radius; regression test must fail without the fix | 5, hard cap | 5, on the fix |
-| **refactor** | cleanup + behavior preservation | 7 | 10 |
-| **chore** | — | 4 | none |
+The short version: the **type** (`--fix` / `--feature` / `--refactor` / `--chore`, else the PR
+title prefix, the branch's commit subjects, parent issue labels, the branch name, the diff
+shape) decides which questions matter, and the diff's **scale** (trivial ≤10 lines, lite ≤100,
+full above) decides how many agents ask them — a dropped pass folds its question into the
+general pass instead of disappearing. Public-API changes, weakened test assertions and
+CI/release files force the full tier regardless of size. A fix is capped at five agents and
+starts with the premise check: a fix contradicting a recorded project decision stops the run.
+Every profile includes the comment/slop pass, because `self-review` is the full-scale review
+where even C-tier nits are worth surfacing — the CI review bot on the PR deliberately drops them.
 
-Every profile includes the comment/slop pass. Feature and refactor also run a cleanup pass (reuse / simplification / efficiency) — `self-review` is the full-scale review that surfaces even C-tier nits, because the CI review bot on the PR is a final gate that deliberately drops low-value findings. `pr-review` reuses the type detection and the profile's breadth pass (not the mutant budget or the cleanup pass) when reviewing a PR; on a fix PR a contradicted premise leads the findings instead of stopping the run.
+**Deep review** — the per-change lens analysis — is `arch-review`'s job: by default
+`self-review` reports breadth findings only and points at `/agent-skills:arch-review` for
+architectural questions; `--deep N` runs arch-review's inventory and lens trios on the top N
+significant changes and merges their findings into the report.
 
-On top of the type, the diff's **scale** tiers the depth: **trivial** (≤10 lines) runs 1–3 agents with the dropped passes' questions folded into the general pass, **lite** (≤100 lines) runs 3–4 (a fix always keeps its 5), **full** (>100 lines) is the table above. Public-API changes, weakened test assertions, and CI/release files force full regardless of size; `--scale trivial|lite|full` forces a tier by hand. Mutant budgets cap at 3 / 8 / type budget, and the fix profile's whole-fix revert runs at every scale.
-
-**Deep review** — the per-change lens analysis — is `arch-review`'s job: by default `self-review` reports breadth findings only and points at `/agent-skills:arch-review` for architectural questions; `--deep N` runs arch-review's inventory and lens trios on the branch's top N significant changes and merges their findings into the report.
-
-`self-review` never changes anything. Every stage is read-only, the one exception being the coverage check, which comments out a source line at a time and restores it before the next. A single gate asks whether to write the report and whether to run that check — never what to apply, because nothing is ever applied. `HEAD`, the index and the working tree end exactly as they started.
+`self-review` never changes anything. Every step is read-only, the one exception being the
+coverage check, which comments out a source line at a time and restores it before the next. A
+single gate asks whether to write the report and whether to run that check — never what to
+apply, because nothing is ever applied. `HEAD`, the index and the working tree end exactly as
+they started.
 
 ## Updating a skill
 
@@ -118,15 +128,22 @@ agents/              # read-only reviewer subagents (agent-skills:<name>) used b
   lens-*.md          # the three arch-review lenses
   *-reviewer.md      # breadth passes (self-review + pr-review), premise check, comment/slop pass
   change-enumerator.md
+references/          # shared by every review skill — the single source for each of these
+  pipeline.md        # the six pipeline steps: plan, context, fan-out, roll call, triage, deliver
+  profiles.md        # the pass table + the type x scale matrix (parsed by review-plan.sh)
+  severity.md        # A / B / C, the tie-breaker, type-aware tiering, lens severity mapping
+  delivery.md        # launch rules, the delivery clause, roll call, escalation ladder
+  rationale.md       # why the pipeline is shaped this way, measured on real runs
 scripts/
-  get-pr-context.sh  # shared context script: PR metadata, branch state, ANCHORS SHAs, diffs
+  get-pr-context.sh  # PR metadata, branch state, ANCHORS SHAs, diffs
+  review-plan.sh     # wraps it and prints === PLAN ===: type, scale, pass list, budgets, paths
 skills/
   self-review/
-    SKILL.md         # stage orchestration; deep review delegated to arch-review via --deep
-    references/      # per-stage detail, read on first use
+    SKILL.md         # eight steps; shared machinery in references/, deep review via --deep
+    references/      # mutation.md (coverage check), finalize.md (gate, report, verdict)
   arch-review/
     SKILL.md         # standalone entry: scope → inventory → trio → triage
-    references/      # lenses.md, significance.md, delivery.md (shared launch/roll-call rules)
+    references/      # lenses.md, significance.md
   guided-review/
     SKILL.md         # two-phase walkthrough, read-only
   adversarial-review/

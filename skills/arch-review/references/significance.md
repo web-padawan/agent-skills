@@ -34,7 +34,7 @@ A four-file feature in one module is usually **one** trio. Getting this wrong is
 
 ## Inventory contract
 
-One `agent-skills:change-enumerator` agent, read-only. Its definition ([`../../agents/change-enumerator.md`](../../agents/change-enumerator.md), fallback `${CLAUDE_PLUGIN_ROOT}/agents/change-enumerator.md`) carries the five rules, the exclusion list, and this contract — the invoker's prompt adds the deep-review budget, the scope context, and the delivery clause. When the plugin's agents are unavailable, fall back to `general-purpose` with the agent file's body pasted into the prompt. The contract, for the stages that consume its output:
+One `agent-skills:change-enumerator` agent, read-only. Its definition ([`../../../agents/change-enumerator.md`](../../../agents/change-enumerator.md), fallback `${CLAUDE_PLUGIN_ROOT}/agents/change-enumerator.md`) carries the five rules, the exclusion list, and this contract — the invoker's prompt adds the deep-review budget, the scope context, and the delivery clause. When the plugin's agents are unavailable, fall back to `general-purpose` with the agent file's body pasted into the prompt. The contract, for the stages that consume its output:
 
 ```
 <rank> | <file>:<line-range>[ + <file>:<line-range> …] | <rule 1-5> | <one sentence: what it changes>

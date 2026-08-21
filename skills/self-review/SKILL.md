@@ -3,139 +3,69 @@ name: self-review
 description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching profile of breadth review passes in one parallel batch, sized by the diff's scale tier (trivial/lite/full), always including the comment/slop pass; a bug fix first has its premise checked against the history of the behavior it changes. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Per-change deep review (lenses) lives in arch-review — opt in here with --deep N. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
 argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--scale trivial|lite|full] [--deep N] [--no-coverage]"
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/get-pr-context.sh:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*)
 ---
 
-You are self-reviewing the current branch before it becomes (or updates) a PR. Optional input `$0` is the parent PR or issue this branch was extracted from. Work the stages in order.
+You are self-reviewing the current branch before it becomes (or updates) a PR. Optional
+input `$0` is the parent PR or issue this branch was extracted from.
 
 Three rules outrank everything else:
 
-- **Never edit code.** Every stage is read-only. The single carve-out is stage 4's coverage mutants: one line at a time, restored with `git checkout -- <path>` before the next, and the stage ends only when `git status --porcelain --untracked-files=no` is empty again. Nothing else in this skill writes to a tracked file. (`Edit` is in `allowed-tools` for that carve-out alone — do not remove it, and do not use it anywhere else.)
-- **Never commit or stage.** No commit, amend, push, `git add`, `stash`, `reset --hard`, or `git clean` — ever. `HEAD` and the index end exactly as found.
-- **The only files this skill creates are the shared context file and the report**, both in the git-ignored report directory, and the report only after the stage-3 gate — or, on a premise-stopped fix, the premise-stop question that stands in for it — approves it.
+- **Never edit code.** Every step is read-only. The single carve-out is step 7's coverage
+  mutants: one line at a time, restored with `git checkout -- <path>` before the next, and
+  the step ends only when `git status --porcelain --untracked-files=no` is empty again.
+  (`Edit` is in `allowed-tools` for that carve-out alone.)
+- **Never commit or stage.** No commit, amend, push, `git add`, `stash`, `reset --hard`, or
+  `git clean` — ever. `HEAD` and the index end exactly as found.
+- **The only files this skill creates are the context file and the report**, both in the
+  git-ignored report directory the plan names, and the report only after step 6's gate — or,
+  on a premise-stopped fix, the premise-stop question that stands in for it — approves it.
 
 Every finding ends up in the report as `confirmed` or `accepted`. Nothing is silently dropped.
 
-Detailed instructions live in references — read each one the **first time** a stage needs it, and never twice in a session. `analysis.md`, `fix-profile.md`, `triage.md`, `mutation.md` and `finalize.md` sit next to this file (fallback `${CLAUDE_PLUGIN_ROOT}/skills/self-review/references/<name>.md`); `delivery.md` belongs to the sibling `arch-review` skill (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/<name>.md`).
-
 | Reference | Covers |
 | --- | --- |
-| [`references/analysis.md`](references/analysis.md) | Stage 1: breadth-pass prompts per profile (incl. the premise pass's procedure), context file, finding format, severity rubric |
-| [`references/fix-profile.md`](references/fix-profile.md) | Fix only: launch order, premise decision rules, the premise-stop gate, five-agent cap, size check |
-| [`../arch-review/references/delivery.md`](../arch-review/references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
-| [`references/triage.md`](references/triage.md) | Stages 2–3: verification, classification, the gate |
-| [`references/mutation.md`](references/mutation.md) | Stage 4: mutant selection per profile, restore safety, survivors as findings |
-| [`references/finalize.md`](references/finalize.md) | Stage 5: FINDINGS.md template, verdict rubric |
+| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the context file, the fan-out, the premise gate, the roll call, triage |
+| [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering |
+| [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
+| [`references/mutation.md`](references/mutation.md) | Step 7: mutant selection, restore safety, survivors as findings |
+| [`references/finalize.md`](references/finalize.md) | Steps 6 and 8: the gate, the FINDINGS.md template, the verdict rubric |
 
-## Stage 0 — Setup & guards
+Read each one the **first time** a step needs it, never twice in a session. Relative paths
+resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<name>.md` or
+`${CLAUDE_PLUGIN_ROOT}/skills/self-review/references/<name>.md`.
 
-- Refuse to run on `main`, `master`, or a `maintenance/*` branch — stop with a one-line message.
-- **Tracked files must be clean**: `git status --porcelain --untracked-files=no` empty. If not, stop and ask the user to commit or stash first. Untracked files are fine — never touch them, never stage them. This is not tidiness: stage 4 restores mutants with `git checkout -- <path>`, which resets to the **index**; since this skill never stages, the index equals `HEAD` and the restore is exact. A dirty tree breaks that invariant.
-- **Context in one call**: run the shared context script — `${CLAUDE_PLUGIN_ROOT}/scripts/get-pr-context.sh --no-diff`, with the plugin root resolved to a literal path. It returns the branch's open PR (title/body feed the intent check), the branch state, and the `=== ANCHORS ===` section with the merge-base SHA and the changed-file list. Record `<BASE>` and `<HEAD>` as literal SHAs (shell variables do not persist between tool calls, and subagents never see them). **This skill reviews the local branch**, so `<HEAD>` = `git rev-parse HEAD`; take `<BASE>` from ANCHORS only when its `head` equals that SHA — when they differ (unpushed or rebased commits), or ANCHORS printed an error, recompute `<BASE>` = `git merge-base origin/<base_branch> HEAD`, or the review diff would include base-branch commits from before the rebase. Fetch `$0` (parent PR/issue) with `gh` when given.
-- Record `<HEAD0>` = `git rev-parse HEAD`. Stage 5 asserts `HEAD` still equals it and that the index is still empty — that is the proof nothing was committed or staged.
-- **Command map** — record once, used by stage 4. In `vaadin/web-components`: lint `yarn lint`; tests `yarn test --group <package>`; source glob `packages/*/src/*.js`; affected packages = unique `packages/<name>` prefixes of the changed files. In another repo, take lint/test commands from `CLAUDE.md` / `AGENTS.md` / `package.json` scripts and note the equivalent source glob and test-scoping unit.
-- **Report location**: `.omc/self-review/<slug>-FINDINGS.md` when `.omc/` is git-ignored (`git check-ignore -q .omc` — true in web-components); otherwise the session scratchpad, so the report never lands in the diff. `<slug>` is the branch name with `/` replaced by `-` — branch names are usually `type/topic`, and using them raw silently creates a directory per prefix. The shared context file sits next to it as `context.md`.
+## Steps
 
-### Change type
+1. **Plan.** Run the plan script — one call, the plugin root resolved to a literal path:
+   `${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode self` plus the flags the user passed
+   (`--fix|--feature|--refactor|--chore` → `--type`, `--scale`, `--deep N`, `--no-coverage`).
+   A `guard: refuse:` line ends the run — say the reason in one line and stop. Record `base`,
+   `head` and `head0` as literal SHAs. Fetch `$0` with `gh` when given. Per pipeline.md,
+   resolve `type: undetermined` yourself and hand any `type_conflict` to the scope pass.
+2. **Context file.** Write it at the plan's `context:` path, per pipeline.md.
+3. **Fan out.** Launch the plan's `passes` — `stage: pre` alone and first, the rest in one
+   message — per pipeline.md and delivery.md. With `--deep N`, run arch-review's steps 2–3
+   ([`../arch-review/SKILL.md`](../arch-review/SKILL.md)) when the batch returns, skipping
+   its scope confirmation: `--deep N` is the confirmation. **On a fix `--deep` is ignored** —
+   the plan's five-agent profile wins; say so in one line and point at
+   `/agent-skills:arch-review <file>:<lines>` on the fix's hunks instead.
+4. **Assert nothing changed.** `git status --porcelain --untracked-files=no` still empty. If a
+   pass edited anyway: revert those tracked files with `git checkout -- <path>`, delete files
+   it created **by path**, keep only its output as findings. Never `git clean`; never touch
+   pre-existing untracked files.
+5. **Roll call, then triage.** Both per pipeline.md — the roll call first, by pass name.
+6. **Gate.** Per finalize.md: the classified list in chat, then one `AskUserQuestion` — write
+   the report, and run the coverage check. Nothing is applied either way; the gate decides
+   what gets **produced**, not what gets **changed**.
+7. **Coverage check.** Per mutation.md, with the plan's `mutants` budget, unless the gate
+   skipped it or the budget is 0.
+8. **Report and verdict.** Per finalize.md: assert `HEAD` == the plan's `head0`, nothing
+   unstaged, nothing staged; write the report when the gate approved it; reply in chat with
+   the type, the scale tier, tier counts, the reminder that **nothing was changed**, and the
+   verdict: **ready for PR** / **needs more work**.
 
-Decide the type once, from the first signal that resolves — do not spend a subagent on this:
-
-1. `--fix` / `--feature` / `--refactor` / `--chore` flag.
-2. Conventional prefix of the PR title (`fix:`, `feat:`, `refactor:`, `perf:`, `test:`, `docs:`, `chore:`, `build:`, `deps:`).
-3. Majority prefix across `git log --format=%s <BASE>..HEAD`.
-4. Parent issue labels from `$0` (`bug` → fix, `enhancement` / `feature` → feature).
-5. Branch name prefix (`fix/`, `bugfix/`, `feat/`, `refactor/`).
-6. Diff shape: new export, public property, method, or `.d.ts` addition → feature; edits inside existing logic plus a test → fix; same behavior moved or renamed → refactor; only tests, docs, or build files → chore.
-
-Take the **first signal that resolves** and stop — that is the declared type, and it is what the profile runs on. `perf:` maps to refactor.
-
-Signals below it may still *disagree*; do not let that silently upgrade the type. Instead, when a lower signal is more demanding than the one that won (`feat` beats `fix` beats `refactor` beats `chore`), keep the declared type and hand the disagreement to the scope pass as an explicit question. A branch whose PR title says `refactor:` while two of its three commits say `fix:` is exactly that case. Keep the declared type rather than auto-upgrading: reviewing against the author's claim is what tests it, and the more demanding profile would examine a *different* risk instead of the mislabel itself.
-
-Report the type and the signal that decided it in the stage-5 summary, and treat a wrong-looking type as a `scope` finding — a fix that grows an API is a mislabeled feature, and a refactor that removes public API is a mislabeled breaking change.
-
-### Scale
-
-Scale decides how many agents ask the profile's questions; the type still decides which questions matter. Compute it once, from the same stage-0 anchors:
-
-- `git diff --numstat -M <BASE>..<HEAD>`, excluding lock files (`*.lock`, `package-lock.json`), generated/vendored dirs (`dist/`, `node_modules/`), images and snapshots (`*.png`, `__snapshots__/`). Lines = added + deleted over the remainder; files = remaining entries.
-- **trivial**: ≤ 10 lines and ≤ 2 files · **lite**: ≤ 100 lines and ≤ 6 files · **full**: everything else. When the measurement is ambiguous, round up a tier, never down.
-- **Risk overrides — bump to full regardless of size**: a new export, public property/method/event, or `.d.ts` change; a deleted or weakened assertion in an existing test; CI, release, or build-infra files touched; `--deep N` passed. Size is a proxy for risk, not risk itself.
-- `--scale trivial|lite|full` forces the tier and wins over the overrides.
-
-Record the tier, the counts, and any override reason (or the forcing flag) — they go in the context file and the report header.
-
-### Review profile
-
-The type picks the profile. Passes are named, never numbered — analysis.md's pass table maps each name to its agent, and every pass's contract lives in that agent's definition. The **slop** pass runs for every type — a fix included.
-
-| Type | Breadth passes | Agents | Mutant budget |
-| --- | --- | --- | --- |
-| **feature** | general · scope · intent · integration · tests · slop · cleanup · **requirements coverage** | 8 | 15 |
-| **fix** | **premise & history** first, then general · tests · slop · **root cause & blast radius** — **5 agents total, hard cap** | 5 | 5, concentrated on the fix |
-| **refactor** | general · scope · integration · tests · slop · cleanup · **behavior preservation** | 7 | 10 |
-| **chore** | general · integration · tests · slop | 4 | none — skip stage 4 |
-
-- `--no-coverage` zeroes the mutant budget and skips the gate's coverage question.
-- Say in the summary which profile ran.
-- **This is the full-scale review — C findings are the point, not noise.** The CI review bot on the PR is a final gate that deliberately drops low-value findings; this skill is where nits, taste, and cleanup surface, judged by the author at zero round-trip cost. The cleanup pass exists for the same reason: reuse/simplification/efficiency moved here when the bot dropped them.
-- Within a tier the agent counts are floors, not targets to trim — the sanctioned way to spend less on a small diff is the scale tier below, never an ad-hoc pass drop. Repo-wide work is exempt from economising at every tier: the root-cause/blast-radius pass scales with the repo, not the diff.
-
-#### Scale tiers
-
-The table above is the **full** tier, unchanged. Smaller diffs shrink by **folding** — a dropped pass's core question moves into the general pass (its definition carries the fold list; the prompt names which folds to carry), findings still under their own category — never by dropping the type's **defining pass** (bolded above), which no tier removes.
-
-| Type | trivial (≤10 lines) | lite (≤100 lines) |
-| --- | --- | --- |
-| **feature** | general (folds scope · intent · integration · tests · slop) + **requirements** — 2 | general (folds scope · intent · integration · reuse) · tests · slop · **requirements** — 4 |
-| **fix** | **premise** → general (folds scope · intent · integration · tests · slop) + **root cause** — 3 | = full — 5 |
-| **refactor** | general (folds integration · tests · slop) + **behavior** — 2 | general (folds scope · integration · reuse) · tests · slop · **behavior** — 4 |
-| **chore** | general (folds integration · tests · slop) — 1 | general (folds integration) · tests · slop — 3 |
-
-- Mutant budget: `min(type budget, scale cap)` — trivial 3, lite 8, full uncapped. The fix profile's whole-fix revert runs at every scale.
-- The cleanup pass runs only at full; at lite its highest-value question (reuse) folds into general, the rest are B/C nits with no surface on a small diff.
-- On trivial and lite, launch the slop and integration passes with `model: sonnet`; judgment passes always keep the session default. One line to revert if their finding quality drops.
-- Report the tier next to the profile in the stage-5 summary.
-
-### Deep review — arch-review's job, opt-in here
-
-This skill runs **no per-change deep review**: the lens trio, the significance inventory, and their contracts all live in the sibling `arch-review` skill. The general pass still covers correctness and API-contract keeping across the whole diff; for architectural shape, boundary promises, or blast radius of a specific change, the report points the user at `/agent-skills:arch-review <file:lines>`.
-
-`--deep N` opts back in: after stage 1's breadth barrier, run arch-review's inventory and lens trios exactly as [`../arch-review/SKILL.md`](../arch-review/SKILL.md) steps 2–3 describe (budget N, its batching cap, delivery per delivery.md), and merge the resulting findings into stage-2 triage. Skip arch-review's step-2 scope confirmation — `--deep N` *is* the confirmation. Do not restate any of arch-review's machinery here — its SKILL.md is the single source. **On a fix, `--deep` is ignored**: the five-agent cap wins; say so in one line and point at `/agent-skills:arch-review <file>:<lines>` on the fix's hunks instead.
-
-### Fix profile — premise first, five agents total
-
-The fix pipeline differs end to end — read [`references/fix-profile.md`](references/fix-profile.md) before stage 1 on a fix. In short:
-
-- **The premise & history pass runs before the rest of stage 1**, after the context file is written, and answers one question: does the project already have a decision about this behavior? `sound` / `unverified` → continue. **`contradicted` → stop the review**: report the citation and ask the user with `AskUserQuestion` — that question stands in for the stage-3 gate, and stages 1–4 never run.
-- **Five agents total, hard cap**: premise & history, then a single stage-1 message of **four** — general (carrying the folded scope, intent and integration questions), tests, root cause & blast radius, and slop. On the **trivial** scale tier: three total — premise, then general (additionally folding tests and slop) and root cause.
-- The premise pass runs alone and first, so its evidence is available to every later pass — append its citations to the context file's **Settled facts** before launching the rest, or the four that follow will each re-derive them.
-
-## Stage 1 — Analysis (read-only)
-
-Per analysis.md: write the shared context file, then launch the profile's breadth passes — **all in one message**, sharing one barrier. Every pass runs as a plugin agent (`agent-skills:*`); each agent's definition carries its contract, so prompts carry only the context file path, the pass table's run-specific facts, and the delivery clause.
-
-On a **fix** this is a single message of **four** agents — general, tests, root-cause and slop (**two** on the trivial tier: general and root-cause) — launched only after the premise check returned `sound` or `unverified` (on `contradicted` the run stopped; see fix-profile.md).
-
-Read delivery.md before launching and follow it exactly — synchronous launch where the harness supports it, no `name`, and the delivery clause in every prompt. Those are what decide whether the findings ever reach you; the defaults silently lose them. Follow its waiting rule too: pre-verify while a batch is in flight, never poll.
-
-With `--deep N`: when the breadth barrier returns, run arch-review's steps 2–3 (see **Deep review** above) before moving to stage 2.
-
-Afterwards assert `git status --porcelain --untracked-files=no` is still empty. If any pass edited anyway: revert those tracked files with `git checkout -- <path>` (safe — the tree was clean at stage 0), delete files it created **by path**, and keep only its output as findings. Never `git clean`; never touch pre-existing untracked files.
-
-Then run delivery.md's **roll call**: list every agent launched by pass name — never by number — with its finding count, recover the ones that reported nothing by escalating the mechanism per delivery.md's ladder, and record each pass as `agent`, `self-run`, or `missing`. A pass that reported nothing has *not* come back clean.
-
-## Stage 2 — Triage & classify (read-only)
-
-Per triage.md: verify every finding against the code, dedup across the passes, assign the final tier, note the suggested one-line fix.
-
-## Stage 3 — Gate
-
-Per triage.md: the classified list in chat, then a single `AskUserQuestion` — write the report, and run the coverage check. Nothing is applied either way; the gate decides what gets produced, not what gets changed.
-
-## Stage 4 — Coverage check (report-only)
-
-Per mutation.md, unless the gate skipped it or the profile has no budget: mutate changed source lines, expect the affected tests to fail, restore each mutant before the next. Survivors are coverage gaps and become findings — this skill never writes the missing test.
-
-## Stage 5 — Report & verdict
-
-Per finalize.md: assert `HEAD` == `<HEAD0>`, nothing unstaged, nothing staged; write the report when the gate approved it; and reply in chat with the profile, a short summary, tier counts, the reminder that **nothing was changed**, and the verdict: **ready for PR** / **needs more work**.
+The profile itself — which passes run, with which folds and budget — lives in
+[`../../references/profiles.md`](../../references/profiles.md) and reaches you through the
+plan. Do not re-derive it here. Why the pipeline is shaped this way:
+[`../../references/rationale.md`](../../references/rationale.md).
