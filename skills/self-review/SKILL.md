@@ -1,7 +1,7 @@
 ---
 name: self-review
-description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching profile of breadth review passes in one parallel batch, always including the comment/slop pass; a bug fix first has its premise checked against the history of the behavior it changes. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Per-change deep review (lenses) lives in arch-review — opt in here with --deep N. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
-argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--deep N] [--no-coverage]"
+description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching profile of breadth review passes in one parallel batch, sized by the diff's scale tier (trivial/lite/full), always including the comment/slop pass; a bug fix first has its premise checked against the history of the behavior it changes. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Per-change deep review (lenses) lives in arch-review — opt in here with --deep N. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
+argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--scale trivial|lite|full] [--deep N] [--no-coverage]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/get-pr-context.sh:*)
 ---
@@ -53,6 +53,17 @@ Signals below it may still *disagree*; do not let that silently upgrade the type
 
 Report the type and the signal that decided it in the stage-5 summary, and treat a wrong-looking type as a `scope` finding — a fix that grows an API is a mislabeled feature, and a refactor that removes public API is a mislabeled breaking change.
 
+### Scale
+
+Scale decides how many agents ask the profile's questions; the type still decides which questions matter. Compute it once, from the same stage-0 anchors:
+
+- `git diff --numstat -M <BASE>..<HEAD>`, excluding lock files (`*.lock`, `package-lock.json`), generated/vendored dirs (`dist/`, `node_modules/`), images and snapshots (`*.png`, `__snapshots__/`). Lines = added + deleted over the remainder; files = remaining entries.
+- **trivial**: ≤ 10 lines and ≤ 2 files · **lite**: ≤ 100 lines and ≤ 6 files · **full**: everything else. When the measurement is ambiguous, round up a tier, never down.
+- **Risk overrides — bump to full regardless of size**: a new export, public property/method/event, or `.d.ts` change; a deleted or weakened assertion in an existing test; CI, release, or build-infra files touched; `--deep N` passed. Size is a proxy for risk, not risk itself.
+- `--scale trivial|lite|full` forces the tier and wins over the overrides.
+
+Record the tier, the counts, and any override reason (or the forcing flag) — they go in the context file and the report header.
+
 ### Review profile
 
 The type picks the profile. Passes are named, never numbered — analysis.md's pass table maps each name to its agent, and every pass's contract lives in that agent's definition. The **slop** pass runs for every type — a fix included.
@@ -67,7 +78,23 @@ The type picks the profile. Passes are named, never numbered — analysis.md's p
 - `--no-coverage` zeroes the mutant budget and skips the gate's coverage question.
 - Say in the summary which profile ran.
 - **This is the full-scale review — C findings are the point, not noise.** The CI review bot on the PR is a final gate that deliberately drops low-value findings; this skill is where nits, taste, and cleanup surface, judged by the author at zero round-trip cost. The cleanup pass exists for the same reason: reuse/simplification/efficiency moved here when the bot dropped them.
-- The agent counts are floors for coverage, not targets to trim: on a small diff the saving comes from passes not re-deriving each other's work (analysis.md's **Settled facts** and **Open leads** rules), not from dropping a pass. The one exception is repo-wide work — the root-cause/blast-radius pass scales with the repo, not the diff, and is never the place to economise.
+- Within a tier the agent counts are floors, not targets to trim — the sanctioned way to spend less on a small diff is the scale tier below, never an ad-hoc pass drop. Repo-wide work is exempt from economising at every tier: the root-cause/blast-radius pass scales with the repo, not the diff.
+
+#### Scale tiers
+
+The table above is the **full** tier, unchanged. Smaller diffs shrink by **folding** — a dropped pass's core question moves into the general pass (its definition carries the fold list; the prompt names which folds to carry), findings still under their own category — never by dropping the type's **defining pass** (bolded above), which no tier removes.
+
+| Type | trivial (≤10 lines) | lite (≤100 lines) |
+| --- | --- | --- |
+| **feature** | general (folds scope · intent · integration · tests · slop) + **requirements** — 2 | general (folds scope · intent · integration · reuse) · tests · slop · **requirements** — 4 |
+| **fix** | **premise** → general (folds scope · intent · integration · tests · slop) + **root cause** — 3 | = full — 5 |
+| **refactor** | general (folds integration · tests · slop) + **behavior** — 2 | general (folds scope · integration · reuse) · tests · slop · **behavior** — 4 |
+| **chore** | general (folds integration · tests · slop) — 1 | general (folds integration) · tests · slop — 3 |
+
+- Mutant budget: `min(type budget, scale cap)` — trivial 3, lite 8, full uncapped. The fix profile's whole-fix revert runs at every scale.
+- The cleanup pass runs only at full; at lite its highest-value question (reuse) folds into general, the rest are B/C nits with no surface on a small diff.
+- On trivial and lite, launch the slop and integration passes with `model: sonnet`; judgment passes always keep the session default. One line to revert if their finding quality drops.
+- Report the tier next to the profile in the stage-5 summary.
 
 ### Deep review — arch-review's job, opt-in here
 
@@ -80,14 +107,14 @@ This skill runs **no per-change deep review**: the lens trio, the significance i
 The fix pipeline differs end to end — read [`references/fix-profile.md`](references/fix-profile.md) before stage 1 on a fix. In short:
 
 - **The premise & history pass runs before the rest of stage 1**, after the context file is written, and answers one question: does the project already have a decision about this behavior? `sound` / `unverified` → continue. **`contradicted` → stop the review**: report the citation and ask the user with `AskUserQuestion` — that question stands in for the stage-3 gate, and stages 1–4 never run.
-- **Five agents total, hard cap**: premise & history, then a single stage-1 message of **four** — general (carrying the folded scope, intent and integration questions), tests, root cause & blast radius, and slop.
+- **Five agents total, hard cap**: premise & history, then a single stage-1 message of **four** — general (carrying the folded scope, intent and integration questions), tests, root cause & blast radius, and slop. On the **trivial** scale tier: three total — premise, then general (additionally folding tests and slop) and root cause.
 - The premise pass runs alone and first, so its evidence is available to every later pass — append its citations to the context file's **Settled facts** before launching the rest, or the four that follow will each re-derive them.
 
 ## Stage 1 — Analysis (read-only)
 
 Per analysis.md: write the shared context file, then launch the profile's breadth passes — **all in one message**, sharing one barrier. Every pass runs as a plugin agent (`agent-skills:*`); each agent's definition carries its contract, so prompts carry only the context file path, the pass table's run-specific facts, and the delivery clause.
 
-On a **fix** this is a single message of **four** agents — general, tests, root-cause and slop — launched only after the premise check returned `sound` or `unverified` (on `contradicted` the run stopped; see fix-profile.md).
+On a **fix** this is a single message of **four** agents — general, tests, root-cause and slop (**two** on the trivial tier: general and root-cause) — launched only after the premise check returned `sound` or `unverified` (on `contradicted` the run stopped; see fix-profile.md).
 
 Read delivery.md before launching and follow it exactly — `run_in_background: false`, no `name`, and the delivery clause in every prompt. Those three are what decide whether the findings ever reach you; the defaults silently lose them.
 

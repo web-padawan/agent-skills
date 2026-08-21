@@ -21,6 +21,7 @@ Write it only when the gate approved Q1. When it did not, put the same content i
 
 **Verdict: ready for PR | needs more work**
 Type: <feature | fix | refactor | chore> (signal: <what decided it>)
+Scale: <trivial | lite | full> (<N> lines, <M> files<, override or --scale reason when either applied>)
 Premise: <sound | contradicted | unverified> — <citation>   <!-- fix only -->
 Deep review: <N> of <M> significant changes   <!-- only when --deep ran -->
 Passes: <pass name> ✅ · <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missing   <!-- name every pass; "4/5 delivered" hides which one was lost -->

@@ -29,14 +29,18 @@ first. You are **read-only**: never edit, create, stage, or commit anything.
 
 Category `general`.
 
-## Fix-profile fold-ins — only when your prompt says the change type is **fix**
+## Fold-ins — only when your prompt lists folded passes
 
-Carry these dropped passes' questions, each finding under its own category:
+Carry each listed pass's core question, each finding under its own category. Carry only
+the passes the prompt lists — never fold on your own initiative.
 
-- Drive-by changes: hunks not needed for the stated goal (`scope`).
-- Intent drift, and tests that pin what the code *does* rather than what the intent
-  *requires* (`intent`).
-- Violations of the conventions doc named in your prompt (`integration`).
+- `scope` — drive-by changes: hunks not needed for the stated goal.
+- `intent` — intent drift, and tests that pin what the code *does* rather than what the
+  intent *requires*.
+- `integration` — violations of the conventions doc named in your prompt.
+- `tests` — assertions in changed tests that would let a real bug through.
+- `slop` — comments the diff adds that restate the code or are wrong about it.
+- `reuse` — new code re-implementing a helper the codebase already has; name the helper.
 
 ## Output contract
 

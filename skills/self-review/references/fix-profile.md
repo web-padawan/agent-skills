@@ -41,9 +41,8 @@ A fix gets five agents in total:
 - **premise & history** (first, alone) · **general** · **tests** · **root cause & blast
   radius** · **slop**.
 - The scope, intent and integration passes fold into general
-  (`agent-skills:general-reviewer`) — its definition carries the folded drive-by,
-  intent-drift and conventions questions; the prompt must say the type is **fix** and name
-  the repo's conventions doc.
+  (`agent-skills:general-reviewer`) — its definition carries each fold's question; the
+  prompt must list those three folds and name the repo's conventions doc.
 - No deep review, and **`--deep` is ignored on a fix** — the five-agent cap wins; say so in
   one line when the flag was passed. Measured on a real fix branch, the old full profile ran
   16 agents and reported the same two A findings from two and three lenses each, in a
@@ -53,6 +52,17 @@ A fix gets five agents in total:
   fix's hunks in the report instead of spending agents here.
 
 If the fix looks too big for five agents, that is the finding — see the size check below.
+
+## Scale tiers
+
+- **lite = full** for a fix: five agents is already the lean pipeline.
+- **trivial** (per SKILL.md's scale rules): **three agents total** — premise first and
+  alone as always, then one message of **two**: general (prompt lists the scope · intent ·
+  integration · tests · slop folds) and root cause & blast radius. The premise pass is at
+  its most valuable on a tiny fix — a flipped guard is exactly where a recorded decision
+  hides.
+- The whole-fix revert in stage 4 runs at every scale — it is the regression-test proof
+  and costs one test run. The mutant budget caps at 3 on trivial (5 otherwise).
 
 ## Size check — same stage as the premise check
 

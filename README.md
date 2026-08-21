@@ -37,6 +37,7 @@ claude plugin list
 /agent-skills:self-review <parent-PR-or-issue>  # branch extracted from bigger work
 /agent-skills:self-review --feature --deep 2    # force type, opt into arch-review deep review (top 2 changes)
 /agent-skills:self-review --fix --no-coverage   # type + skip the mutation coverage check
+/agent-skills:self-review --scale full          # force full depth on a small diff
 
 /agent-skills:arch-review packages/overlay/src/vaadin-overlay-mixin.js:120-180
 /agent-skills:arch-review --diff main..feature  # inventory + trio per significant change
@@ -77,7 +78,11 @@ The change type comes from, in order: an explicit `--fix` / `--feature` / `--ref
 | **refactor** | cleanup + behavior preservation | 7 | 10 |
 | **chore** | — | 4 | none |
 
-Every profile includes the comment/slop pass. Feature and refactor also run a cleanup pass (reuse / simplification / efficiency) — `self-review` is the full-scale review that surfaces even C-tier nits, because the CI review bot on the PR is a final gate that deliberately drops low-value findings. `pr-review` reuses the type detection and the profile's breadth pass (not the mutant budget or the cleanup pass) when reviewing a PR; on a fix PR a contradicted premise leads the findings instead of stopping the run. **Deep review** — the per-change lens analysis — is `arch-review`'s job: by default `self-review` reports breadth findings only and points at `/agent-skills:arch-review` for architectural questions; `--deep N` runs arch-review's inventory and lens trios on the branch's top N significant changes and merges their findings into the report.
+Every profile includes the comment/slop pass. Feature and refactor also run a cleanup pass (reuse / simplification / efficiency) — `self-review` is the full-scale review that surfaces even C-tier nits, because the CI review bot on the PR is a final gate that deliberately drops low-value findings. `pr-review` reuses the type detection and the profile's breadth pass (not the mutant budget or the cleanup pass) when reviewing a PR; on a fix PR a contradicted premise leads the findings instead of stopping the run.
+
+On top of the type, the diff's **scale** tiers the depth: **trivial** (≤10 lines) runs 1–3 agents with the dropped passes' questions folded into the general pass, **lite** (≤100 lines) runs 3–4 (a fix always keeps its 5), **full** (>100 lines) is the table above. Public-API changes, weakened test assertions, and CI/release files force full regardless of size; `--scale trivial|lite|full` forces a tier by hand. Mutant budgets cap at 3 / 8 / type budget, and the fix profile's whole-fix revert runs at every scale.
+
+**Deep review** — the per-change lens analysis — is `arch-review`'s job: by default `self-review` reports breadth findings only and points at `/agent-skills:arch-review` for architectural questions; `--deep N` runs arch-review's inventory and lens trios on the branch's top N significant changes and merges their findings into the report.
 
 `self-review` never changes anything. Every stage is read-only, the one exception being the coverage check, which comments out a source line at a time and restores it before the next. A single gate asks whether to write the report and whether to run that check — never what to apply, because nothing is ever applied. `HEAD`, the index and the working tree end exactly as they started.
 
