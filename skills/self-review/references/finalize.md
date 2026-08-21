@@ -1,30 +1,71 @@
-# Stage 5 — Report & verdict
+# Gate, report, verdict
 
-## End-state checks
+## The gate (step 6)
 
-Three assertions, together proving the working tree, the index and `HEAD` are all exactly as found:
+First in chat, compact and scannable — the full detail belongs in the report:
 
-- `git rev-parse HEAD` == `<HEAD0>` from stage 0 — nothing was committed.
+```
+Type: refactor — signal: branch name prefix · Scale: lite (78 lines, 4 files)
+Premise: sound — #9239 review kept the filter guard   (fix only)
+
+A (must fix before merge) — 2
+  packages/foo/src/foo.js:42 — <claim> → <suggested fix>
+B (follow-up is fine) — 3
+C (taste) — 5
+```
+
+**Say this before asking, whenever there is at least one A:** this skill applies nothing, so
+an A finding cannot be cleared inside a run — the verdict will be *needs more work* whatever
+is chosen here.
+
+Then a single `AskUserQuestion` with two questions:
+
+**Q1 — header `Report`**: "Write the findings report?"
+- `Yes — write FINDINGS.md` *(Recommended)* — name the plan's `report:` path in the description
+- `No — chat summary only`
+
+On the **trivial** tier with zero A findings, swap the recommendation to `No — chat summary
+only`: a report file for a nit-only review of a 10-line diff is ceremony.
+
+**Q2 — header `Coverage`**: "Run the coverage check? It temporarily mutates source lines and
+restores each one."
+- `Yes — run it` *(Recommended)* · `Skip it`
+
+Rules:
+
+- A custom answer ("Other") wins over the presets — do exactly what it names.
+- Nothing is dropped either way: `No — chat summary only` relocates the findings, it does not
+  delete them.
+- Nothing to report (no findings, or only `accepted` ones) → ask Q2 alone. Mutant budget 0
+  (chore, or `--no-coverage`) → ask Q1 alone.
+- On a **fix**, say that skipping coverage also skips the whole-fix revert — the one check a
+  bug fix most needs, since it is what proves a regression test exists.
+
+## End-state checks (step 8)
+
+Three assertions, together proving the working tree, the index and `HEAD` are exactly as found:
+
+- `git rev-parse HEAD` == the plan's `head0` — nothing was committed.
 - `git diff --name-only` empty — nothing unstaged, no mutant residue.
 - `git diff --staged --name-only` empty — nothing was staged.
 
-If any of the three differs, say so loudly at the top of the chat reply before anything else.
+If any differs, say so loudly at the top of the chat reply before anything else. Pre-existing
+untracked files are untouched and unstaged.
 
-Pre-existing untracked files are untouched and unstaged. Never commit, amend, push, `git add`, `stash`, `reset --hard`, or `git clean`.
+## Report — at the plan's `report:` path
 
-## Report — stage-0 report location (`.omc/self-review/<slug>-FINDINGS.md` in web-components; `<slug>` per stage 0, `/` → `-`)
-
-Write it only when the gate approved Q1. When it did not, put the same content in the chat reply instead, compressed — the findings are never lost, only relocated.
+Write it only when the gate approved Q1. Otherwise the same content goes in the chat reply,
+compressed — the findings are never lost, only relocated.
 
 ````markdown
 # Self-review: <branch> — <date>
 
 **Verdict: ready for PR | needs more work**
 Type: <feature | fix | refactor | chore> (signal: <what decided it>)
-Scale: <trivial | lite | full> (<N> lines, <M> files<, override or --scale reason when either applied>)
+Scale: <trivial | lite | full> (<N> lines, <M> files<, override or --scale reason>)
 Premise: <sound | contradicted | unverified> — <citation>   <!-- fix only -->
 Deep review: <N> of <M> significant changes   <!-- only when --deep ran -->
-Passes: <pass name> ✅ · <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missing   <!-- name every pass; "4/5 delivered" hides which one was lost -->
+Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missing   <!-- name every pass -->
 
 **Nothing was changed** — this report is the only output.
 
@@ -55,33 +96,51 @@ Fix the A findings, then re-run. Coverage gaps: `/agent-skills:mutation-coverage
 For architectural/boundary/impact analysis of a specific change, run `/agent-skills:arch-review <file>:<lines>`.
 ````
 
-- Every finding from every stage appears under its category, tagged `[tier]` and `[status]`. Statuses are exactly two: `confirmed` (real, and still open — this skill fixed nothing) and `accepted` (no action needed — false positive or deliberate choice).
-- **Only when `--deep` ran**: add a `## Deep review` section after the summary paragraph, per arch-review's report rules — the three narrative blocks per change **verbatim**, in inventory rank order, with the `[3-lens]` / `[2-lens]` markers from triage; their rolled-up finding lines also appear under `architecture`, `boundary` / `api` and `impact` category headings. Follow it with `## Not deep-reviewed`, listing every significant change that ranked below the `--deep` budget line. Without `--deep`, neither section appears — the Next-steps handoff line is the deep-review pointer.
-- Add the profile's own sections after the shared ones: **feature** → `## Requirements coverage`; **fix** → `## Premise & history` first, then `## Root cause & blast radius`; **refactor** → `## Behavior preservation`.
-- A **fix** stopped by a contradicted premise gets the short report: the premise line, the `## Premise & history` section with the citation and what the project decided, the size check, and nothing else. The premise-stop `AskUserQuestion` stands in for the stage-3 gate here (see `fix-profile.md`) — write the file only when it approved a report, otherwise the same content goes in the chat reply. Say plainly that stages 1–4 did not run and why — a report that looks thin for that reason is correct, and padding it with findings about code the answer may delete is the failure this stage exists to avoid.
-- Omit sections whose agent the profile did not run. Empty category → `- none`.
-- Distinguish "not run" from "ran and lost". Tag findings from a `self-run` pass `[self-run]` after the status, and head that category with `> pass self-run — no independent agent review`. A `missing` category reads `- none delivered — pass not covered`, never `- none`.
-- Coverage stats line under **Tests**: `N mutants, K killed, S survived, skipped: <hunks or none>`. On a **fix**, prefix it with the whole-fix revert result: `regression test: <name> fails without the fix | none fails without the fix`.
-- **Follow-ups** repeats every `confirmed` B and C finding as a paste-ready list for the follow-up issue or PR. A findings are not follow-ups — they are in the way of the merge and belong in `## Next steps`.
-- The report itself is never committed — it lives in the git-ignored stage-0 location.
+- Every finding appears under its category, tagged `[tier]` and `[status]`. Statuses are
+  exactly two: `confirmed` (real, still open — this skill fixed nothing) and `accepted` (no
+  action needed — false positive or deliberate choice).
+- Add the profile's own sections after the shared ones: **feature** → `## Requirements
+  coverage`; **fix** → `## Premise & history` first, then `## Root cause & blast radius`;
+  **refactor** → `## Behavior preservation`. Omit sections whose pass did not run; an empty
+  category reads `- none`.
+- **Only when `--deep` ran**: a `## Deep review` section and a `## Not deep-reviewed` list,
+  both exactly as [`../../arch-review/SKILL.md`](../../arch-review/SKILL.md) step 4 defines
+  them — its rules are the single source, do not restate them. Without `--deep`, the Next
+  steps line is the deep-review pointer.
+- Distinguish "not run" from "ran and lost". Tag `self-run` findings `[self-run]` after the
+  status and head that category with `> pass self-run — no independent agent review`. A
+  `missing` category reads `- none delivered — pass not covered`, never `- none`.
+- Coverage stats line under **Tests**: `N mutants, K killed, S survived, skipped: <hunks or
+  none>`. On a **fix**, prefix it with the whole-fix revert result: `regression test: <name>
+  fails without the fix | none fails without the fix`.
+- **Follow-ups** repeats every `confirmed` B and C finding as a paste-ready list for the
+  follow-up issue. A findings are not follow-ups — they are in the way of the merge and
+  belong in `## Next steps`.
+- A **fix** stopped by a contradicted premise gets the short report: the premise line, the
+  `## Premise & history` section with the citation and what the project decided, the size
+  check, and nothing else. Say plainly that the later steps did not run and why — a report
+  that looks thin for that reason is correct.
+- The report is never committed — it lives in the git-ignored path the plan named.
 
 ## Verdict rubric
 
 **needs more work** when any of:
 
-- any **confirmed A** finding exists — this skill changes nothing, so an A is unresolved by definition
-- **fix**: `premise: contradicted` — the project already decided this behavior differently, so the diff is answering the wrong question; the run stopped before stages 1–4
-- **fix**: no test fails when the whole fix is reverted
+- any **confirmed A** finding exists — this skill changes nothing, so an A is unresolved by
+  definition
+- **fix**: `premise: contradicted`, or no test fails when the whole fix is reverted
 - **feature**: a stated requirement is unimplemented
 - **refactor**: an observable behavior change is unexplained
-- a **profile-specific pass** — the bolded one in the stage-0 profile table — is `missing`: the type's defining risk went unexamined, so there is no basis for a verdict
+- the type's **defining pass** (requirements on a feature, premise or root-cause on a fix,
+  behavior preservation on a refactor) is `missing`: the type's defining risk went
+  unexamined, so there is no basis for a verdict
 
-Otherwise **ready for PR**. Confirmed B and C findings never block; they live under Follow-ups.
-
-The verdict describes `HEAD` as it stands. Nothing was changed to reach it.
+Otherwise **ready for PR**. Confirmed B and C findings never block; they live under
+Follow-ups. The verdict describes `HEAD` as it stands — nothing was changed to reach it.
 
 ## Chat reply
 
-Verdict + detected type and profile + tier counts + 3–5 essential bullets + "nothing was changed" + report path. Name every confirmed A finding explicitly — those are what the verdict rests on. Do not restate the full report.
-
-State the pass tally whenever any pass was `self-run` or `missing`. Reduced coverage changes what the verdict is worth, and leaving it out makes the review look stronger than it was.
+Verdict + type and scale + tier counts + 3–5 essential bullets + "nothing was changed" +
+report path. Name every confirmed A finding explicitly — those are what the verdict rests on.
+State the pass tally whenever any pass was `self-run` or `missing`: reduced coverage changes
+what the verdict is worth, and leaving it out makes the review look stronger than it was.
