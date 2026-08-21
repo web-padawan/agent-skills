@@ -116,7 +116,7 @@ Per analysis.md: write the shared context file, then launch the profile's breadt
 
 On a **fix** this is a single message of **four** agents — general, tests, root-cause and slop (**two** on the trivial tier: general and root-cause) — launched only after the premise check returned `sound` or `unverified` (on `contradicted` the run stopped; see fix-profile.md).
 
-Read delivery.md before launching and follow it exactly — `run_in_background: false`, no `name`, and the delivery clause in every prompt. Those three are what decide whether the findings ever reach you; the defaults silently lose them.
+Read delivery.md before launching and follow it exactly — synchronous launch where the harness supports it, no `name`, and the delivery clause in every prompt. Those are what decide whether the findings ever reach you; the defaults silently lose them. Follow its waiting rule too: pre-verify while a batch is in flight, never poll.
 
 With `--deep N`: when the breadth barrier returns, run arch-review's steps 2–3 (see **Deep review** above) before moving to stage 2.
 

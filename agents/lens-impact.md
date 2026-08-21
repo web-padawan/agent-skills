@@ -23,6 +23,8 @@ Mitigation path: <what would reduce the risk before merge>
 Unblock conditions: <what must be true for this to be safe to merge — a test that exists, a consumer confirmed unaffected, a flag added>
 ```
 
+- Keep the whole block under **250 words** — the propagation paths and `Unblock
+  conditions` earn the extra room, nothing else does. Detail belongs in the finding lines.
 - `Propagation paths` names files. A path stated abstractly ("this could affect overlays")
   is not a path; find the call chain or say no path was found.
 - `Unblock conditions` are checkable statements, not intentions. "A test asserts the

@@ -67,7 +67,7 @@ The cleanup pass and mutation coverage stay in self-review — they need the aut
 
 **`--deep N`**: after the breadth agents return, run arch-review's inventory and lens trios on the PR's top N significant changes exactly as [`../arch-review/SKILL.md`](../arch-review/SKILL.md) steps 2–3 describe (skip its scope confirmation — the flag is the confirmation), and merge the lens findings into step-3 triage under their own categories (`architecture`, `boundary`, `impact`, `api`).
 
-Delivery per [`../arch-review/references/delivery.md`](../arch-review/references/delivery.md) (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/delivery.md`): `run_in_background: false`, no `name`, the delivery clause verbatim in every prompt. Afterwards run its roll call and escalate lost reports per its ladder — a pass that reported nothing has not come back clean.
+Delivery per [`../arch-review/references/delivery.md`](../arch-review/references/delivery.md) (fallback `${CLAUDE_PLUGIN_ROOT}/skills/arch-review/references/delivery.md`): synchronous launch where the harness supports it, no `name`, the delivery clause verbatim in every prompt. Afterwards run its roll call and escalate lost reports per its ladder — a pass that reported nothing has not come back clean.
 
 ### 3. Triage
 

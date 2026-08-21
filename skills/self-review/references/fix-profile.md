@@ -10,7 +10,7 @@ decision rules, the launch order, and the cap.
 1. Stage 0 as usual, then write the shared context file (analysis.md's **Shared context
    file** section) *before* the premise check, so that pass reads it like every other agent.
 2. **Premise & history** (`agent-skills:premise-reviewer`), launched alone, with
-   the delivery clause and `run_in_background: false` from arch-review's `delivery.md`
+   the delivery clause and the launch rules from arch-review's `delivery.md`
    like every other agent.
 3. On `sound` or `unverified`: append its citations to the context file's **Settled facts**,
    then launch the rest of stage 1 as **one message of four agents**: the general, tests,
