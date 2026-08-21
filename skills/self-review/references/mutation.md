@@ -23,6 +23,8 @@ Prioritize by logic density: conditionals and early returns > event listener add
 
 ### Budget and targeting per profile
 
+The scale tier caps every budget below: effective budget = `min(profile budget, cap)` — cap 3 on **trivial**, 8 on **lite**, uncapped on **full**. The fix profile's whole-fix revert runs at every scale.
+
 - **fix — 5 mutants, and the whole-fix revert first.** Before any single-line mutant, revert the entire fix as one unit (`git stash` is forbidden — comment out the changed hunks, or `git checkout <BASE> -- <source file>` when the file's only change is the fix) and run the affected tests. **A new test must fail.** If every test still passes, the branch has no regression test for the bug it claims to fix — that is an A finding, the most important output of this stage. Restore, then spend the 5 mutants inside the fix's own hunks only; unrelated lines are not this branch's job.
 - **feature — 15 mutants**, weighted to the feature's new behavior: the new public path first (the property setter, the event dispatch, the guard that makes the feature conditional), then its interaction with existing state (`disabled`, `readonly`, RTL), then everything else.
 - **refactor — 10 mutants** on the refactored logic. A refactor with unchanged tests should kill everything; a survivor here usually means the old code path was never tested and the refactor is unverified. Tier survivors B unless the line is on the component's main path.

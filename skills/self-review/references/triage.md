@@ -54,6 +54,8 @@ Then a single `AskUserQuestion` with two questions:
 - `Yes — write FINDINGS.md` *(Recommended)* — name the stage-0 path in the option description
 - `No — chat summary only`
 
+On the **trivial** scale tier with zero A findings, swap the recommendation to `No — chat summary only` — a report file for a nit-only review of a 10-line diff is ceremony.
+
 **Q2 — header `Coverage`**: "Run the coverage check? It temporarily mutates source lines and restores each one."
 - `Yes — run it` *(Recommended)*
 - `Skip it`

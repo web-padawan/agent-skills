@@ -12,7 +12,7 @@ The launch rules, the delivery clause, the roll call, and the escalation ladder 
 
 ## Shared context file
 
-Write it once before launching stage 1 (on a **fix**, before the premise check), next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` and `<HEAD>` SHAs from stage 0 (with the note that the diff under review is `git diff <BASE>..<HEAD>`), `git diff --stat <BASE>..<HEAD>`, the changed file list, the detected change type and the signal that decided it, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, the severity rubric below, and the three sections that follow.
+Write it once before launching stage 1 (on a **fix**, before the premise check), next to the report as `<report-dir>/context.md`, and give every agent its path instead of repeating the content per prompt. It holds: branch name, the literal `<BASE>` and `<HEAD>` SHAs from stage 0 (with the note that the diff under review is `git diff <BASE>..<HEAD>`), `git diff --stat <BASE>..<HEAD>`, the changed file list, the detected change type and the signal that decided it, the scale tier with its line/file counts and any override reason, PR title/body when a PR exists, a summary of `$0` when given, the one-line intent, the severity rubric below, and the three sections that follow.
 
 Each agent prompt is then: `read <report-dir>/context.md first`, the run-specific facts from the pass table below, and the delivery clause — questions, categories, and output contracts live in the agent definitions.
 
@@ -71,11 +71,11 @@ Two rules ride with the rubric into the context file, verbatim:
 
 ## The breadth passes
 
-Passes are identified by name — the same names the profile table in SKILL.md uses, and the same ones the roll call and the report print. Each agent's definition holds its full contract; the **prompt adds** column is what the invoker must supply beyond the context file path and delivery clause.
+Passes are identified by name — the same names the profile table in SKILL.md uses, and the same ones the roll call and the report print. Each agent's definition holds its full contract; the **prompt adds** column is what the invoker must supply beyond the context file path and delivery clause. On the trivial and lite scale tiers, launch **slop** and **integration** with `model: sonnet`; every other pass keeps the session default.
 
 | Pass | Agent | Profiles | Prompt adds |
 | --- | --- | --- | --- |
-| **general** | `agent-skills:general-reviewer` | all | On a **fix**: say the type is fix and name the repo's conventions doc — the definition then carries the folded scope/intent/integration questions, each finding under its own category |
+| **general** | `agent-skills:general-reviewer` | all | The tier's folded-pass list from SKILL.md's scale table (on a **fix**, always at least scope · intent · integration — name the repo's conventions doc); the definition carries each fold's question, each finding under its own category |
 | **scope** | `agent-skills:scope-reviewer` | feature, refactor | any type-signal disagreement recorded in stage 0 |
 | **intent** | `agent-skills:intent-reviewer` | feature | — (reads the intent from the context file) |
 | **integration** | `agent-skills:integration-reviewer` | feature, refactor, chore | — |
