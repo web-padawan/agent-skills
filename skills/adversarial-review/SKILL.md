@@ -38,7 +38,7 @@ Run through these explicitly. Say nothing rather than inventing a finding to fil
 
 - **Correctness** — off-by-one, null/empty cases, races, wrong defaults.
 - **Security** — input validation, auth/authz, injection, secrets, sensitive data in responses.
-- **Performance** — N+1, unbounded loops, missing indexes, blocking I/O on hot paths.
+- **Performance** — unnecessary allocations, unbounded loops, repeated layout or measurement work on hot paths.
 - **API design** — backwards compatibility, naming consistency, error shapes, public surface.
 - **Error handling** — swallowed exceptions, leaky messages, non-idempotent retries.
 - **Testing** — coverage, edge cases, tautological tests, flaky patterns.

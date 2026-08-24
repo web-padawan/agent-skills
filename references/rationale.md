@@ -60,7 +60,7 @@ worth debating; overlapping *reads* were the measurable cost, and the lanes are 
 them.
 
 **Restating a shared fact is cheaper than N agents finding it.** Naming the conventions doc
-still left the conformance pass reading all of it, most of which governs untouched code. The
+still left the conventions pass (now fit's conventions category) reading all of it, most of which governs untouched code. The
 orchestrator now quotes the governing chapters into the context file, the way Settled facts
 already worked.
 
