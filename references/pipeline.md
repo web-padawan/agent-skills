@@ -69,8 +69,8 @@ run creates.
 
 ### The context file
 
-Write it once, at the path the plan names, after the patches and before launching anything
-(on a fix, before the premise pass too). Every agent prompt then carries its **path** instead of a retyped
+Write it once, at the path the plan names, after the patches and before launching anything.
+Every agent prompt then carries its **path** instead of a retyped
 paragraph: prompts drift apart when the context is inline, and a correction reaches only
 the agents launched after you found it.
 
@@ -105,8 +105,8 @@ the excerpt with this instruction, verbatim:
 > unless a finding of yours needs a rule that is not quoted here; say so in the finding if
 > you had to.
 
-**Settled facts** — what you verified in the plan step, plus the premise pass's citations on
-a fix. One line per claim with its evidence (`file:line`, a SHA, an issue number, or the
+**Settled facts** — what you verified in the plan step. One line per claim with its
+evidence (`file:line`, a SHA, an issue number, or the
 command that produced it). Head the section with this instruction, verbatim:
 
 > Each entry is authoritative. Do not open the file it came from. If a finding of yours
@@ -118,7 +118,7 @@ one owner pass:
 
 ```
 - [owner: tests] The append branch is never exercised with an already-added component.
-- [owner: root cause] `removeAll()` may still bypass the guard the fix restored.
+- [owner: fix] `removeAll()` may still bypass the guard the fix restored.
 ```
 
 Other passes do not investigate a lead they do not own; triage inherits the owner's verdict.
@@ -133,8 +133,8 @@ Other passes do not investigate a lead they do not own; triage inherits the owne
 
 ## 3 — Fan out
 
-Launch the plan's `passes` list. `stage: pre` runs **alone and first**; everything marked
-`stage: batch` goes out in **one message**, sharing one barrier. Each prompt is exactly:
+Launch the plan's `passes` list in **one message**, sharing one barrier (a `stage: pre`
+pass, when a profile defines one, runs alone and first — none currently does). Each prompt is exactly:
 the context file path, the pass's `reads` lane resolved to the patch path(s) it names, the
 pass's `folds` and `prompt adds` from the plan, and [`delivery.md`](delivery.md)'s delivery
 clause verbatim. Questions, categories, output
@@ -178,32 +178,20 @@ Findings come back one per line:
 ```
 
 Categories: `general`, `scope`, `intent`, `requirements`, `premise`, `root-cause`,
-`behavior`, `integration`, `tests`, `slop`, `cleanup` — plus `architecture`, `boundary`,
-`impact` and `api` when arch-review's lenses ran. **A category is not a pass**: `fit`
-reports `intent`, `scope`, `integration` and `cleanup`. The roll
+`behavior`, `integration`, `tests`, `slop`, `cleanup`, `maintainability` — plus
+`architecture`, `boundary`, `impact` and `api` when arch-review's lenses ran. **A category
+is not a pass**: `fit` reports `intent`, `scope`, `integration`, `cleanup` and
+`maintainability`; `fix` reports `premise` and `root-cause`. The roll
 call goes by pass, the report by category.
 
-### The premise gate — fix only
+### The premise verdict — fix only
 
-The premise pass answers one question: **does the project already have a decision about
-this behavior?** A bug fix can be right in every detail and still be the wrong fix.
-
-- **No decision found** → `premise: unverified`, continue.
-- **Decision agrees with the fix** → `premise: sound` with the citation, continue. Append
-  its citations to the context file's **Settled facts** before launching the batch, or every
-  later pass re-derives them. Append its **suite search** too — the existing tests it found
-  that touch this behavior, by name and path — whatever the verdict: that is the search the
-  root-cause pass would otherwise repeat to answer "is there a regression test".
-- **Decision contradicts the fix** → **stop.** Do not launch the batch, do not triage:
-  the findings would describe code the user's answer may delete. Report the citation and ask
-  the user with a single `AskUserQuestion` — that question stands in for the skill's own
-  gate. `pr-review` is the exception: a contradicted premise there is the top A finding, not
-  a stop.
-
-Also record the fix's production diff (`git diff --numstat <base>..<head> -- <source
-globs>`). A fix that adds new public API, a new cross-process message, or a new state
-machine is a mislabeled feature — raise it as a `scope` finding (B, a judgement call for
-the user) and weigh the premise question harder.
+The fix pass opens its report with a premise verdict: **does the project already have a
+decision about this behavior?** A bug fix can be right in every detail and still be the
+wrong fix. `premise: sound` and `premise: unverified` carry a citation and change nothing
+about the run. `premise: contradicted` is the review's **top A finding** — it questions the
+diff, not a line of it — so triage ranks it first and the report leads with it and the
+recorded decision it cites.
 
 ## 4 — Roll call
 
