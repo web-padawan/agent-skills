@@ -43,7 +43,7 @@ resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<
    (`--fix|--feature|--refactor|--chore` → `--type`, `--scale`, `--deep N`, `--no-coverage`).
    A `guard: refuse:` line ends the run — say the reason in one line and stop. Record `base`,
    `head` and `head0` as literal SHAs. Fetch `$0` with `gh` when given. Per pipeline.md,
-   resolve `type: undetermined` yourself and hand any `type_conflict` to the framing pass.
+   resolve `type: undetermined` yourself and hand any `type_conflict` to the fit pass.
 2. **Patches, then context file.** Write the prod and test patches at the plan's
    `patch_prod:` / `patch_tests:` paths — **with a shell redirect**, so the diff lands in a
    file without passing through your own context either. Then the context file at its

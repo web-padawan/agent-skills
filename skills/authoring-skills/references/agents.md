@@ -39,7 +39,7 @@ Target ≤80 lines: role and read-only statement first, then the questions, the 
 contract (finding-line format, cap, `NO FINDINGS` rule), a **Verify before reporting**
 section, and the closing delivery sentence. See `agents/behavior-reviewer.md` for the
 minimal example, `agents/premise-reviewer.md` for a procedure-heavy one, and
-`agents/framing-reviewer.md` for one carrying two categories — a pass takes a second
+`agents/fit-reviewer.md` for one carrying four categories — a pass takes another
 question when it shares the first one's inputs, and each still reports under its own
 category.
 

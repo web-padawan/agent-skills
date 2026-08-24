@@ -39,7 +39,7 @@ The plan is authoritative for everything it prints. Two things it hands back to 
   feature).
 - `type_conflict: <signal> → <type>` — a lower signal is more demanding than the declared
   type. **Never auto-upgrade.** Keep the declared type and hand the disagreement to the
-  framing pass as an explicit question: reviewing against the author's claim is what tests
+  fit pass as an explicit question: reviewing against the author's claim is what tests
   it, and the more demanding profile would examine a different risk instead of the mislabel.
 
 `guard:` starting with `refuse:` ends the run — say the one-line reason and stop.
@@ -97,7 +97,7 @@ topic-specific rules doc that governs the change. Agents that have to find these
 spend tool calls doing it, and each one finds a different subset.
 
 Then **quote those chapters here, in full**, under `### Conventions excerpt`. The
-conformance pass otherwise reads the whole conventions doc — most of which governs code
+fit pass otherwise reads the whole conventions doc — most of which governs code
 this diff does not touch — and on a fold row the general pass reads it a second time. Head
 the excerpt with this instruction, verbatim:
 
@@ -142,7 +142,7 @@ contracts and verification rules live in the agent definitions (`agents/<name>.m
 paste them into a prompt.
 
 **A fold widens the lane.** A pass reads its own `reads` lane *plus* the lane of every pass
-folded into it — so `general+conformance+tests` gets the test patch too, and
+folded into it — so `general+fit+tests` gets the test patch too, and
 `general+…+slop` gets the `comment_files` list. Name those extra inputs in the prompt; a folded question with no
 material is a silently dropped pass.
 
@@ -179,8 +179,8 @@ Findings come back one per line:
 
 Categories: `general`, `scope`, `intent`, `requirements`, `premise`, `root-cause`,
 `behavior`, `integration`, `tests`, `slop`, `cleanup` — plus `architecture`, `boundary`,
-`impact` and `api` when arch-review's lenses ran. **A category is not a pass**: `framing`
-reports `intent` and `scope`, `conformance` reports `integration` and `cleanup`. The roll
+`impact` and `api` when arch-review's lenses ran. **A category is not a pass**: `fit`
+reports `intent`, `scope`, `integration` and `cleanup`. The roll
 call goes by pass, the report by category.
 
 ### The premise gate — fix only

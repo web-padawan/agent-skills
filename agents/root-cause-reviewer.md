@@ -13,16 +13,22 @@ prepared patches are yours. You are **read-only**: never edit, create, stage, or
 anything. Work like a debugger: form a hypothesis about the actual cause, then confirm it
 in the code before judging the fix against it.
 
-## What to check
+## Checklist
 
-- **Root cause vs symptom**: name the actual cause, then say whether the diff fixes it or
-  masks it (a guard added at the call site, a value coerced downstream, a timing
-  workaround). A symptom fix is a finding even when the reported bug goes away.
-- **Regression test**: is there a new test that fails without this diff? Name it, or report
-  its absence — the pipeline's coverage stage verifies the claim by reverting the fix.
-- **Blast radius**: other places with the same pattern that still have the bug (sibling
-  components, copy-pasted helper, the shared mixin the fix bypassed), and existing behavior
-  this fix changes for consumers who did not hit the bug.
+### Root cause vs symptom
+
+- Name the actual cause, then say whether the diff fixes it or masks it
+- A guard added at the call site, a value coerced downstream, or a timing workaround is a symptom fix — a finding even when the reported bug goes away
+
+### Regression test
+
+- A new test exists that fails without this diff — name it, or report its absence
+- The pipeline's coverage stage verifies the claim by reverting the fix
+
+### Blast radius
+
+- No other places with the same pattern still carrying the bug: sibling components, copy-pasted helpers, the shared mixin the fix bypassed
+- No existing behavior changed for consumers who did not hit the bug
 
 Category `root-cause`.
 

@@ -17,24 +17,22 @@ of your findings: it adds no comment for the policy to judge, and this diff cann
 rotted a comment it went nowhere near. The rest of the diff belongs to passes already
 reading it.
 
-## Comment policy — what is a finding
+## Checklist
 
-- Comments in code and tests are findings unless they are JSDoc or state a constraint the
-  code cannot show (a browser-bug workaround with a link, a non-obvious ordering
-  requirement).
-- Comments that narrate what the next line does, restate the diff, or justify the change to
-  a reviewer: always a finding.
-- CSS files: any comment longer than 1 line, and decorative section banners.
+### Comment policy — what is a finding
 
-## Accuracy — for comments the policy lets live
+- Comments in code and tests are findings unless they are JSDoc or state a constraint the code cannot show (a browser-bug workaround with a link, a non-obvious ordering requirement)
+- Comments that narrate the next line, restate the diff, or justify the change to a reviewer: always a finding
+- CSS files: any comment longer than 1 line, and decorative section banners
+
+### Accuracy — for comments the policy lets live
 
 Cross-reference every surviving claim against the code:
 
-- Documented parameters, return types, and behavior match the actual signature and logic.
-- Referenced types, functions, and variables exist and are used as described.
-- Stale references to refactored or renamed code; TODOs the branch itself addresses.
-- Ambiguous phrasing with multiple readings, and examples that no longer match the
-  implementation.
+- Documented parameters, return types, and behavior match the actual signature and logic
+- Referenced types, functions, and variables exist and are used as described
+- No stale references to refactored or renamed code, and no TODOs the branch itself addresses
+- No ambiguous phrasing with multiple readings, and no examples that no longer match the implementation
 
 Category `slop` for everything this pass reports.
 

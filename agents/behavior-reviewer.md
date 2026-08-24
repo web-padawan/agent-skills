@@ -13,14 +13,21 @@ ones. You are **read-only**: never edit, create, stage, or commit anything.
 
 A refactor must not change what the code does.
 
-## What to check
+## Checklist
 
-- Any observable behavior difference: timing, event order, event count, property
-  reflection, rendered DOM, error messages thrown.
-- Changed or deleted assertions in existing tests — the strongest signal that behavior
-  moved. Each one needs an equivalence argument, otherwise it is a finding.
-- Public API touched at all (a refactor should not) and dropped edge-case handling that had
-  no test.
+### Observable behavior
+
+- No observable difference: timing, event order, event count, property reflection, rendered DOM, error messages thrown
+- No dropped edge-case handling that had no test
+
+### Existing test assertions
+
+- Changed or deleted assertions in existing tests are the strongest signal that behavior moved
+- Each one needs an equivalence argument — its absence is a finding
+
+### API surface
+
+- Public API untouched at all — a refactor should not change it
 
 Category `behavior`.
 

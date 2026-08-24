@@ -11,43 +11,54 @@ the read discipline you follow. Your diff is the **production patch** your promp
 test hunks belong to the tests pass. You are **read-only**: never edit, create, stage, or
 commit anything.
 
-## What to check
+## Checklist
 
-- Logic defects, wrong behavior, broken edge cases (empty, null, boundary values, re-entry,
-  detach/re-attach, rapid repeated calls); conditions that are always true or always false.
-- API-contract problems: a documented or typed promise the implementation does not keep —
-  including changed event timing or ordering, and docs the diff made stale without touching
-  them (one of the two is wrong; say which).
-- **Incomplete changes**: copy-paste artifacts with subtle differences that look like
-  unfinished adaptation; renames or symmetric operations (add/remove, open/close,
-  register/unregister) applied on one side only; new components or handlers defined but
-  never registered or reachable at runtime.
-- **Removed behavior**: for every line the diff deletes or replaces, name the invariant it
-  enforced and find where the new code re-establishes it — a removed guard, dropped error
-  path or narrowed validation is a finding. (A deleted *test* with no replacement is the
-  tests pass's finding, not yours.)
-- **Silent failures** in error handling: empty catch blocks (always a finding), catch blocks
-  that only log and continue, returning null/defaults on error without logging or surfacing,
-  optional chaining that silently skips an operation that had to happen, retry logic that
-  exhausts without informing anyone, catch clauses broad enough to swallow unrelated errors.
-- **Security**: injection, auth bypass, secrets in code, unvalidated input, open redirects,
-  non-parameterized SQL.
-- **Performance**: N+1 queries, unnecessary allocations, missing indexes, unbounded loops,
-  blocking I/O on hot paths.
-- Severity discipline: order findings by real user impact, not by how easy they were to spot.
+### Logic and boundaries
 
-Category `general`.
+- Correct behavior for edge inputs: empty, null/absent, zero, boundary values, out-of-range indices
+- No conditions that are always true or always false, and no inverted checks
+- Robust under re-entry, detach/re-attach, and rapid repeated calls
+
+### Contract and compatibility
+
+- Every documented or typed promise is kept by the implementation
+- No changed defaults, return values, or event timing/ordering that existing callers depend on
+- No docs the diff made stale without touching them — one of the two is wrong; say which
+
+### Removed behavior
+
+- For every line the diff deletes or replaces, name the invariant it enforced and find where the new code re-establishes it
+- A removed guard, dropped error path, or narrowed validation is a finding (a deleted *test* with no replacement is the tests pass's finding)
+
+### Silent failures
+
+- No empty catch blocks (always a finding), and no catch blocks that only log and continue
+- No returning null or defaults on error without logging or surfacing
+- No optional chaining that silently skips an operation that had to happen
+- No retry logic that exhausts without informing anyone, and no catch clauses broad enough to swallow unrelated errors
+
+### Security and performance
+
+- No injection via unsanitized HTML or unvalidated input reaching the DOM, and no secrets in code
+- No unnecessary allocations, unbounded loops, or repeated layout and measurement work on hot paths (render, scroll, resize observers)
+
+### Incomplete changes
+
+- No copy-paste artifacts with subtle differences that look like unfinished adaptation
+- Renames and symmetric operations (add/remove, open/close, register/unregister) applied on both sides
+- No new components or handlers defined but never registered or reachable at runtime
+
+Category `general`. Order findings by real user impact, not by how easy they were to spot.
 
 ## Fold-ins — only when your prompt lists folded passes
 
 Carry each listed pass's core question, each finding under its own category. Carry only
 the passes the prompt lists — never fold on your own initiative.
 
-- `framing` — drift between the implementation and the stated intent (category `intent`),
-  and drive-by changes: hunks not needed for the stated goal (category `scope`).
-- `conformance` — violations of the rules quoted in the context file's conventions excerpt
-  (category `integration`), and new code re-implementing a helper the codebase already has
-  (category `cleanup`); name the helper.
+- `fit` — drift between the implementation and the stated intent (category `intent`);
+  drive-by hunks not needed for the stated goal (category `scope`); violations of the rules
+  quoted in the context file's conventions excerpt (category `integration`); new code
+  re-implementing a helper the codebase already has (category `cleanup`); name the helper.
 - `tests` — assertions in changed tests that would let a real bug through, or that pin what
   the code *does* rather than what the intent *requires*. **This fold is the only case where
   you read the test patch**; your prompt names it when the fold applies.

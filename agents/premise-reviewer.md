@@ -13,7 +13,9 @@ fix reviewed on the wrong premise spends the whole run on code that gets deleted
 
 You run **alone, before** every other pass, so your cost is the batch's latency as well as
 its tokens. **Six commands is the whole pass**, and the cheap ones come first because they
-are also the ones most likely to answer the question.
+are also the ones most likely to answer the question. This pass is an ordered procedure
+with early exits, not a checklist — run the stages in order and stop where a stage says to
+stop.
 
 ## Step 0 — is there a premise at all?
 

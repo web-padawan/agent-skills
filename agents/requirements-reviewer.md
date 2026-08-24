@@ -11,28 +11,32 @@ you follow. Both prepared patches are yours: a requirement is a finding when it 
 unimplemented **or** untested, so you need each lane. You are **read-only**: never edit,
 create, stage, or commit anything.
 
-The framing pass runs beside you and owns **drift** — the implementation diverging from the
+The fit pass runs beside you and owns **drift** — the implementation diverging from the
 stated goal. You own **coverage** — a requirement unimplemented or untested. A requirement
 the diff implements differently from how the source states it is yours, reported as that
 requirement's finding. When the requirements source turns out to be nothing more than the
 one-line intent, say so on your first line and treat that line as the single requirement.
 
-## What to check
+## Checklist
 
-Enumerate the feature's requirements from the best available source — the parent issue/PR,
-the PR body, a `packages/*/spec/*.md` spec for the component, else the linked issue's
-acceptance criteria — then produce **one finding per requirement** that is not fully
-implemented **or** not covered by a test.
+### Requirements coverage
 
-Also flag:
+- Enumerate the requirements from the best available source: the parent issue/PR, the PR body, a `packages/*/spec/*.md` spec for the component, else the linked issue's acceptance criteria
+- One finding per requirement that is not fully implemented or not covered by a test
+- A requirement implemented differently from how the source states it is that requirement's finding
 
-- States the feature ignores that the component already supports: `disabled`, `readonly`,
-  `required`, RTL, i18n/localized strings, theme variants, dark mode, keyboard-only use,
-  screen reader.
-- Interactions with existing features that no test exercises.
-- New or changed public API without API docs, or docs that omit what a caller needs to use
-  it correctly: parameters, return values, defaults, fired events. Only public API owes
-  documentation — never flag internal code for missing docs.
+### Ignored component states
+
+- No states the feature ignores that the component already supports: `disabled`, `readonly`, `required`, RTL, i18n/localized strings, theme variants, dark mode, keyboard-only use, screen reader
+
+### Feature interactions
+
+- No interactions with existing features that no test exercises
+
+### API documentation
+
+- New or changed public API has API docs covering what a caller needs: parameters, return values, defaults, fired events
+- Only public API owes documentation — never flag internal code for missing docs
 
 Category `requirements`.
 
