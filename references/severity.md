@@ -15,6 +15,10 @@ invoking skill's triage assigns the final one. Agent-proposed tiers run high.
 **Tie-breaker between A and B:** can a follow-up PR fix this without a breaking change or
 a user-visible bug? No → **A**.
 
+**Verification caps the tier:** a finding whose key claim triage could not verify is **B**
+at most, with the unverified part named in the claim. Impact decides the tier only once
+the claim is confirmed.
+
 ## Type-aware tiering
 
 The change type shifts where the A line sits. Apply on top of the rubric:

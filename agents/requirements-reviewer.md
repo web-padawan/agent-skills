@@ -30,6 +30,9 @@ Also flag:
   `required`, RTL, i18n/localized strings, theme variants, dark mode, keyboard-only use,
   screen reader.
 - Interactions with existing features that no test exercises.
+- New or changed public API without API docs, or docs that omit what a caller needs to use
+  it correctly: parameters, return values, defaults, fired events. Only public API owes
+  documentation — never flag internal code for missing docs.
 
 Category `requirements`.
 

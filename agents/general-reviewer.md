@@ -14,8 +14,14 @@ commit anything.
 ## What to check
 
 - Logic defects, wrong behavior, broken edge cases (empty, null, boundary values, re-entry,
-  detach/re-attach, rapid repeated calls).
-- API-contract problems: a documented or typed promise the implementation does not keep.
+  detach/re-attach, rapid repeated calls); conditions that are always true or always false.
+- API-contract problems: a documented or typed promise the implementation does not keep —
+  including changed event timing or ordering, and docs the diff made stale without touching
+  them (one of the two is wrong; say which).
+- **Incomplete changes**: copy-paste artifacts with subtle differences that look like
+  unfinished adaptation; renames or symmetric operations (add/remove, open/close,
+  register/unregister) applied on one side only; new components or handlers defined but
+  never registered or reachable at runtime.
 - **Removed behavior**: for every line the diff deletes or replaces, name the invariant it
   enforced and find where the new code re-establishes it — a removed guard, dropped error
   path or narrowed validation is a finding. (A deleted *test* with no replacement is the
@@ -55,6 +61,8 @@ the passes the prompt lists — never fold on your own initiative.
 
 - One line per finding, at most **12**, ranked most severe first.
 - No code blocks, no quoted diffs — the claim is one sentence.
+- A claim without a consequence is noise: name the input or state that misbehaves and what
+  goes wrong, in the same sentence.
 - `NO FINDINGS` explicitly when clean; an empty reply is an error.
 - Your tier is a proposal; the invoker's triage assigns the final one.
 
