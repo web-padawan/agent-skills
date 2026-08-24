@@ -1,6 +1,6 @@
 ---
 name: self-review
-description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching profile of breadth review passes in one parallel batch, sized by the diff's scale tier (trivial/lite/full), always including the comment/slop pass; a bug fix first has its premise checked against the history of the behavior it changes. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Per-change deep review (lenses) lives in arch-review — opt in here with --deep N. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
+description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching profile of breadth review passes in one parallel batch, sized by the diff's scale tier (trivial/lite/full), always including the comment/slop pass; on a bug fix the batch includes the fix pass, which checks the fix's premise against the history of the behavior it changes and judges root cause and blast radius. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Per-change deep review (lenses) lives in arch-review — opt in here with --deep N. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
 argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--scale trivial|lite|full] [--deep N] [--no-coverage]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*)
@@ -19,14 +19,13 @@ Three rules outrank everything else:
   `git clean` — ever. `HEAD` and the index end exactly as found.
 - **The only files this skill creates are the two prepared patches, the context file and
   the report**, all in the git-ignored report directory the plan names, and the report only
-  after step 6's gate — or, on a premise-stopped fix, the premise-stop question that stands
-  in for it — approves it.
+  after step 6's gate approves it.
 
 Every finding ends up in the report as `confirmed` or `accepted`. Nothing is silently dropped.
 
 | Reference | Covers |
 | --- | --- |
-| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the patches and context file, the read discipline, the fan-out, the premise gate, the roll call, triage |
+| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the patches and context file, the read discipline, the fan-out, the premise verdict, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
 | [`references/mutation.md`](references/mutation.md) | Step 7: mutant selection, restore safety, survivors as findings |
@@ -50,13 +49,13 @@ resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<
    `context:` path. Both per pipeline.md §2, including the conventions excerpt and the
    read-discipline block verbatim: everything a pass would otherwise re-derive is settled
    here, once.
-3. **Fan out.** Launch the plan's `passes` — `stage: pre` alone and first, the rest in one
-   message — per pipeline.md and delivery.md. Give each pass **only the patch its `reads`
+3. **Fan out.** Launch the plan's `passes` in one message, per pipeline.md and delivery.md.
+   Give each pass **only the patch its `reads`
    lane names**: that column, not the pass count, is what the profile's token cost turns on.
    With `--deep N`, run arch-review's steps 2–3
    ([`../arch-review/SKILL.md`](../arch-review/SKILL.md)) when the batch returns, skipping
    its scope confirmation: `--deep N` is the confirmation. **On a fix `--deep` is ignored** —
-   the plan's five-agent profile wins; say so in one line and point at
+   the plan's lean fix profile wins; say so in one line and point at
    `/agent-skills:arch-review <file>:<lines>` on the fix's hunks instead.
 4. **Assert nothing changed.** `git status --porcelain --untracked-files=no` still empty. If a
    pass edited anyway: revert those tracked files with `git checkout -- <path>`, delete files

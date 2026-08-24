@@ -12,7 +12,7 @@ plugin agents, so the diff never sits in your own context.
 
 | Reference | Covers |
 | --- | --- |
-| [`../../references/pipeline.md`](../../references/pipeline.md) | The shared pipeline: the plan, the context file, the fan-out, the premise gate, the roll call, triage |
+| [`../../references/pipeline.md`](../../references/pipeline.md) | The shared pipeline: the plan, the context file, the fan-out, the premise verdict, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
 | [`references/comment-guidelines.md`](references/comment-guidelines.md) | Comment tone, backtick escaping, good/bad examples |
@@ -46,10 +46,8 @@ Write the shared context file at `<scratchpad>/pr-<number>-context.md` per pipel
 including its **PR scope** rule block, which is what keeps agents off the working tree — then
 launch the plan's `passes` in one message per pipeline.md §3 and delivery.md.
 
-Two mode-specific rules:
+One mode-specific rule:
 
-- A `contradicted` premise does **not** stop this review (that is self-review's rule): it
-  becomes the top A finding, citation included.
 - The fit pass reports **no cleanup findings** here (say `no cleanup` in its prompt), and
   the coverage check does not run at all: both need the author's judgment and a local
   checkout, so they stay in `self-review`.

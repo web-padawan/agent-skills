@@ -41,15 +41,15 @@ of the branch, were paid for by seven passes that do not review tests. Hence the
 prepared patches and the `reads` lane in `profiles.md`: only the three passes with a
 question spanning both lanes get both.
 
-**Cheap signals belong first, and expensive ones need a ceiling.** The premise pass's
+**Cheap signals belong first, and expensive ones need a ceiling.** The premise check's
 decisive evidence is a contradicting test name in the suite — a local search — yet it was
 listed fourth, behind `gh pr view --json body,comments,reviews` and a `--paginate` of every
 review comment on the PR, most of it bot chatter about lines the fix does not touch. It now
 runs cheapest-first, stops on a contradicting test, filters review comments to the changed
 paths with `--jq`, follows exactly one reference hop, and skips entirely when the fix's
 hunks change no guard, branch, default or ordering — there is no recorded decision to
-contradict in a pure computation change. It runs alone before the batch, so this was
-latency as well as tokens.
+contradict in a pure computation change. The staged procedure lives on as Part 1 of the fix
+pass, which answers premise before spending anything on root cause.
 
 **One question, one owner — including across passes that share material.** Four passes were
 reading the test diff to ask four overlapping versions of "does this assertion pin the right

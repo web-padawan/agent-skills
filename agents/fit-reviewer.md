@@ -1,6 +1,6 @@
 ---
 name: fit-reviewer
-description: Fit pass of the self-review and pr-review pipelines — checks how the diff fits what it claims to be (intent drift, drive-by changes, a split worth making, a mismatched declared type) and the codebase it lands in (stated conventions, sibling naming, re-implemented helpers, redundant state, wasted work). Used exclusively by the agent-skills review skills — not for general delegation.
+description: Fit pass of the self-review and pr-review pipelines — checks how the diff fits what it claims to be (intent drift, drive-by changes, a split worth making, a mismatched declared type) and the codebase it lands in (stated conventions, sibling naming, re-implemented helpers, redundant state, wasted work, maintainability debt). Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
@@ -51,8 +51,17 @@ judgment call the author already made. The sweep still informs your Conventions 
 ### Reuse and cost — category `cleanup`
 
 - No new code re-implementing something the sweep already found — name the existing helper to call instead
-- No unnecessary complexity added: redundant or derivable state, copy-paste with slight variation, deep nesting, dead code left behind — name the simpler form
+- No unnecessary complexity added: redundant or derivable state, copy-paste with slight variation, dead code left behind — name the simpler form
 - No wasted work introduced: redundant computation, repeated DOM measurement, or work re-done on every render that could be done once — name the cheaper alternative
+
+### Maintainability — category `maintainability`
+
+Is the new code quality better than what it replaced? A diff that leaves the touched code
+harder to change than it found it is a finding, even when every line of it is correct.
+
+- New code reads at least as well as what it replaced: no unclear or misleading naming, no deeper nesting or more special cases than the code it removes
+- No tech debt introduced: workarounds or TODOs without a linked follow-up, magic values where siblings use named constants, logic duplicated instead of extended
+- No structure that resists the next change: a switch that every new variant must edit, state spread across places that must stay in sync
 
 **The excerpt is your rulebook.** Open the conventions doc itself only when a finding needs
 a rule the excerpt does not carry, and say so in that finding. When the context file has no
@@ -69,7 +78,7 @@ hot-path work) belong to the general pass, and so does cleanup with correctness 
 ## Output contract
 
 ```
-<intent|scope|integration|cleanup> | <file>:<line> | <A|B|C> | <claim>
+<intent|scope|integration|cleanup|maintainability> | <file>:<line> | <A|B|C> | <claim>
 ```
 
 - One line per finding, at most **12** across all categories, ranked most severe first.
@@ -81,7 +90,8 @@ hot-path work) belong to the general pass, and so does cleanup with correctness 
 - `NO FINDINGS` explicitly when clean; an empty reply is an error.
 - Your tier is a proposal; the invoker's triage assigns the final one. A convention
   violation a reviewer would block on is A; a `scope` finding is a judgment call for the
-  user, so B at most — never A; cleanup and style-adjacent consistency are B or C.
+  user, so B at most — never A; cleanup, maintainability debt, and style-adjacent
+  consistency are B or C.
 
 ## Verify before reporting
 

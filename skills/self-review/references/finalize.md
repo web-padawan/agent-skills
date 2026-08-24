@@ -116,10 +116,9 @@ For architectural/boundary/impact analysis of a specific change, run `/agent-ski
 - **Follow-ups** repeats every `confirmed` B and C finding as a paste-ready list for the
   follow-up issue. A findings are not follow-ups — they are in the way of the merge and
   belong in `## Next steps`.
-- A **fix** stopped by a contradicted premise gets the short report: the premise line, the
-  `## Premise & history` section with the citation and what the project decided, the size
-  check, and nothing else. Say plainly that the later steps did not run and why — a report
-  that looks thin for that reason is correct.
+- On a **fix** with `premise: contradicted`, the `## Premise & history` section leads the
+  report: the citation, what the project decided, and what the fix does instead — the top A
+  finding the verdict rests on.
 - The report is never committed — it lives in the git-ignored path the plan named.
 
 ## Verdict rubric
@@ -131,7 +130,7 @@ For architectural/boundary/impact analysis of a specific change, run `/agent-ski
 - **fix**: `premise: contradicted`, or no test fails when the whole fix is reverted
 - **feature**: a stated requirement is unimplemented
 - **refactor**: an observable behavior change is unexplained
-- the type's **defining pass** (requirements on a feature, premise or root-cause on a fix,
+- the type's **defining pass** (requirements on a feature, the fix pass on a fix,
   behavior preservation on a refactor) is `missing`: the type's defining risk went
   unexamined, so there is no basis for a verdict
 

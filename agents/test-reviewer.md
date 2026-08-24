@@ -33,8 +33,8 @@ through, never a percentage and never "add more tests".
 - Error branches, guard clauses, and rejection paths have a failing-path test
 - Edge cases covered: empty, null/undefined, zero, single element, boundary values
 - A test the diff deletes or skips, has replacement coverage unless clearly justified
-- On a feature, requirement-level gaps belong to the requirements pass; on a self-mode fix,
-  the regression-test check belongs to root-cause — report only what they do not own
+- On a feature, requirement-level gaps belong to the requirements pass; on a fix,
+  the regression-test check belongs to the fix pass — report only what they do not own
 
 ### Structure
 
