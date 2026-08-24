@@ -291,10 +291,10 @@ pass_agent() {
   awk -F'|' -v id="$1" '
     /^## Passes/ { in_passes = 1; next }
     /^## / { in_passes = 0 }
-    !in_passes || NF < 5 { next }
+    !in_passes || NF < 6 { next }
     {
-      for (i = 2; i <= 4; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
-      if ($2 == id) { print $3 "\t" $4; exit }
+      for (i = 2; i <= 5; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
+      if ($2 == id) { print $3 "\t" $4 "\t" $5; exit }
     }
   ' "$PROFILES"
 }
@@ -358,6 +358,40 @@ if [ -n "$CHANGED" ]; then
   AFFECTED=$(printf '%s\n' "$CHANGED" | awk -F/ '$1 == "packages" && NF > 2 { print $1 "/" $2 }' | sort -u | tr '\n' ' ')
 fi
 
+# ── File lanes ────────────────────────────────────────────────────────
+# The prepared patches are split so a pass reads only its own material: the
+# test diff is most of a branch's line count, and every pass that does not
+# review tests was paying for it. See references/profiles.md's `reads` column.
+TEST_RE='(^|/)(test|tests|__tests__|it)/|\.(test|spec)\.[cm]?[jt]sx?$|Test\.java$|IT\.java$|Tests?\.kt$'
+TEST_FILES=""
+PROD_FILES=""
+if [ -n "$CHANGED" ]; then
+  TEST_FILES=$(printf '%s\n' "$CHANGED" | grep -E "$TEST_RE" | tr '\n' ' ' || true)
+  PROD_FILES=$(printf '%s\n' "$CHANGED" | grep -vE "$TEST_RE" | tr '\n' ' ' || true)
+fi
+
+# Files with a comment inside or beside a hunk — the slop pass's whole input.
+# It has two questions: comments the diff ADDS (policy) and comments the diff left
+# stale (rot). The first needs added comment lines; the second needs comments near
+# changed code, so the window is -U3 and removed/context lines count too. A file
+# with no comment within three lines of a change cannot hold a finding of that pass.
+COMMENT_FILES=""
+if [ -n "$BASE" ]; then
+  COMMENT_FILES=$(git diff -U3 "$BASE..$HEAD" 2>/dev/null | awk '
+    /^diff --git |^index |^--- |^\+\+\+ |^@@ |^(new|deleted) file|^similarity|^rename / {
+      if ($0 ~ /^\+\+\+ b\//) { file = substr($0, 7) }
+      next
+    }
+    file == "" { next }
+    {
+      body = substr($0, 2)
+      if (body ~ /(\/\/|\/\*|\*\/|<!--)/ || body ~ /^[ \t]*\*[ \t]/) {
+        if (!(file in seen)) { seen[file] = 1; printf "%s ", file }
+      }
+    }
+  ' || true)
+fi
+
 # ── Print the plan ────────────────────────────────────────────────────
 echo "=== PLAN ==="
 echo "mode: $MODE"
@@ -414,19 +448,26 @@ else
 
     INFO=$(pass_agent "$token")
     AGENT=$(printf '%s' "$INFO" | cut -f1)
-    ADDS=$(printf '%s' "$INFO" | cut -f2)
+    READS=$(printf '%s' "$INFO" | cut -f2)
+    ADDS=$(printf '%s' "$INFO" | cut -f3)
     [ -z "$AGENT" ] && AGENT="(no agent in references/profiles.md for '$token')"
     COUNT=$((COUNT + 1))
-    printf '  %-13s %-38s stage: %-5s model: %-7s folds: %-34s prompt adds: %s\n' \
-      "$token" "$AGENT" "$STAGE" "$MODEL" "${FOLDS:--}" "${ADDS:--}"
+    printf '  %-13s %-38s stage: %-5s model: %-7s reads: %-7s folds: %-30s prompt adds: %s\n' \
+      "$token" "$AGENT" "$STAGE" "$MODEL" "${READS:-both}" "${FOLDS:--}" "${ADDS:--}"
   done
   echo "agents: $COUNT"
 fi
+
+echo "prod_files: ${PROD_FILES:-none}"
+echo "test_files: ${TEST_FILES:-none}"
+echo "comment_files: ${COMMENT_FILES:-none}"
 
 if [ -n "$REPORT_DIR" ]; then
   echo "report_dir: $REPORT_DIR"
   echo "report: $REPORT_DIR/$SLUG-FINDINGS.md"
   echo "context: $REPORT_DIR/context.md"
+  echo "patch_prod: $REPORT_DIR/prod.patch"
+  echo "patch_tests: $REPORT_DIR/tests.patch"
 fi
 echo "commands: lint=${LINT_CMD:-unknown} test=${TEST_CMD:-unknown} src_glob=${SRC_GLOB:-unknown} (source: $CMD_SOURCE)"
 echo "affected_packages: ${AFFECTED:-none}"

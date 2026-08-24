@@ -9,6 +9,14 @@ You review the comments the diff under review adds or touches. Read the shared c
 named in your prompt first. You are **read-only**: never edit, create, stage, or commit
 anything — you analyze and report only.
 
+**Your prompt names the only files with a comment inside or beside a hunk** — usually a few
+of the changed files, not all of them. Diff those files alone
+(`git diff -U5 <BASE>..<HEAD> -- <the named files>`, literal SHAs from the context file) and
+review nothing else. A file with no comment within a few lines of a change can hold neither
+of your findings: it adds no comment for the policy to judge, and this diff cannot have
+rotted a comment it went nowhere near. The rest of the diff belongs to passes already
+reading it.
+
 ## Comment policy — what is a finding
 
 - Comments in code and tests are findings unless they are JSDoc or state a constraint the

@@ -17,15 +17,16 @@ Three rules outrank everything else:
   (`Edit` is in `allowed-tools` for that carve-out alone.)
 - **Never commit or stage.** No commit, amend, push, `git add`, `stash`, `reset --hard`, or
   `git clean` — ever. `HEAD` and the index end exactly as found.
-- **The only files this skill creates are the context file and the report**, both in the
-  git-ignored report directory the plan names, and the report only after step 6's gate — or,
-  on a premise-stopped fix, the premise-stop question that stands in for it — approves it.
+- **The only files this skill creates are the two prepared patches, the context file and
+  the report**, all in the git-ignored report directory the plan names, and the report only
+  after step 6's gate — or, on a premise-stopped fix, the premise-stop question that stands
+  in for it — approves it.
 
 Every finding ends up in the report as `confirmed` or `accepted`. Nothing is silently dropped.
 
 | Reference | Covers |
 | --- | --- |
-| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the context file, the fan-out, the premise gate, the roll call, triage |
+| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the patches and context file, the read discipline, the fan-out, the premise gate, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
 | [`references/mutation.md`](references/mutation.md) | Step 7: mutant selection, restore safety, survivors as findings |
@@ -42,17 +43,25 @@ resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<
    (`--fix|--feature|--refactor|--chore` → `--type`, `--scale`, `--deep N`, `--no-coverage`).
    A `guard: refuse:` line ends the run — say the reason in one line and stop. Record `base`,
    `head` and `head0` as literal SHAs. Fetch `$0` with `gh` when given. Per pipeline.md,
-   resolve `type: undetermined` yourself and hand any `type_conflict` to the scope pass.
-2. **Context file.** Write it at the plan's `context:` path, per pipeline.md.
+   resolve `type: undetermined` yourself and hand any `type_conflict` to the framing pass.
+2. **Patches, then context file.** Write the prod and test patches at the plan's
+   `patch_prod:` / `patch_tests:` paths — **with a shell redirect**, so the diff lands in a
+   file without passing through your own context either. Then the context file at its
+   `context:` path. Both per pipeline.md §2, including the conventions excerpt and the
+   read-discipline block verbatim: everything a pass would otherwise re-derive is settled
+   here, once.
 3. **Fan out.** Launch the plan's `passes` — `stage: pre` alone and first, the rest in one
-   message — per pipeline.md and delivery.md. With `--deep N`, run arch-review's steps 2–3
+   message — per pipeline.md and delivery.md. Give each pass **only the patch its `reads`
+   lane names**: that column, not the pass count, is what the profile's token cost turns on.
+   With `--deep N`, run arch-review's steps 2–3
    ([`../arch-review/SKILL.md`](../arch-review/SKILL.md)) when the batch returns, skipping
    its scope confirmation: `--deep N` is the confirmation. **On a fix `--deep` is ignored** —
    the plan's five-agent profile wins; say so in one line and point at
    `/agent-skills:arch-review <file>:<lines>` on the fix's hunks instead.
 4. **Assert nothing changed.** `git status --porcelain --untracked-files=no` still empty. If a
    pass edited anyway: revert those tracked files with `git checkout -- <path>`, delete files
-   it created **by path**, keep only its output as findings. Never `git clean`; never touch
+   it created **by path**, keep only its output as findings. The patches live in the
+   git-ignored report directory, so they never show up here. Never `git clean`; never touch
    pre-existing untracked files.
 5. **Roll call, then triage.** Both per pipeline.md — the roll call first, by pass name.
 6. **Gate.** Per finalize.md: the classified list in chat, then one `AskUserQuestion` — write
