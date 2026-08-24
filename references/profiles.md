@@ -32,7 +32,7 @@ never regenerates one with `git diff` (pipeline.md §3, *Read discipline*).
 | general | agent-skills:general-reviewer | prod | the plan's `folds` list, when it is not `-`; on a fix also name the repo's conventions doc |
 | framing | agent-skills:framing-reviewer | prod | the plan's `type_conflict` line, when it is not `none` |
 | conformance | agent-skills:conformance-reviewer | prod | in `pr` mode, `conventions half only` — cleanup needs the author's judgment and a local checkout, so it stays in `self` |
-| tests | agent-skills:test-reviewer | tests | — |
+| tests | agent-skills:test-reviewer | both | — |
 | slop | agent-skills:comment-reviewer | comments | the plan's `comment_files` list |
 | requirements | agent-skills:requirements-reviewer | both | the best requirements source, named |
 | root-cause | agent-skills:root-cause-reviewer | both | — |
@@ -93,7 +93,8 @@ the effective one. `arch` mode has no breadth passes — its lens trio comes fro
   made.
 - Lanes, not pass count, are what a profile pays for. Tests are usually most of a
   branch's changed lines, so passes each reading the whole diff paid for the test hunks
-  once per pass to review them once. Only `requirements`, `root-cause` and `behavior`
-  have a question that spans both lanes.
+  once per pass to review them once. `requirements`, `root-cause`, `behavior` and `tests`
+  have a question that spans both lanes — for `tests` it is coverage, which cannot be
+  judged without seeing what changed in production code.
 - The largest profile is six agents (`feature/full`), which is the batch cap
   `rationale.md` sets. It was eight.
