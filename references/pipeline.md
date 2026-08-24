@@ -74,6 +74,12 @@ Write it once, at the path the plan names, after the patches and before launchin
 paragraph: prompts drift apart when the context is inline, and a correction reaches only
 the agents launched after you found it.
 
+It opens with this framing line, verbatim, so every pass judges against library stakes:
+
+> This is framework / library code: its consumers are arbitrary downstream applications,
+> its observable behavior is a contract, and it is maintained for years — judge it
+> accordingly.
+
 It holds: branch, the literal `base` and `head` SHAs, the two patch paths with the note
 that **the patches are the diff under review**, `git diff --stat`, the changed-file list
 split into prod and test, the type and its signal, the scale tier with counts and any override, PR title/body when a PR exists, a
@@ -214,15 +220,20 @@ say. A pass that reported nothing has *not* come back clean.
 2. **Dedup**: same file, line and claim from several agents is one finding; keep the
    clearest wording, note which categories raised it. Lenses converging on one change is
    signal — merge and mark `[3-lens]` / `[2-lens]`.
-3. **Assign the final tier** per [`severity.md`](severity.md), overriding the agent's
-   proposal. Where an agent overstated a claim, keep the corrected version and say so in one
-   clause.
+3. **Judge, then tier.** Per finding, one sentence of judgement first — does the evidence
+   hold, and what does the issue cost if the change merges as-is — then the final tier per
+   [`severity.md`](severity.md), overriding the agent's proposal: the judgement is the
+   reasoning, the tier is the conclusion. Where an agent overstated a claim, keep the
+   corrected version and say so in one clause.
 4. **Write the suggested fix as one line.** Concrete and specific to the file and line: "move
    the listener removal into `disconnectedCallback`", never "consider refactoring this".
 
 Wording, because the report and any comment reuse these lines verbatim: every identifier,
 method, type and compared literal in backticks; plain developer words, no invented labels;
-one short sentence per claim, keeping the single detail that makes it concrete.
+one short sentence per claim, keeping the single detail that makes it concrete. Assume the
+author knows the code: name the trigger only when it is not obvious, do not explain
+consequences the reader can infer, and do not re-tell the trace that produced the finding.
+Length is not thoroughness.
 
 ## 6 — Deliver
 
