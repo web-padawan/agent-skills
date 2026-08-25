@@ -28,8 +28,8 @@ The change type shifts where the A line sits. Apply on top of the rubric:
   stated requirement with no implementation is A. Internal debt stays B.
 - **fix** — a symptom-only fix is A. A missing or non-failing regression test is A. The same
   bug left in place elsewhere (blast radius) is A when the sibling is released, B when it is
-  not reachable yet. A `contradicted` premise outranks every other finding: it questions the
-  diff, not a line of it.
+  not reachable yet. A fix that reverses a behavior an existing test asserts on purpose is A:
+  it questions the diff, not a line of it.
 - **refactor** — any unexplained observable behavior change is A, including a weakened or
   deleted assertion in an existing test. New public API in a refactor is at least B and
   belongs in a separate PR.

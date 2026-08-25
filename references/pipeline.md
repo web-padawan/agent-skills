@@ -25,8 +25,8 @@ rules are written down.
 `scripts/review-plan.sh --mode self|pr|arch [--pr N] [--type T] [--scale S] [--deep N]
 [--no-coverage]` wraps `get-pr-context.sh` and prints a `=== PLAN ===` block: the guard
 verdict, the literal `base` / `head` / `head0` SHAs, the change type with its signal, the
-scale tier with its counts, the pass list with each pass's agent, stage, model, read lane
-and folds, the mutant budget, the conventions doc, the changed files split into
+scale tier with its counts, the pass list with each pass's agent, read lane and prompt adds,
+the mutant budget, the conventions doc, the changed files split into
 `prod_files` / `test_files` / `comment_files`, and the context, patch and report paths. Record the SHAs as literals —
 shell variables do not survive between tool calls, and subagents never see them.
 
@@ -39,8 +39,8 @@ The plan is authoritative for everything it prints. Two things it hands back to 
   feature).
 - `type_conflict: <signal> → <type>` — a lower signal is more demanding than the declared
   type. **Never auto-upgrade.** Keep the declared type and hand the disagreement to the
-  fit pass as an explicit question: reviewing against the author's claim is what tests
-  it, and the more demanding profile would examine a different risk instead of the mislabel.
+  code pass as an explicit question: reviewing against the author's claim is what tests
+  it, and silently switching types would shift the checklist instead of naming the mislabel.
 
 `guard:` starting with `refuse:` ends the run — say the one-line reason and stop.
 
@@ -97,9 +97,8 @@ topic-specific rules doc that governs the change. Agents that have to find these
 spend tool calls doing it, and each one finds a different subset.
 
 Then **quote those chapters here, in full**, under `### Conventions excerpt`. The
-fit pass otherwise reads the whole conventions doc — most of which governs code
-this diff does not touch — and on a fold row the general pass reads it a second time. Head
-the excerpt with this instruction, verbatim:
+code pass otherwise reads the whole conventions doc — most of which governs code
+this diff does not touch. Head the excerpt with this instruction, verbatim:
 
 > These are the conventions chapters that govern this diff. Do not open the conventions doc
 > unless a finding of yours needs a rule that is not quoted here; say so in the finding if
@@ -118,7 +117,7 @@ one owner pass:
 
 ```
 - [owner: tests] The append branch is never exercised with an already-added component.
-- [owner: fix] `removeAll()` may still bypass the guard the fix restored.
+- [owner: code] `removeAll()` may still bypass the guard the fix restored.
 ```
 
 Other passes do not investigate a lead they do not own; triage inherits the owner's verdict.
@@ -133,18 +132,12 @@ Other passes do not investigate a lead they do not own; triage inherits the owne
 
 ## 3 — Fan out
 
-Launch the plan's `passes` list in **one message**, sharing one barrier (a `stage: pre`
-pass, when a profile defines one, runs alone and first — none currently does). Each prompt is exactly:
-the context file path, the pass's `reads` lane resolved to the patch path(s) it names, the
-pass's `folds` and `prompt adds` from the plan, and [`delivery.md`](delivery.md)'s delivery
-clause verbatim. Questions, categories, output
-contracts and verification rules live in the agent definitions (`agents/<name>.md`) — never
-paste them into a prompt.
-
-**A fold widens the lane.** A pass reads its own `reads` lane *plus* the lane of every pass
-folded into it — so `general+fit+tests` gets the test patch too, and
-`general+…+slop` gets the `comment_files` list. Name those extra inputs in the prompt; a folded question with no
-material is a silently dropped pass.
+Launch the plan's `passes` list in **one message**, sharing one barrier. Each prompt is
+exactly: the context file path, the pass's `reads` lane resolved to the patch path(s) it
+names — for the code pass that is the prod patch *plus* the plan's `comment_files` list — the
+pass's `prompt adds` from the plan, and [`delivery.md`](delivery.md)'s delivery clause
+verbatim. Questions, categories, output contracts and verification rules live in the agent
+definitions (`agents/<name>.md`) — never paste them into a prompt.
 
 Read [`delivery.md`](delivery.md) before the first launch and follow it exactly: it is what
 decides whether findings arrive at all. Its waiting rule applies here — pre-verify the
@@ -177,21 +170,10 @@ Findings come back one per line:
 <category> | <file>:<line> | <A|B|C> | <claim>
 ```
 
-Categories: `general`, `scope`, `intent`, `requirements`, `premise`, `root-cause`,
-`behavior`, `integration`, `tests`, `slop`, `cleanup`, `maintainability` — plus
-`architecture`, `boundary`, `impact` and `api` when arch-review's lenses ran. **A category
-is not a pass**: `fit` reports `intent`, `scope`, `integration`, `cleanup` and
-`maintainability`; `fix` reports `premise` and `root-cause`. The roll
-call goes by pass, the report by category.
-
-### The premise verdict — fix only
-
-The fix pass opens its report with a premise verdict: **does the project already have a
-decision about this behavior?** A bug fix can be right in every detail and still be the
-wrong fix. `premise: sound` and `premise: unverified` carry a citation and change nothing
-about the run. `premise: contradicted` is the review's **top A finding** — it questions the
-diff, not a line of it — so triage ranks it first and the report leads with it and the
-recorded decision it cites.
+Categories: `behavior`, `fix`, `logic`, `conventions`, `reuse`, `maintainability`,
+`comments`, `tests` — plus `architecture`, `boundary`, `impact` and `api` when arch-review's
+lenses ran. **A category is not a pass**: the `code` pass reports the first seven, one per
+section of its checklist. The roll call goes by pass, the report by category.
 
 ## 4 — Roll call
 

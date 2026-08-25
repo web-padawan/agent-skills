@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # review-plan.sh — compute the review plan for a review skill: the anchors, the
-# change type, the scale tier, the pass list with its agents and models, the
+# change type, the scale tier, the pass list with its agents and read lanes, the
 # mutant budget, the guards, and the report paths.
 #
 # The matrix it resolves lives in references/profiles.md — this script parses that
@@ -209,7 +209,7 @@ if [ -z "$TYPE" ]; then
   TYPE_SIGNAL="none resolved — decide from the diff shape (see references/pipeline.md)"
 fi
 
-# A lower signal that is *more demanding* than the winner is handed to the scope
+# A lower signal that is *more demanding* than the winner is handed to the code
 # pass as a question; it never silently upgrades the type.
 demand() { case "$1" in feature) echo 3 ;; fix) echo 2 ;; refactor) echo 1 ;; chore) echo 0 ;; *) echo -1 ;; esac; }
 TYPE_CONFLICT="none"
@@ -220,7 +220,7 @@ if [ "$TYPE" != "undetermined" ]; then
     [ -z "$other" ] && continue
     [ "$other" = "$TYPE" ] && continue
     if [ "$(demand "$other")" -gt "$win" ]; then
-      TYPE_CONFLICT="${cand%%:*} → $other (more demanding than the declared type — hand it to the scope pass)"
+      TYPE_CONFLICT="${cand%%:*} → $other (more demanding than the declared type — hand it to the code pass)"
       win=$(demand "$other")
     fi
   done
@@ -320,7 +320,7 @@ case "$SCALE" in trivial) CAP=3 ;; lite) CAP=8 ;; *) CAP=999 ;; esac
 [ "$COVERAGE" = "off" ] && MUTANTS=0
 [ "$MODE" != "self" ] && MUTANTS=0
 
-# ── Conventions doc (decides the conditional integration pass) ────────
+# ── Conventions doc (named in the plan, quoted into the context) ──────
 CONVENTIONS=""
 for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTIONS.md CLAUDE.md AGENTS.md; do
   if [ -f "$f" ]; then CONVENTIONS="$f"; break; fi
@@ -370,11 +370,12 @@ if [ -n "$CHANGED" ]; then
   PROD_FILES=$(printf '%s\n' "$CHANGED" | grep -vE "$TEST_RE" | tr '\n' ' ' || true)
 fi
 
-# Files with a comment inside or beside a hunk — the slop pass's whole input.
-# It has two questions: comments the diff ADDS (policy) and comments the diff left
-# stale (rot). The first needs added comment lines; the second needs comments near
-# changed code, so the window is -U3 and removed/context lines count too. A file
-# with no comment within three lines of a change cannot hold a finding of that pass.
+# Files with a comment inside or beside a hunk — the code pass's extra input for
+# its Comments category, which has two questions: comments the diff ADDS (policy)
+# and comments the diff left stale (rot). The first needs added comment lines; the
+# second needs comments near changed code, so the window is -U3 and removed/context
+# lines count too. A file with no comment within three lines of a change cannot
+# hold either finding.
 COMMENT_FILES=""
 if [ -n "$BASE" ]; then
   COMMENT_FILES=$(git diff -U3 "$BASE..$HEAD" 2>/dev/null | awk '
@@ -429,31 +430,14 @@ else
   echo "passes:"
   COUNT=0
   for token in $PASS_TOKENS; do
-    STAGE="batch"
-    case "$token" in pre:*) STAGE="pre"; token="${token#pre:}" ;; esac
-
-    MODEL="default"
-    case "$token" in *:sonnet) MODEL="sonnet"; token="${token%:sonnet}" ;; esac
-
-    CONDITIONAL=""
-    case "$token" in *\?) token="${token%\?}"; CONDITIONAL="yes" ;; esac
-
-    FOLDS=""
-    case "$token" in *+*) FOLDS="${token#*+}"; FOLDS=$(printf '%s' "$FOLDS" | tr '+' ','); token="${token%%+*}" ;; esac
-
-    if [ -n "$CONDITIONAL" ] && [ -z "$CONVENTIONS" ]; then
-      echo "  $token — skipped: no conventions doc in this repo"
-      continue
-    fi
-
     INFO=$(pass_agent "$token")
     AGENT=$(printf '%s' "$INFO" | cut -f1)
     READS=$(printf '%s' "$INFO" | cut -f2)
     ADDS=$(printf '%s' "$INFO" | cut -f3)
     [ -z "$AGENT" ] && AGENT="(no agent in references/profiles.md for '$token')"
     COUNT=$((COUNT + 1))
-    printf '  %-13s %-38s stage: %-5s model: %-7s reads: %-7s folds: %-30s prompt adds: %s\n' \
-      "$token" "$AGENT" "$STAGE" "$MODEL" "${READS:-both}" "${FOLDS:--}" "${ADDS:--}"
+    printf '  %-7s %-28s reads: %-14s prompt adds: %s\n' \
+      "$token" "$AGENT" "${READS:-both}" "${ADDS:--}"
   done
   echo "agents: $COUNT"
 fi

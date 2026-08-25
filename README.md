@@ -8,11 +8,11 @@ Five review skills with strict boundaries, one verification skill, one authoring
 
 | Skill | When to use |
 | --- | --- |
-| `self-review` | **Your own branch**, before opening or updating a PR. Detects the change type (feature / fix / refactor / chore) and runs the matching profile of breadth passes — the comment/slop pass always included — in one parallel batch. Never edits code — classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste) and writes a `FINDINGS.md` with a ready / needs-work verdict. Coverage gaps are reported, not closed — `mutation-coverage` closes them. Per-change deep review lives in `arch-review`; `--deep N` opts in from here. |
+| `self-review` | **Your own branch**, before opening or updating a PR. Detects the change type (feature / fix / refactor / chore) and runs two breadth passes — a code pass over the production diff, a tests pass over the test diff — in one parallel batch. Never edits code — classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste) and writes a `FINDINGS.md` with a ready / needs-work verdict. Coverage gaps are reported, not closed — `mutation-coverage` closes them. Per-change deep review lives in `arch-review`; `--deep N` opts in from here. |
 | `arch-review` | **One change, deep.** Three lenses — architectural (observed behavior, risk, consequences, suggestion), boundary (which promise the change makes, to whom, why it is hard to take back), change-impact analysis (ripple effects, propagation paths, unblock conditions). Takes a file, a diff range, a PR, or the current branch. Answers "is this API safe to ship?", "what's the blast radius?". Report-only. The plugin's only home of the lens deep review — `self-review --deep` delegates here. |
 | `guided-review` | **Someone else's PR, interactively.** Phase 1 explains the PR's goal and mechanism with a concrete example, then gates on your confirmation before Phase 2 reviews thoroughly. Read-only — never posts; you post any feedback yourself. |
 | `adversarial-review` | **Someone else's PR (or your own, pre-review), one skeptical pass.** Severity-bucketed report (🔴 High / 🟠 Medium / 🟡 Low / ✅ Done well + one-line summary), posted as a **single PR comment** after confirmation. |
-| `pr-review` | **Full reviewer pass with inline comments.** One context-script call, then the plugin's reviewer agents in parallel (correctness, tests, comment slop, conventions, plus the change type's profile pass: premise + root cause on fixes, requirements + scope on features, behavior preservation on refactors; `--deep N` adds arch-review's lenses) — the diff never enters the orchestrator's context. Findings triaged **A** (must fix) / **B** (follow-up) / **C** (nit) — the same scale as `self-review` — presented behind a short PR summary, then **positioned line comments** posted after confirmation. Profile passes add analysis depth; the triage filter decides what reaches the PR. |
+| `pr-review` | **Full reviewer pass with inline comments.** One context-script call, then the plugin's two reviewer agents in parallel (a code pass over the production diff — behavior, fix correctness, logic, conventions, reuse, maintainability, comments — and a tests pass; `--deep N` adds arch-review's lenses) — the diff never enters the orchestrator's context. Findings triaged **A** (must fix) / **B** (follow-up) / **C** (nit) — the same scale as `self-review` — presented behind a short PR summary, then **positioned line comments** posted after confirmation. The passes add analysis depth; the triage filter decides what reaches the PR. |
 | `mutation-coverage` | Finds code no test asserts on via mutation testing (line-removal or Stryker), then closes each gap with a test that fails when the code is broken. Estimates runtime before mutating; nothing committed or installed in the target repo. |
 | `pr-description` | **Writes** the PR body, doesn't review it. Turns the branch diff into the Vaadin PR template as short bullet lists — issue links, one bullet per behavior change, a `Type of change` label, and numbered `How to test` steps naming a real dev page. Scaffolds `Before / After` for visual changes. Drafts in chat; `gh pr edit` only after you confirm. |
 | `authoring-skills` | Meta: create or improve a skill in this plugin — trigger-shaped descriptions, body archetypes, references split, frontmatter conventions. |
@@ -71,20 +71,21 @@ Everything that posts (`adversarial-review`, `pr-review`) asks for confirmation 
 
 The pass list is data, not prose: `references/profiles.md` holds the pass table and the
 change type × scale matrix, and `scripts/review-plan.sh` resolves them into a launch plan
-(type + signal, scale tier + counts, each pass with its agent, folds and model, the mutant
-budget, the report paths, and the guard verdict). One script call, nothing for a skill to
-re-derive — read that file rather than a copy of it here.
+(type + signal, scale tier + counts, each pass with its agent, read lane and prompt adds, the
+mutant budget, the report paths, and the guard verdict). One script call, nothing for a skill
+to re-derive — read that file rather than a copy of it here.
 
-The short version: the **type** (`--fix` / `--feature` / `--refactor` / `--chore`, else the PR
-title prefix, the branch's commit subjects, parent issue labels, the branch name, the diff
-shape) decides which questions matter, and the diff's **scale** (trivial ≤10 lines, lite ≤100,
-full above) decides how many agents ask them — a dropped pass folds its question into the
-general pass instead of disappearing. Public-API changes, weakened test assertions and
-CI/release files force the full tier regardless of size. A fix is capped at four agents and
-includes the fix pass, whose premise check runs first: a fix contradicting a recorded project
-decision becomes the review's top must-fix finding.
-Every profile includes the comment/slop pass, because `self-review` is the full-scale review
-where even C-tier nits are worth surfacing — the CI review bot on the PR deliberately drops them.
+The short version: two passes, one per read lane — `code-reviewer` on the production diff
+plus the comment-adjacent hunks, `test-reviewer` on the test diff. The **type** (`--fix` /
+`--feature` / `--refactor` / `--chore`, else the PR title prefix, the branch's commit
+subjects, parent issue labels, the branch name, the diff shape) reaches the code pass as a
+prompt add rather than adding a pass: it decides whether fix correctness applies and how
+strictly behavior preservation is read. The diff's **scale** (trivial ≤10 lines, lite ≤100,
+full above) sizes the mutation-coverage budget and nothing else; public-API changes, weakened
+test assertions and CI/release files force the full tier regardless of size. The code pass
+reports C-tier comment and cleanup nits in `self-review`, where they cost nothing to judge,
+and is told to skip the cleanup half in `pr-review` — the CI review bot on the PR
+deliberately drops those too.
 
 **Deep review** — the per-change lens analysis — is `arch-review`'s job: by default
 `self-review` reports breadth findings only and points at `/agent-skills:arch-review` for
@@ -127,7 +128,8 @@ Repo-specific commands (lint, test scoping, source globs) are resolved per repo 
   marketplace.json   # single-plugin marketplace (name: local)
 agents/              # read-only reviewer subagents (agent-skills:<name>) used by the review pipelines
   lens-*.md          # the three arch-review lenses
-  *-reviewer.md      # breadth passes (self-review + pr-review), fix premise/root-cause pass, comment/slop pass
+  code-reviewer.md   # breadth pass over the production diff (self-review + pr-review)
+  test-reviewer.md   # breadth pass over the test diff
   change-enumerator.md
 references/          # shared by every review skill — the single source for each of these
   pipeline.md        # the six pipeline steps: plan, context, fan-out, roll call, triage, deliver
