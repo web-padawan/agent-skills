@@ -1,6 +1,6 @@
 ---
 name: self-review
-description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the matching profile of breadth review passes in one parallel batch, sized by the diff's scale tier (trivial/lite/full), always including the comment/slop pass; on a bug fix the batch includes the fix pass, which checks the fix's premise against the history of the behavior it changes and judges root cause and blast radius. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Per-change deep review (lenses) lives in arch-review — opt in here with --deep N. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
+description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs the code and test review passes in one parallel batch, with the change type reaching the code pass as a prompt add; the diff's scale tier (trivial/lite/full) sizes the coverage budget only. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Per-change deep review (lenses) lives in arch-review — opt in here with --deep N. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review, adversarial-review) or a single pointed architecture question (arch-review).
 argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--scale trivial|lite|full] [--deep N] [--no-coverage]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*)
@@ -25,7 +25,7 @@ Every finding ends up in the report as `confirmed` or `accepted`. Nothing is sil
 
 | Reference | Covers |
 | --- | --- |
-| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the patches and context file, the read discipline, the fan-out, the premise verdict, the roll call, triage |
+| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the patches and context file, the read discipline, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
 | [`references/mutation.md`](references/mutation.md) | Step 7: mutant selection, restore safety, survivors as findings |
@@ -42,7 +42,7 @@ resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<
    (`--fix|--feature|--refactor|--chore` → `--type`, `--scale`, `--deep N`, `--no-coverage`).
    A `guard: refuse:` line ends the run — say the reason in one line and stop. Record `base`,
    `head` and `head0` as literal SHAs. Fetch `$0` with `gh` when given. Per pipeline.md,
-   resolve `type: undetermined` yourself and hand any `type_conflict` to the fit pass.
+   resolve `type: undetermined` yourself and hand any `type_conflict` to the code pass.
 2. **Patches, then context file.** Write the prod and test patches at the plan's
    `patch_prod:` / `patch_tests:` paths — **with a shell redirect**, so the diff lands in a
    file without passing through your own context either. Then the context file at its
@@ -54,9 +54,8 @@ resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<
    lane names**: that column, not the pass count, is what the profile's token cost turns on.
    With `--deep N`, run arch-review's steps 2–3
    ([`../arch-review/SKILL.md`](../arch-review/SKILL.md)) when the batch returns, skipping
-   its scope confirmation: `--deep N` is the confirmation. **On a fix `--deep` is ignored** —
-   the plan's lean fix profile wins; say so in one line and point at
-   `/agent-skills:arch-review <file>:<lines>` on the fix's hunks instead.
+   its scope confirmation: `--deep N` is the confirmation. It behaves the same on every
+   change type.
 4. **Assert nothing changed.** `git status --porcelain --untracked-files=no` still empty. If a
    pass edited anyway: revert those tracked files with `git checkout -- <path>`, delete files
    it created **by path**, keep only its output as findings. The patches live in the
@@ -73,7 +72,7 @@ resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<
    the type, the scale tier, tier counts, the reminder that **nothing was changed**, and the
    verdict: **ready for PR** / **needs more work**.
 
-The profile itself — which passes run, with which folds and budget — lives in
+The profile itself — which passes run, and the mutant budget — lives in
 [`../../references/profiles.md`](../../references/profiles.md) and reaches you through the
 plan. Do not re-derive it here. Why the pipeline is shaped this way:
 [`../../references/rationale.md`](../../references/rationale.md).

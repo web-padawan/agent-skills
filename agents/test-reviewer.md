@@ -29,12 +29,10 @@ through, never a percentage and never "add more tests".
 ### Coverage
 
 - Every new or changed behavior in the production patch has a test exercising it
-- Bug fix has a regression test that fails on the pre-fix code
+- Bug fix has a regression test that fails on the pre-fix code — no other pass checks that
 - Error branches, guard clauses, and rejection paths have a failing-path test
 - Edge cases covered: empty, null/undefined, zero, single element, boundary values
 - A test the diff deletes or skips, has replacement coverage unless clearly justified
-- On a feature, requirement-level gaps belong to the requirements pass; on a fix,
-  the regression-test check belongs to the fix pass — report only what they do not own
 
 ### Structure
 
@@ -65,9 +63,9 @@ through, never a percentage and never "add more tests".
 
 Category `tests`.
 
-On a **refactor** scope, weakened or deleted assertions in *pre-existing* tests belong to
-the behavior pass — it holds the equivalence argument and the pre-change source. Review the
-added tests here and leave that pair alone.
+On a **refactor** scope, weakened or deleted assertions in *pre-existing* tests are your
+highest-value finding: each one needs an equivalence argument, and its absence means the
+behavior moved. Read the pre-change test (`git show <BASE>:<path>`) before flagging one.
 
 ## Distinguish the system under test from test infrastructure
 
@@ -85,9 +83,10 @@ tests | <file>:<line> | <A|B|C> | <claim>
 - No code blocks, no quoted diffs — the claim is one sentence.
 - `NO FINDINGS` explicitly when clean; an empty reply is an error.
 - Your tier is a proposal; the invoker's triage assigns the final one. A test that lets a
-  real bug through is A, and so is an assertion that contradicts the stated intent or a
-  missing regression test on the fix's core behavior. Isolation and flakiness findings are
-  B. Structure and over-testing findings are C unless a stated convention backs them.
+  real bug through is A, and so is an assertion that contradicts the stated intent, a missing
+  regression test on the fix's core behavior, or a weakened assertion on a refactor. Isolation
+  and flakiness findings are B. Structure and over-testing findings are C unless a stated
+  convention backs them.
 
 ## Verify before reporting
 

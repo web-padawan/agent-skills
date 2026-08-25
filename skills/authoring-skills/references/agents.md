@@ -37,11 +37,9 @@ disallowedTools: Write, Edit
 
 Target ≤80 lines: role and read-only statement first, then the questions, the output
 contract (finding-line format, cap, `NO FINDINGS` rule), a **Verify before reporting**
-section, and the closing delivery sentence. See `agents/behavior-reviewer.md` for the
-minimal example, `agents/fix-reviewer.md` for a procedure-heavy one, and
-`agents/fit-reviewer.md` for one carrying four categories — a pass takes another
-question when it shares the first one's inputs, and each still reports under its own
-category.
+section, and the closing delivery sentence. See `agents/test-reviewer.md` for the single-category
+example and `agents/code-reviewer.md` for one carrying seven — a pass takes another question
+when it shares the first one's inputs, and each still reports under its own category.
 
 ## Static in the body, dynamic in the prompt
 

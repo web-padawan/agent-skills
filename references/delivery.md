@@ -30,13 +30,12 @@ List every agent you launched and tick the ones whose findings you actually hold
 
 ```
 Delivery roll call
-  general             ✅ agent · 8 findings
+  code                ✅ agent · 8 findings
   tests               ✅ agent · 8 findings
-  slop                ✅ agent · 2 findings
   boundary lens       ✅ agent · 3 findings + narrative block
 ```
 
-Markers: `✅ agent` · `⚠️ self-run` · `❌ missing` · `⏳ running`. The finding count makes the roll call double as a yield tally, which is what tells you later whether a pass earns its place. Use the same names in any mid-run status line — `Done: general, tests. Waiting on: slop, boundary lens.` — so the reader never has to map a digit to a purpose.
+Markers: `✅ agent` · `⚠️ self-run` · `❌ missing` · `⏳ running`. The finding count makes the roll call double as a yield tally, which is what tells you later whether a pass earns its place. Use the same names in any mid-run status line — `Done: code, tests. Waiting on: boundary lens.` — so the reader never has to map a digit to a purpose.
 
 ## Escalation — for each pass that delivered nothing
 

@@ -6,7 +6,6 @@ First in chat, compact and scannable — the full detail belongs in the report:
 
 ```
 Type: refactor — signal: branch name prefix · Scale: lite (78 lines, 4 files)
-Premise: sound — #9239 review kept the filter guard   (fix only)
 
 A (must fix before merge) — 2
   packages/foo/src/foo.js:42 — <claim> → <suggested fix>
@@ -63,7 +62,6 @@ compressed — the findings are never lost, only relocated.
 **Verdict: ready for PR | needs more work**
 Type: <feature | fix | refactor | chore> (signal: <what decided it>)
 Scale: <trivial | lite | full> (<N> lines, <M> files<, override or --scale reason>)
-Premise: <sound | contradicted | unverified> — <citation>   <!-- fix only -->
 Deep review: <N> of <M> significant changes   <!-- only when --deep ran -->
 Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missing   <!-- name every pass -->
 
@@ -77,16 +75,17 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 
 <one paragraph: what was reviewed, what was found, what remains>
 
-## General review
+## Behavior
 - [A][confirmed] packages/foo/src/foo.js:42 — <claim> → <suggested fix>
 - [C][accepted] <file>:<line> — <claim> — <why it is not a problem>
 
-## Scope
-## Intent
-## Integration
+## Fix
+## Logic
+## Conventions
+## Reuse
+## Maintainability
+## Comments
 ## Tests
-## Slop
-## Cleanup
 
 ## Follow-ups
 - [B] <file>:<line> — <claim> → <suggested fix>
@@ -99,10 +98,9 @@ For architectural/boundary/impact analysis of a specific change, run `/agent-ski
 - Every finding appears under its category, tagged `[tier]` and `[status]`. Statuses are
   exactly two: `confirmed` (real, still open — this skill fixed nothing) and `accepted` (no
   action needed — false positive or deliberate choice).
-- Add the profile's own sections after the shared ones: **feature** → `## Requirements
-  coverage`; **fix** → `## Premise & history` first, then `## Root cause & blast radius`;
-  **refactor** → `## Behavior preservation`. Omit sections whose pass did not run; an empty
-  category reads `- none`.
+- One section per category the `code` and `tests` passes report, in the order above; the
+  category list is [`../../../references/pipeline.md`](../../../references/pipeline.md) §3's.
+  Omit the `## Fix` section on a change that is not a fix; an empty category reads `- none`.
 - **Only when `--deep` ran**: a `## Deep review` section and a `## Not deep-reviewed` list,
   both exactly as [`../../arch-review/SKILL.md`](../../arch-review/SKILL.md) step 4 defines
   them — its rules are the single source, do not restate them. Without `--deep`, the Next
@@ -116,9 +114,8 @@ For architectural/boundary/impact analysis of a specific change, run `/agent-ski
 - **Follow-ups** repeats every `confirmed` B and C finding as a paste-ready list for the
   follow-up issue. A findings are not follow-ups — they are in the way of the merge and
   belong in `## Next steps`.
-- On a **fix** with `premise: contradicted`, the `## Premise & history` section leads the
-  report: the citation, what the project decided, and what the fix does instead — the top A
-  finding the verdict rests on.
+- On a **fix**, a finding that the change reverses a behavior an existing test asserts on
+  purpose leads the report: it questions the diff, not a line of it.
 - The report is never committed — it lives in the git-ignored path the plan named.
 
 ## Verdict rubric
@@ -127,12 +124,11 @@ For architectural/boundary/impact analysis of a specific change, run `/agent-ski
 
 - any **confirmed A** finding exists — this skill changes nothing, so an A is unresolved by
   definition
-- **fix**: `premise: contradicted`, or no test fails when the whole fix is reverted
+- **fix**: no test fails when the whole fix is reverted
 - **feature**: a stated requirement is unimplemented
 - **refactor**: an observable behavior change is unexplained
-- the type's **defining pass** (requirements on a feature, the fix pass on a fix,
-  behavior preservation on a refactor) is `missing`: the type's defining risk went
-  unexamined, so there is no basis for a verdict
+- the `code` pass is `missing`: the change's own correctness went unexamined, so there is no
+  basis for a verdict
 
 Otherwise **ready for PR**. Confirmed B and C findings never block; they live under
 Follow-ups. The verdict describes `HEAD` as it stands — nothing was changed to reach it.
