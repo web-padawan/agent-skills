@@ -75,10 +75,11 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 
 <one paragraph: what was reviewed, what was found, what remains>
 
-## Behavior
+## Scope
 - [A][confirmed] packages/foo/src/foo.js:42 — <claim> → <suggested fix>
 - [C][accepted] <file>:<line> — <claim> — <why it is not a problem>
 
+## Behavior
 ## Fix
 ## Logic
 ## Conventions

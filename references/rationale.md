@@ -60,7 +60,7 @@ scale only sizes the mutant budget instead of dropping a pass.
 (requirements, fix, behavior) and the split of the general questions across general, fit and
 slop all judged the same production patch against the same reference material, so triage
 spent its verification budget deduping findings the batch had already paid to produce twice.
-The whole checklist fits in one agent under the 80-line body target, each section reporting
+The whole checklist fits in one agent, each section reporting
 under its own category, and the type now reaches it as a prompt add — which is what makes a
 question type-specific without making it a pass.
 
