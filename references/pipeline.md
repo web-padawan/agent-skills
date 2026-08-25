@@ -170,9 +170,9 @@ Findings come back one per line:
 <category> | <file>:<line> | <A|B|C> | <claim>
 ```
 
-Categories: `behavior`, `fix`, `logic`, `conventions`, `reuse`, `maintainability`,
+Categories: `scope`, `behavior`, `fix`, `logic`, `conventions`, `reuse`, `maintainability`,
 `comments`, `tests` — plus `architecture`, `boundary`, `impact` and `api` when arch-review's
-lenses ran. **A category is not a pass**: the `code` pass reports the first seven, one per
+lenses ran. **A category is not a pass**: the `code` pass reports the first eight, one per
 section of its checklist. The roll call goes by pass, the report by category.
 
 ## 4 — Roll call

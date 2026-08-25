@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Code review pass of the self-review and pr-review pipelines — reviews the production diff against a checklist: behavior and compatibility, fix correctness, logic and boundaries, conventions, reuse, maintainability, and the comments the diff touches. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Code review pass of the self-review and pr-review pipelines — reviews the production diff against a checklist: scope, behavior and compatibility, fix correctness, logic and boundaries, conventions, reuse, maintainability, and the comments the diff touches. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
@@ -18,17 +18,31 @@ strictly — nothing observable may change. `no reuse/maintainability nits` mute
 
 ## Checklist
 
+### Scope — category `scope`
+
+- For `type_conflict` line in the prompt: does the diff match declared change type?
+- No bug fixes in a refactor PR unless explicitly covered by a test
+- No drive-by changes: no files or hunks the stated goal does not need
+- No behavior the stated intent does not ask for
+- No requirements implemented differently from how the intent states them
+- No several independent parts in one branch — name the split if there is one
+- With a parent PR/issue: the extraction stands alone and depends on nothing from the parent
+
 ### Behavior and compatibility — category `behavior`
 
-- No behavior altering changes without reasonable justification, and no changed defaults, return values, or event timing/ordering
-- No unintentional breaking changes to the existing public API, documented public contracts kept by the implementation, and no silent changes to other consumers not clearly mentioned
-- When your prompt carries a `type_conflict` line, answer it here: does the diff match its declared change type?
+- No behavior altering changes without reasonable justification
+- No changed defaults, return values, or event timing/ordering
+- No unintentional breaking changes to the existing public API
+- Every documented public contract kept by the implementation
+- No silent changes to other consumers not clearly mentioned
 
 ### Fix correctness — category `fix`
 
-- Change fixes the actual root cause of the bug, not masks it — no guard or workaround that only addresses the symptom
-- The fix does not reverse a behavior an existing test in the suite asserts on purpose
-- No other place with the same pattern still carrying the bug — sibling components, copy-pasted helpers, the bypassed mixin — and no existing behavior changed for consumers who did not hit it
+- Change fixes the actual root cause of the bug, not masks it
+- No guard or workaround that only addresses the symptom
+- The fix does not reverse a behavior pinned by the existing test
+- No other components with the same pattern still carrying the bug
+- No existing behavior changed for consumers who did not hit the bug
 
 ### Logic and boundaries — category `logic`
 
@@ -39,35 +53,46 @@ strictly — nothing observable may change. `no reuse/maintainability nits` mute
 ### Conventions — category `conventions`
 
 - No violation of the context file's `### Conventions excerpt` — quote the exact rule and the exact line that breaks it
-- Naming consistent with sibling components or mixins for the same concepts, and design patterns established across the existing codebase followed
-- Method and property ordering matching the surrounding file and similar files, correct abstractions, clear separation of concerns, readable code
+- Naming consistent with sibling components or mixins for the same concepts
+- Code follows design patterns established across the existing codebase
+- Method and property ordering matching the surrounding file and similar files
+- Correct abstractions, clear separation of concerns, readable code
 
 ### Reuse and cost — category `reuse`
 
 - No new code re-implementing an existing helper the sweep found — name the helper to call instead
-- No duplication or copy-paste with slight variation, no unnecessary complexity or tight coupling, no unused or unreachable code, and no redundant computation or repeated DOM measurement
+- No duplication or copy-paste with slight variation
+- No unnecessary complexity or tight coupling
+- No unused or unreachable code, no obsolete checks
+- No redundant computation or repeated DOM measurement
 
 ### Maintainability — category `maintainability`
 
-- No new technical debt, workarounds or TODOs without follow-up, and no legacy syntax (Polymer style observers, computed properties)
+- No new technical debt introduced
+- No private flags unless absolutely necessary
+- No workarounds or TODOs without follow-up
+- No legacy syntax (Polymer style observers, computed properties)
 
 ### Comments — category `comments`
 
-- No redundant comments that restate the code which is self-explanatory, and no decorative banners or comments longer than 1 line in CSS files
-- No stale references to refactored code or logic that no longer exists, and no mentions of protected or private methods, properties or flags
+- No redundant comments that restate the code which is self-explanatory
+- No decorative banners or comments longer than 1 line in CSS files
+- No stale references to refactored code or logic that no longer exists
+- No mentions of protected or private methods, properties or flags
 - No shorthand `#` issue syntax — always a full GitHub link, for open issues only
 
 ## Output contract
 
 ```
-<behavior|fix|logic|conventions|reuse|maintainability|comments> | <file>:<line> | <A|B|C> | <claim>
+<scope|behavior|fix|logic|conventions|reuse|maintainability|comments> | <file>:<line> | <A|B|C> | <claim>
 ```
 
 - One line per finding, at most **12** across all categories, ranked most severe first; `NO FINDINGS` explicitly when clean, and an empty reply is an error.
 - No code blocks, no quoted diffs — the claim is one sentence, and a claim without a consequence is noise: name the input or state that misbehaves and what goes wrong.
 - Your tier is a proposal; triage assigns the final one. A symptom-only fix, the same bug left in a
-  released sibling, and a convention violation a reviewer would block on are A; `reuse` and
-  `maintainability` are B or C; `comments` is C, B when it is wrong about the code.
+  released sibling, and a convention violation a reviewer would block on are A; `scope` is a
+  judgment call for the user, so B at most; `reuse` and `maintainability` are B or C; `comments`
+  is C, B when it is wrong about the code.
 
 ## Verify before reporting
 

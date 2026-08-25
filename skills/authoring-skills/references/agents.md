@@ -35,10 +35,10 @@ disallowedTools: Write, Edit
 
 ## Body shape
 
-Target ≤80 lines: role and read-only statement first, then the questions, the output
+Target ≤100 lines: role and read-only statement first, then the questions, the output
 contract (finding-line format, cap, `NO FINDINGS` rule), a **Verify before reporting**
 section, and the closing delivery sentence. See `agents/test-reviewer.md` for the single-category
-example and `agents/code-reviewer.md` for one carrying seven — a pass takes another question
+example and `agents/code-reviewer.md` for one carrying eight — a pass takes another question
 when it shares the first one's inputs, and each still reports under its own category.
 
 ## Static in the body, dynamic in the prompt
