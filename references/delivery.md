@@ -44,7 +44,7 @@ Escalate the **mechanism** — a retry down the same channel fails identically, 
 1. **Re-spawn once** with no `name` (and `run_in_background: false` where the tool has it) — a different channel, not a second try down the broken one.
 2. **Self-run the pass**: read the files and answer that pass's questions yourself (the questions are in the pass's `agents/<name>.md` definition). Tag every finding it yields `self-run`.
 
-Pinging a live agent is **not** a rung. The launch rule above forbids `name`, so there is nothing addressable to ping — a ladder that starts with a rung the launch rule rules out just wastes a turn before the re-spawn. If you deliberately broke the launch rule and named an agent, ping it once before re-spawning: restate the output contract, name the 2–3 questions you most need answered, and include what you have already verified so it does not re-derive it.
+(Only if you named an agent against the launch rule: ping it once before re-spawning — restate the output contract and what you have already verified.)
 
 Never drop a pass silently, and never let a lost report pass for a clean one. Carry each pass's status — `agent`, `self-run`, or `missing` — into the report.
 

@@ -35,23 +35,13 @@ The change type shifts where the A line sits. Apply on top of the rubric:
   belongs in a separate PR.
 - **chore** — nothing is A unless CI would fail.
 
-### When a tests finding meets the type-aware line
+### Tests findings vs the type-aware line
 
-The rubric calls a test that lets a real bug through **A**; the type-aware line calls a
-coverage gap away from the core behavior **B**. A tests finding can read as both. The
-type-aware line wins, with one exception and one tie-break:
-
-- **Exception** — the unpinned path is the very thing the branch exists to deliver (the fix's
-  own behavior, the feature's headline promise). Then it is A, and on a **fix** it is A
-  regardless, per the rule above.
-- **Tie-break** — ask whether the behavior is pinned *anywhere else*. A tint that no base or
-  Lumo screenshot catches but the Aura suite does is a **B**: the branch is not shipping
-  unverified, it is shipping under-verified in one lane.
-
-A stale-but-passing baseline is the common case here. It is B when regenerating it is the
-whole fix and nothing user-visible is at risk — and the report must still say the committed
-baseline does not match the current code, because a reader who assumes it does is being
-misled by the repo, not by the review.
+A tests finding can read as both "lets a real bug through" (A) and "coverage gap away from the
+core" (B). The type-aware line wins, except when the unpinned path is what the branch exists
+to deliver — then A (on a **fix**, always). Tie-break: pinned anywhere else (another suite,
+another theme) → B. A stale-but-passing baseline is B when regenerating it is the whole fix,
+but the report must still say the committed baseline does not match the code.
 
 ## Slop and comments
 
