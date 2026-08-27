@@ -110,7 +110,12 @@ else
     else
       REMOTE_HEAD="not_on_remote"
     fi
-    UNCOMMITTED=$(git status --porcelain 2>/dev/null || echo "")
+    # Only TRACKED changes make a branch dirty. Untracked files are reported but
+    # never set the status: a stray scratch file or an unregistered skill dir is
+    # not a reason to withhold the diff, and the callers' own guards
+    # (review-plan.sh) already test tracked dirtiness with --untracked-files=no.
+    UNCOMMITTED=$(git status --porcelain --untracked-files=no 2>/dev/null || echo "")
+    UNTRACKED=$(git ls-files --others --exclude-standard --directory 2>/dev/null || echo "")
 
     LOCAL_SHORT="${LOCAL_HEAD:0:8}"
     if [ "$REMOTE_HEAD" = "not_on_remote" ]; then
@@ -133,6 +138,10 @@ else
     if [ -n "$UNCOMMITTED" ]; then
       echo "uncommitted:"
       echo "$UNCOMMITTED"
+    fi
+    if [ -n "$UNTRACKED" ]; then
+      echo "untracked (does not affect status):"
+      printf '%s\n' "$UNTRACKED" | sed 's/^/?? /'
     fi
   fi
 fi
