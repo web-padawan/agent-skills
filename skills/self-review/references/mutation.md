@@ -35,6 +35,19 @@ calculations and assignments > everything else. Weight toward lines the earlier 
 flagged — a mutant on a flagged line is worth more than one on an incidental line. List
 skipped hunks in the report; silent truncation is forbidden.
 
+**When the styling skip empties the pool, stop.** The plan's `mutant_pool:` counts what is left
+after it; `mutant_pool: 0` means the budget has nothing to spend itself on, and the honest
+output is one line in the report — `no mutants: the prod diff is styling only` — not fifteen
+mutants on CSS declarations. Say it; a coverage stage that quietly ran on nothing reads exactly
+like one that ran and found nothing.
+
+**A visually-tested package weakens the signal, it does not restore it.** Where the only test
+for a line is a screenshot, a mutant dies only if it moves enough pixels to clear the runner's
+tolerance (in this repo `wtr-utils.js`: `threshold: 0.2`, `failureThreshold: 0.05` percent). A
+small colour or spacing change survives a mutation it genuinely broke. Treat a survivor there
+as *unpinned within tolerance* and say so in the finding, rather than reporting it as a plain
+coverage gap.
+
 ### Targeting per type
 
 The plan prints the effective budget (`mutants:`), already capped by the scale tier. What

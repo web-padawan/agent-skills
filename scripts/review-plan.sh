@@ -349,7 +349,7 @@ fi
 # ── Command map ───────────────────────────────────────────────────────
 LINT_CMD=""; TEST_CMD=""; SRC_GLOB=""; CMD_SOURCE=""
 if [ -d packages ] && ls packages/*/src >/dev/null 2>&1; then
-  LINT_CMD="yarn lint"; TEST_CMD="yarn test --group <package>"; SRC_GLOB="packages/*/src/*.js"
+  LINT_CMD="yarn lint"; TEST_CMD="yarn test --group <package>"; SRC_GLOB="packages/*/src/**/*.{js,ts}"
   CMD_SOURCE="monorepo layout (packages/*/src)"
 elif [ -f package.json ]; then
   grep -q '"lint"' package.json && LINT_CMD="yarn lint"
@@ -372,9 +372,47 @@ fi
 TEST_RE='(^|/)(test|tests|__tests__|it)/|\.(test|spec)\.[cm]?[jt]sx?$|Test\.java$|IT\.java$|Tests?\.kt$'
 TEST_FILES=""
 PROD_FILES=""
+BINARY_FILES=""
 if [ -n "$CHANGED" ]; then
-  TEST_FILES=$(printf '%s\n' "$CHANGED" | grep -E "$TEST_RE" | tr '\n' ' ' || true)
-  PROD_FILES=$(printf '%s\n' "$CHANGED" | grep -vE "$TEST_RE" | tr '\n' ' ' || true)
+  # Binaries get their own lane. `git diff` renders them as a one-line `Bin N -> M
+  # bytes` stub, so putting them in a prepared patch adds noise and no reviewable
+  # content — but dropping them silently hides screenshot baselines, which are the
+  # whole subject of a visual-regression review. Named, not diffed.
+  BINARY_FILES=$(git diff --numstat "$BASE..$HEAD" 2>/dev/null | awk -F'\t' '$1 == "-" && $2 == "-" { print $3 }' | tr '\n' ' ' || true)
+  TEXT_CHANGED="$CHANGED"
+  if [ -n "$BINARY_FILES" ]; then
+    for bin in $BINARY_FILES; do
+      TEXT_CHANGED=$(printf '%s\n' "$TEXT_CHANGED" | grep -vxF "$bin" || true)
+    done
+  fi
+  TEST_FILES=$(printf '%s\n' "$TEXT_CHANGED" | grep -E "$TEST_RE" | tr '\n' ' ' || true)
+  PROD_FILES=$(printf '%s\n' "$TEXT_CHANGED" | grep -vE "$TEST_RE" | tr '\n' ' ' || true)
+fi
+
+# Mutant candidate pool — an advisory count, not a budget. The matrix sizes
+# `mutants:` from type and scale, both blind to what the diff is MADE of. A diff
+# that is all CSS, CSS-in-JS or markup has nothing mutation.md would accept as a
+# candidate (its selection rule skips styling outright), so a budget of 15 against
+# a pool of 0 sends the coverage stage looking for work that does not exist.
+MUTANT_POOL=0
+if [ -n "$PROD_FILES" ] && [ -n "$BASE" ]; then
+  MUTANT_POOL=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | awk '
+    /^\+\+\+ b\// { file = substr($0, 7); next }
+    /^\+/ {
+      if (file !~ /\.[cm]?[jt]sx?$/) next          # source code only
+      if (file ~ /(^|\/)styles\// || file ~ /-styles\.[cm]?[jt]s$/) next   # styling by construction
+      body = substr($0, 2)
+      sub(/^[ \t]+/, "", body)
+      if (body == "") next
+      if (body ~ /^(import|export[ \t]+\{|export[ \t]+\*)/) next
+      if (body ~ /^(\/\/|\/\*|\*|\*\/)/) next
+      if (body ~ /^[)}\]`;,]+$/) next
+      if (body ~ /^-{0,2}[_a-z][-_a-z0-9]*:[ \t]/) next   # CSS declaration, custom properties included
+      if (body ~ /^[.:&#@[$]/ || body ~ /^[a-z-]+[ \t]*\{$/) next   # CSS selector, at-rule, interpolated selector
+      if (body ~ /^(var|color-mix|calc|light-dark|oklch|linear-gradient)\(/) next   # wrapped CSS value
+      n++
+    }
+    END { print n + 0 }' || echo 0)
 fi
 
 # Files with a comment inside or beside a hunk — the code pass's extra input for
@@ -420,6 +458,13 @@ echo "scale_reason: $SCALE_REASON"
 echo "deep: $DEEP_ROW (source: $DEEP_SOURCE)"
 echo "coverage: $COVERAGE"
 echo "mutants: $MUTANTS"
+if [ "$MUTANTS" -gt 0 ] 2>/dev/null; then
+  if [ "$MUTANT_POOL" -eq 0 ]; then
+    echo "mutant_pool: 0 — no non-styling source lines in the prod diff; the coverage stage has nothing to mutate"
+  else
+    echo "mutant_pool: ~$MUTANT_POOL non-styling source lines"
+  fi
+fi
 echo "conventions_doc: ${CONVENTIONS:-none}"
 
 if [ "$GUARD" != "ok" ]; then
@@ -449,7 +494,22 @@ fi
 
 echo "prod_files: ${PROD_FILES:-none}"
 echo "test_files: ${TEST_FILES:-none}"
+echo "binary_files: ${BINARY_FILES:-none}"
 echo "comment_files: ${COMMENT_FILES:-none}"
+
+# The branch's own commit sequence. `base..head` flattens it, but the ORDER is
+# evidence: a fix commit landing after the commit that captured a baseline, or
+# after the test that was supposed to pin it, is exactly the stale-baseline and
+# untested-fix smell — and it is invisible in the squashed diff.
+if [ -n "$BASE" ]; then
+  BRANCH_COMMITS=$(git log --oneline --no-decorate --reverse "$BASE..$HEAD" 2>/dev/null || true)
+  if [ -n "$BRANCH_COMMITS" ]; then
+    echo "commits:"
+    printf '%s\n' "$BRANCH_COMMITS" | sed 's/^/  /'
+  else
+    echo "commits: none"
+  fi
+fi
 
 if [ -n "$REPORT_DIR" ]; then
   echo "report_dir: $REPORT_DIR"
