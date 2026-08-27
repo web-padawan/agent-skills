@@ -20,39 +20,45 @@ with `git diff` (pipeline.md §3, *Read discipline*).
 
 | id | agent | reads | prompt adds |
 | --- | --- | --- | --- |
-| code | agent-skills:code-reviewer | prod+comments | the change type; the plan's `type_conflict` line, when it is not `none`; in `pr` mode, `no reuse/maintainability nits` — both need the author's judgment and a local checkout, so they stay in `self` |
+| change | agent-skills:change-reviewer | prod | the change type; the plan's `type_conflict` line, when it is not `none`; the plan's `deep` budget (`deep budget N`) |
+| code | agent-skills:code-reviewer | prod+comments | in `pr` mode, `no reuse/maintainability nits` — both need the author's judgment and a local checkout, so they stay in `self` |
 | tests | agent-skills:test-reviewer | both | — |
 
 ## Matrix
 
-| mode | type | scale | passes | mutants |
-| --- | --- | --- | --- | --- |
-| self | feature | any | code tests | 15 |
-| self | fix | any | code tests | 5 |
-| self | refactor | any | code tests | 10 |
-| self | chore | any | code tests | 0 |
-| pr | feature | any | code tests | 0 |
-| pr | fix | any | code tests | 0 |
-| pr | refactor | any | code tests | 0 |
-| pr | chore | any | code tests | 0 |
-| pr | undetermined | any | code tests | 0 |
+| mode | type | scale | passes | mutants | deep |
+| --- | --- | --- | --- | --- | --- |
+| self | feature | any | change code tests | 15 | 3 |
+| self | fix | any | change code tests | 5 | 3 |
+| self | refactor | any | change code tests | 10 | 3 |
+| self | chore | any | change code tests | 0 | 0 |
+| pr | feature | any | change code tests | 0 | 3 |
+| pr | fix | any | change code tests | 0 | 3 |
+| pr | refactor | any | change code tests | 0 | 3 |
+| pr | chore | any | change code tests | 0 | 0 |
+| pr | undetermined | any | change code tests | 0 | 3 |
 
-The scale tier caps the budget on top of the row: **trivial 3 · lite 8 · full uncapped**.
-The plan script prints the capped number, so `mutants` above is the type's budget, not
-the effective one. `arch` mode has no breadth passes — its lens trio comes from
-`skills/arch-review/SKILL.md`.
+The scale tier caps both budgets on top of the row: mutants **trivial 3 · lite 8 · full
+uncapped**, deep blocks **trivial 1 · lite 2 · full uncapped**. The plan script prints the
+capped numbers, so `mutants` and `deep` above are the type's budgets, not the effective ones.
+`--deep N` overrides the deep budget outright; `--deep 0` keeps the change pass but skips its
+blocks.
 
 ## Why the tables look like this
 
-- **Two lanes, two passes.** Production code and tests are the two read lanes a branch has,
-  and each lane has exactly one owner. Every extra pass re-read a lane someone else already
-  owned, so the branch's lines were paid for once per pass and the overlap was deduped at
-  triage — after the spend, not instead of it.
+- **Three questions, three passes.** A branch raises three questions — what the change
+  *does and promises* (scope, behavior, fix correctness, boundary, impact), how the code is
+  *written* (logic, conventions, reuse, maintainability, comments), and whether the *tests*
+  pin it. Each question has exactly one owner, so no two passes search for the same thing:
+  the consumer grep belongs to the change pass, the sibling sweep to the code pass, the test
+  patch to the tests pass.
 - **The change type is a prompt add, not a pass.** The fix, requirements and behavior passes
-  each asked one type's question against the production patch the code pass already reads.
-  As checklist sections in that pass they cost no agent and no extra read, and no tier can
-  drop them.
-- **Scale sizes the mutant budget and nothing else** — trivial 3 · lite 8 · full uncapped.
-  It no longer changes the pass list: with two passes covering two lanes there is nothing
-  left to drop, and the tier still appears in the plan and the report because it is what the
-  coverage stage is sized by.
+  each asked one type's question against the production patch. As checklist sections of the
+  change pass they cost no agent and no extra read, and the code pass is type-agnostic.
+- **Deep review is a budget inside the change pass, not a second stage.** The boundary and
+  impact blocks run on the top changes the pass selects itself, in the same barrier as the
+  other passes; `deep` sizes how many, the same way `mutants` sizes the coverage stage.
+- **Scale sizes budgets and nothing else** — mutants and deep blocks. It never changes the
+  pass list: with three passes covering three questions there is nothing left to drop, and
+  the tier still appears in the plan and the report because it is what the budgets are
+  sized by.

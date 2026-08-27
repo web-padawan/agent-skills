@@ -62,7 +62,7 @@ compressed — the findings are never lost, only relocated.
 **Verdict: ready for PR | needs more work**
 Type: <feature | fix | refactor | chore> (signal: <what decided it>)
 Scale: <trivial | lite | full> (<N> lines, <M> files<, override or --scale reason>)
-Deep review: <N> of <M> significant changes   <!-- only when --deep ran -->
+Deep review: <N> of <M> significant changes   <!-- omit when the deep budget was 0 -->
 Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missing   <!-- name every pass -->
 
 **Nothing was changed** — this report is the only output.
@@ -81,6 +81,8 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 
 ## Behavior
 ## Fix
+## Boundary
+## Impact
 ## Logic
 ## Conventions
 ## Reuse
@@ -88,24 +90,35 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 ## Comments
 ## Tests
 
+## Deep review
+### <file>:<line-range> — <short name>   <!-- one per block the change pass returned -->
+<block prose, scaled to the finding — see below>
+
+## Not deep-reviewed
+- <file>:<line-range> — <reason it ranked below the line, or `covered by <block name>`>
+
 ## Follow-ups
 - [B] <file>:<line> — <claim> → <suggested fix>
 
 ## Next steps
 Fix the A findings, then re-run. Coverage gaps: `/agent-skills:mutation-coverage <file>`.
-For architectural/boundary/impact analysis of a specific change, run `/agent-skills:arch-review <file>:<lines>`.
 ````
 
 - Every finding appears under its category, tagged `[tier]` and `[status]`. Statuses are
   exactly two: `confirmed` (real, still open — this skill fixed nothing) and `accepted` (no
   action needed — false positive or deliberate choice).
-- One section per category the `code` and `tests` passes report, in the order above; the
-  category list is [`../../../references/pipeline.md`](../../../references/pipeline.md) §3's.
-  Omit the `## Fix` section on a change that is not a fix; an empty category reads `- none`.
-- **Only when `--deep` ran**: a `## Deep review` section and a `## Not deep-reviewed` list,
-  both exactly as [`../../arch-review/SKILL.md`](../../arch-review/SKILL.md) step 4 defines
-  them — its rules are the single source, do not restate them. Without `--deep`, the Next
-  steps line is the deep-review pointer.
+- One section per category the `change`, `code` and `tests` passes report, in the order
+  above; the category list is [`../../../references/pipeline.md`](../../../references/pipeline.md)
+  §3's (`api` findings file under **Boundary**). Omit the `## Fix` section on a change that is
+  not a fix; an empty category reads `- none`.
+- **Deep review** holds the change pass's blocks, in its rank order, with the prose scaled to
+  the finding so the report stays readable at any budget: an **A-tier** change keeps its block
+  in full, close to verbatim; a **B/C-only** change keeps one condensed line (`Promise` +
+  `Before merge`) — the finding lines already carry the claim; a **clean** change keeps
+  `NO FINDINGS` plus its `Boundary` and `Consumers` lines, so the clean verdict is on the
+  record. **Not deep-reviewed** lists every `BELOW LINE` candidate with its reason — never
+  silently dropped. Omit both sections when the deep budget was 0 or the pass returned
+  `NO SIGNIFICANT CHANGES` (say which).
 - Distinguish "not run" from "ran and lost". Tag `self-run` findings `[self-run]` after the
   status and head that category with `> pass self-run — no independent agent review`. A
   `missing` category reads `- none delivered — pass not covered`, never `- none`.
@@ -128,8 +141,8 @@ For architectural/boundary/impact analysis of a specific change, run `/agent-ski
 - **fix**: no test fails when the whole fix is reverted
 - **feature**: a stated requirement is unimplemented
 - **refactor**: an observable behavior change is unexplained
-- the `code` pass is `missing`: the change's own correctness went unexamined, so there is no
-  basis for a verdict
+- the `change` or `code` pass is `missing`: what the change does, or how it is written, went
+  unexamined, so there is no basis for a verdict
 
 Otherwise **ready for PR**. Confirmed B and C findings never block; they live under
 Follow-ups. The verdict describes `HEAD` as it stands — nothing was changed to reach it.

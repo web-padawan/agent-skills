@@ -12,14 +12,14 @@ you can open it and copy the shape.
 ## The four categories
 
 ### 1. Code quality & review
-Reviews code against a rubric, a set of lenses, or a skeptical stance; may post
+Reviews code against a rubric, a checklist, or a skeptical stance; may post
 findings. Report-producing, mostly read-only.
-- In this repo: **`self-review`** (own branch, pre-PR, type-profiled passes),
-  **`arch-review`** (one change through three lenses), **`guided-review`**
-  (interactive PR walkthrough, never posts), **`adversarial-review`** (skeptical
-  pass, one summary comment), **`pr-review`** (rubric pass, inline comments).
+- In this repo: **`self-review`** (own branch, pre-PR, three checklist passes),
+  **`guided-review`** (interactive PR walkthrough, never posts),
+  **`adversarial-review`** (skeptical pass, one summary comment),
+  **`pr-review`** (rubric pass, inline comments).
 - The crowded bucket — every new skill here **must** carry a boundary clause
-  against the existing five.
+  against the existing four.
 
 ### 2. Verification & testing
 Describes how to prove code works: coverage checks, test-writing procedures,

@@ -28,14 +28,15 @@ Pack in the literal verbs, nouns, and phrases a user would actually type.
 List the kinds of request it covers — breadth here is deliberate so many
 phrasings match.
 
-- **`arch-review`** lists the questions it answers rather than how it works:
-  > "Use when asked whether a change is architecturally safe, what a new API
-  > commits to, or what a change's blast radius is."
-  A user who types "what does this new property commit us to?" matches even
-  though they never said "boundary review".
+- **`pr-description`** lists the requests it answers rather than how it works:
+  > "Use when asked to write a PR description, fill in the PR template,
+  > describe this branch for a PR, update or improve the PR body, or add a
+  > how-to-test section."
+  A user who types "fill in the template for this branch" matches even though
+  they never said "PR description".
 
 ### 3. State the boundary when a sibling could also match
-This repo has five review skills; without boundary clauses they would collide
+This repo has four review skills; without boundary clauses they would collide
 on every "review this" prompt. Each one names what it is *not* for:
 
 - **`self-review`** — your own branch before opening/updating a PR; not for
@@ -96,10 +97,10 @@ A user asking "is this API change safe to ship?" won't match "runs three
 review agents".
 
 ✅ **After (situation enumeration):**
-> `description: Deep-review a change through three lenses — architectural
-> shape, boundary/API promise, and change impact. Use when asked whether a
-> change is architecturally safe, what a new API commits to, what a change's
-> blast radius is, or before making a breaking change.`
+> `description: Self-review the current branch before opening or updating a
+> PR — scope, behavior and compatibility, fix correctness, boundary and impact
+> of the significant changes, code quality, tests. Use on your own branch; not
+> for reviewing someone else's PR.`
 
 ## The litmus / trigger test (do this before shipping)
 

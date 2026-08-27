@@ -1,6 +1,6 @@
 # Delivery — how agent findings reach the orchestrator
 
-Shared by every skill in this plugin that launches reviewer agents (`arch-review`, `self-review`, `pr-review`). A pass that never reports is worse than a pass you skipped: it looks done. A few launch choices decide whether findings arrive at all, and the **defaults lose them** — and how you spend the wait decides whether the findings you get are worth reporting.
+Shared by every skill in this plugin that launches reviewer agents (`self-review`, `pr-review`). A pass that never reports is worse than a pass you skipped: it looks done. A few launch choices decide whether findings arrive at all, and the **defaults lose them** — and how you spend the wait decides whether the findings you get are worth reporting.
 
 ## Launch rules — all three mandatory
 
@@ -30,12 +30,12 @@ List every agent you launched and tick the ones whose findings you actually hold
 
 ```
 Delivery roll call
+  change              ✅ agent · 5 findings + 2 blocks
   code                ✅ agent · 8 findings
   tests               ✅ agent · 8 findings
-  boundary lens       ✅ agent · 3 findings + narrative block
 ```
 
-Markers: `✅ agent` · `⚠️ self-run` · `❌ missing` · `⏳ running`. The finding count makes the roll call double as a yield tally, which is what tells you later whether a pass earns its place. Use the same names in any mid-run status line — `Done: code, tests. Waiting on: boundary lens.` — so the reader never has to map a digit to a purpose.
+Markers: `✅ agent` · `⚠️ self-run` · `❌ missing` · `⏳ running`. The finding count makes the roll call double as a yield tally, which is what tells you later whether a pass earns its place. Use the same names in any mid-run status line — `Done: code, tests. Waiting on: change.` — so the reader never has to map a digit to a purpose.
 
 ## Escalation — for each pass that delivered nothing
 

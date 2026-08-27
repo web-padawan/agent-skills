@@ -40,17 +40,16 @@ The change type shifts where the A line sits. Apply on top of the rubric:
 Comment noise is C. A comment that is actively **wrong** about the code is B — it will
 mislead the next reader.
 
-## Lens severities
+## Deep-block severities
 
-The arch-review lenses use their own words; they map on as proposals:
+The change pass's boundary and impact blocks propose their tier by two rules; apply them
+literally, nothing else discriminates as sharply:
 
-- **Architectural `Severity`** — A when the consequence is wrong behavior, or a change a
-  follow-up could not make without a breaking change. B for cost-of-change debt. C for taste.
-- **Boundary `Severity`** — a promise that cannot be walked back without a breaking change is
-  A, always. `Consumers: none yet` drops it to B: an unreleased boundary is still cheap to
-  move. Nothing else discriminates as sharply, so apply it literally.
-- **CIA `Risk criticality`** — A when a propagation path reaches released behavior with no
-  test on it. B when the path is internal or test-covered. C when the ripple is cosmetic.
+- **Boundary / api** — a promise that cannot be walked back without a breaking change *and*
+  has consumers is A, always. `Consumers: none yet` drops it to B: an unreleased boundary is
+  still cheap to move.
+- **Impact** — A when a propagation path reaches released behavior with no test on it. B when
+  the path is internal or test-covered. C when the ripple is cosmetic.
 
 ## Two rules that ride with the rubric into every agent's context
 

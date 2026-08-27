@@ -15,10 +15,13 @@ escalation ladder that changes the *mechanism* rather than retrying the broken c
 the `self-run` marker — reviewing with the same context that produced the diff makes you the
 reader least likely to notice what it takes for granted.
 
-**Deep review does not belong in a branch-level pass.** A fix branch reviewed with the old
-full profile ran 16 agents and reported the same two A findings from two and three lenses
-each, in a 1000-line report whose findings were 60% about code the accepted fix did not
-contain. The lens machinery now lives only in `arch-review`; a breadth review is two agents.
+**Deep review is a budget, not a fan-out.** A fix branch reviewed with the old full profile
+ran 16 agents and reported the same two A findings from two and three lenses each, in a
+1000-line report whose findings were 60% about code the accepted fix did not contain. The
+three lens agents were then folded into one change pass by the same reasoning that folded the
+seven breadth passes (below): they read the same change, ran the same consumer grep, and
+their convergence was cost deduped at triage, not signal. A disagreement between the boundary
+and impact questions still surfaces — as two finding lines with two tiers from one agent.
 
 **A settled-fact ledger must not invite challenge.** A ledger headed "do not re-derive, *do
 challenge*" was re-derived from source by three of four agents. The invitation is what
@@ -28,12 +31,15 @@ licenses the spend: a sceptical reading of a settled fact costs as much as estab
 independent verifications of one non-issue — the single largest waste in that run. One lead,
 one owner pass.
 
-**Clustering before ranking is the cheapest win in arch-review.** A four-file feature in one
-module is usually one decision, so one trio. Getting it wrong costs full agent runs, and
-dedup at triage happens *after* the spend, not instead of it.
+**Clustering before ranking is the cheapest win in the deep blocks.** A four-file feature in
+one module is usually one decision, so one block. When the blocks ran as agent trios, getting
+it wrong cost full agent runs; now it costs the block budget, which is why the change pass
+clusters before it spends.
 
-**An agent handed a list writes a survey.** One change per lens agent, always. The same
-failure appears at message level: cap a batch at about six agents.
+**An agent handed a list writes a survey.** Measured on the lens agents, and the open risk of
+the merged change pass: it now selects and block-reviews up to a few changes itself. The
+hedge is the block format, the small budget, and checklist-before-blocks ordering; the
+fallback, if surveys appear, is a change pass per named change — its prompt accepts a list.
 
 **The dominant cost is agents x diff, not agents.** Eight passes each running their own
 `git diff` paid for every line of the branch eight times — and the test hunks, usually most
@@ -60,9 +66,12 @@ scale only sizes the mutant budget instead of dropping a pass.
 (requirements, fix, behavior) and the split of the general questions across general, fit and
 slop all judged the same production patch against the same reference material, so triage
 spent its verification budget deduping findings the batch had already paid to produce twice.
-The whole checklist fits in one agent, each section reporting
-under its own category, and the type now reaches it as a prompt add — which is what makes a
-question type-specific without making it a pass.
+The checklist now splits along the one seam where the *searches* differ, not the questions:
+what the change does and promises (scope, behavior, fix, boundary, impact — the pass that
+greps consumers) and how the code is written (logic, conventions, reuse, maintainability,
+comments — the pass that sweeps siblings). The type reaches the first as a prompt add — which
+is what makes a question type-specific without making it a pass — and the second is
+type-agnostic.
 
 **C findings are the point of a local review.** The CI review bot on the PR deliberately
 drops low-value findings. Nits, taste and cleanup surface here, judged by the author at zero
