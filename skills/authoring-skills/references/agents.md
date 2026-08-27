@@ -52,6 +52,6 @@ prompt — one source, no drift.
 ## Fallback clause
 
 Skills reference agents by type but must survive being copied out of the plugin. The
-convention, used in `lenses.md` and `significance.md`: "when the plugin's agents are
+convention, used in `references/pipeline.md` §3: "when the plugin's agents are
 unavailable, use `general-purpose` and paste the full body of `agents/<name>.md` into the
 prompt."

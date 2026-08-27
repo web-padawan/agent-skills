@@ -22,11 +22,11 @@ rules are written down.
 
 ## 1 — Plan
 
-`scripts/review-plan.sh --mode self|pr|arch [--pr N] [--type T] [--scale S] [--deep N]
+`scripts/review-plan.sh --mode self|pr [--pr N] [--type T] [--scale S] [--deep N]
 [--no-coverage]` wraps `get-pr-context.sh` and prints a `=== PLAN ===` block: the guard
 verdict, the literal `base` / `head` / `head0` SHAs, the change type with its signal, the
 scale tier with its counts, the pass list with each pass's agent, read lane and prompt adds,
-the mutant budget, the conventions doc, the changed files split into
+the mutant and deep-block budgets, the conventions doc, the changed files split into
 `prod_files` / `test_files` / `comment_files`, and the context, patch and report paths. Record the SHAs as literals —
 shell variables do not survive between tool calls, and subagents never see them.
 
@@ -39,7 +39,7 @@ The plan is authoritative for everything it prints. Two things it hands back to 
   feature).
 - `type_conflict: <signal> → <type>` — a lower signal is more demanding than the declared
   type. **Never auto-upgrade.** Keep the declared type and hand the disagreement to the
-  code pass as an explicit question: reviewing against the author's claim is what tests
+  change pass as an explicit question: reviewing against the author's claim is what tests
   it, and silently switching types would shift the checklist instead of naming the mislabel.
 
 `guard:` starting with `refuse:` ends the run — say the one-line reason and stop.
@@ -117,7 +117,8 @@ one owner pass:
 
 ```
 - [owner: tests] The append branch is never exercised with an already-added component.
-- [owner: code] `removeAll()` may still bypass the guard the fix restored.
+- [owner: change] `removeAll()` may still bypass the guard the fix restored.
+- [owner: code] The new early return leaves `_pending` unreset on the error path.
 ```
 
 Other passes do not investigate a lead they do not own; triage inherits the owner's verdict.
@@ -170,10 +171,12 @@ Findings come back one per line:
 <category> | <file>:<line> | <A|B|C> | <claim>
 ```
 
-Categories: `scope`, `behavior`, `fix`, `logic`, `conventions`, `reuse`, `maintainability`,
-`comments`, `tests` — plus `architecture`, `boundary`, `impact` and `api` when arch-review's
-lenses ran. **A category is not a pass**: the `code` pass reports the first eight, one per
-section of its checklist. The roll call goes by pass, the report by category.
+Categories, by owning pass — `change`: `scope`, `behavior`, `fix`, `boundary`, `api`,
+`impact`; `code`: `logic`, `conventions`, `reuse`, `maintainability`, `comments`; `tests`:
+`tests`. **A category is not a pass**: each pass reports one category per section of its
+checklist. The roll call goes by pass, the report by category. The change pass also returns
+its deep **blocks** and a `BELOW LINE` list after the finding lines — the blocks are evidence,
+the lines are what triage works on.
 
 ## 4 — Roll call
 
@@ -188,8 +191,7 @@ say. A pass that reported nothing has *not* come back clean.
    cannot confirm is `accepted` with a one-line reason — kept in the report, never silently
    dropped.
 2. **Dedup**: same file, line and claim from several agents is one finding; keep the
-   clearest wording, note which categories raised it. Lenses converging on one change is
-   signal — merge and mark `[3-lens]` / `[2-lens]`.
+   clearest wording, note which categories raised it.
 3. **Judge, then tier.** Per finding, one sentence of judgement first — does the evidence
    hold, and what does the issue cost if the change merges as-is — then the final tier per
    [`severity.md`](severity.md), overriding the agent's proposal: the judgement is the

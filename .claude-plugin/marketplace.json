@@ -11,7 +11,7 @@
     {
       "name": "agent-skills",
       "source": "./",
-      "description": "Personal skills: five review skills (self-review, arch-review, guided-review, adversarial-review, pr-review), mutation-coverage, authoring-skills.",
+      "description": "Personal skills: four review skills (self-review, guided-review, adversarial-review, pr-review), mutation-coverage, authoring-skills.",
       "category": "workflow"
     }
   ]

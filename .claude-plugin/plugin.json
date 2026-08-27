@@ -1,6 +1,6 @@
 {
   "name": "agent-skills",
-  "description": "Personal Claude Code skills. Review: self-review (own branch, pre-PR), arch-review (three-lens deep review of one change), guided-review (PR walkthrough, never posts), adversarial-review (skeptical pass, one PR comment), pr-review (rubric pass, inline PR comments). Plus mutation-coverage (mutation testing + test-gap closing) and authoring-skills (skill authoring conventions).",
+  "description": "Personal Claude Code skills. Review: self-review (own branch, pre-PR), guided-review (PR walkthrough, never posts), adversarial-review (skeptical pass, one PR comment), pr-review (rubric pass, inline PR comments). Plus mutation-coverage (mutation testing + test-gap closing) and authoring-skills (skill authoring conventions).",
   "author": {
     "name": "Serhii Kulykov",
     "url": "https://github.com/web-padawan"

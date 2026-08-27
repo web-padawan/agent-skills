@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # review-plan.sh — compute the review plan for a review skill: the anchors, the
 # change type, the scale tier, the pass list with its agents and read lanes, the
-# mutant budget, the guards, and the report paths.
+# mutant and deep-block budgets, the guards, and the report paths.
 #
 # The matrix it resolves lives in references/profiles.md — this script parses that
 # file, so the tables are never restated in a skill.
 #
 # Usage:
-#   review-plan.sh [--mode self|pr|arch] [--pr <number-or-url>]
+#   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
 #                  [--type fix|feature|refactor|chore] [--scale trivial|lite|full]
 #                  [--deep N] [--no-coverage] [--report-dir <path>] [--no-context]
 #
@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-case "$MODE" in self|pr|arch) ;; *) echo "error: --mode must be self, pr or arch" >&2; exit 1 ;; esac
+case "$MODE" in self|pr) ;; *) echo "error: --mode must be self or pr" >&2; exit 1 ;; esac
 case "$TYPE_FLAG" in ""|fix|feature|refactor|chore) ;; *) echo "error: --type must be fix, feature, refactor or chore" >&2; exit 1 ;; esac
 case "$SCALE_FLAG" in ""|trivial|lite|full) ;; *) echo "error: --scale must be trivial, lite or full" >&2; exit 1 ;; esac
 case "$DEEP" in ""|*[!0-9]*) [ -z "$DEEP" ] || { echo "error: --deep takes a number" >&2; exit 1; } ;; esac
@@ -209,7 +209,7 @@ if [ -z "$TYPE" ]; then
   TYPE_SIGNAL="none resolved — decide from the diff shape (see references/pipeline.md)"
 fi
 
-# A lower signal that is *more demanding* than the winner is handed to the code
+# A lower signal that is *more demanding* than the winner is handed to the change
 # pass as a question; it never silently upgrades the type.
 demand() { case "$1" in feature) echo 3 ;; fix) echo 2 ;; refactor) echo 1 ;; chore) echo 0 ;; *) echo -1 ;; esac; }
 TYPE_CONFLICT="none"
@@ -220,7 +220,7 @@ if [ "$TYPE" != "undetermined" ]; then
     [ -z "$other" ] && continue
     [ "$other" = "$TYPE" ] && continue
     if [ "$(demand "$other")" -gt "$win" ]; then
-      TYPE_CONFLICT="${cand%%:*} → $other (more demanding than the declared type — hand it to the code pass)"
+      TYPE_CONFLICT="${cand%%:*} → $other (more demanding than the declared type — hand it to the change pass)"
       win=$(demand "$other")
     fi
   done
@@ -262,7 +262,6 @@ fi
 if [ -n "$BASE" ] && git diff --unified=0 "$BASE..$HEAD" 2>/dev/null | grep -qE '^\+[[:space:]]*export '; then
   add_override "a new export added"
 fi
-[ -n "$DEEP" ] && add_override "--deep passed"
 
 if [ -n "$OVERRIDES" ] && [ "$SCALE" != "full" ]; then
   SCALE="full"; SCALE_REASON="risk override: $OVERRIDES"
@@ -278,11 +277,11 @@ matrix_row() {
   awk -F'|' -v mode="$1" -v type="$2" -v scale="$3" '
     /^## Matrix/ { in_matrix = 1; next }
     /^## / { in_matrix = 0 }
-    !in_matrix || NF < 6 { next }
+    !in_matrix || NF < 7 { next }
     {
-      for (i = 2; i <= 6; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
+      for (i = 2; i <= 7; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
       if ($2 == "mode" || $2 ~ /^-+$/) next
-      if ($2 == mode && $3 == type && ($4 == scale || $4 == "any")) { print $5 "\t" $6; exit }
+      if ($2 == mode && $3 == type && ($4 == scale || $4 == "any")) { print $5 "\t" $6 "\t" $7; exit }
     }
   ' "$PROFILES"
 }
@@ -304,13 +303,14 @@ pass_agent() {
 # and re-runs with --type rather than getting a silently chosen profile.
 LOOKUP_TYPE="$TYPE"
 
-ROW=""
-[ "$MODE" != "arch" ] && ROW=$(matrix_row "$MODE" "$LOOKUP_TYPE" "$SCALE")
+ROW=$(matrix_row "$MODE" "$LOOKUP_TYPE" "$SCALE")
 PASS_TOKENS=""
 MUTANTS=0
+DEEP_ROW=0
 if [ -n "$ROW" ]; then
   PASS_TOKENS=$(printf '%s' "$ROW" | cut -f1)
   MUTANTS=$(printf '%s' "$ROW" | cut -f2)
+  DEEP_ROW=$(printf '%s' "$ROW" | cut -f3)
 fi
 
 # Effective mutant budget: the row's number, capped by the scale tier.
@@ -319,6 +319,14 @@ case "$SCALE" in trivial) CAP=3 ;; lite) CAP=8 ;; *) CAP=999 ;; esac
 [ "$MUTANTS" -gt "$CAP" ] && MUTANTS="$CAP"
 [ "$COVERAGE" = "off" ] && MUTANTS=0
 [ "$MODE" != "self" ] && MUTANTS=0
+
+# Effective deep-block budget for the change pass: the row's number, capped by the
+# scale tier; --deep N overrides outright (0 keeps the pass, skips its blocks).
+case "$DEEP_ROW" in ''|*[!0-9]*) DEEP_ROW=0 ;; esac
+case "$SCALE" in trivial) DCAP=1 ;; lite) DCAP=2 ;; *) DCAP=999 ;; esac
+[ "$DEEP_ROW" -gt "$DCAP" ] && DEEP_ROW="$DCAP"
+DEEP_SOURCE="matrix, capped by scale"
+if [ -n "$DEEP" ]; then DEEP_ROW="$DEEP"; DEEP_SOURCE="--deep flag"; fi
 
 # ── Conventions doc (named in the plan, quoted into the context) ──────
 CONVENTIONS=""
@@ -332,7 +340,6 @@ if [ -z "$REPORT_DIR" ]; then
   case "$MODE" in
     self) REPORT_DIR=".omc/self-review" ;;
     pr) REPORT_DIR=".omc/pr-review" ;;
-    arch) REPORT_DIR="" ;;
   esac
   if [ -n "$REPORT_DIR" ] && ! git check-ignore -q "${REPORT_DIR%%/*}" 2>/dev/null; then
     REPORT_DIR="SCRATCHPAD"
@@ -410,7 +417,7 @@ echo "type_conflict: $TYPE_CONFLICT"
 echo "scale: $SCALE"
 echo "scale_counts: $LINES lines, $FILES files (lock, generated, snapshot and image files excluded)"
 echo "scale_reason: $SCALE_REASON"
-echo "deep: ${DEEP:-none}"
+echo "deep: $DEEP_ROW (source: $DEEP_SOURCE)"
 echo "coverage: $COVERAGE"
 echo "mutants: $MUTANTS"
 echo "conventions_doc: ${CONVENTIONS:-none}"
@@ -420,9 +427,7 @@ if [ "$GUARD" != "ok" ]; then
   exit 2
 fi
 
-if [ "$MODE" = "arch" ]; then
-  echo "passes: none — arch mode runs the lens trio per skills/arch-review/SKILL.md"
-elif [ "$LOOKUP_TYPE" = "undetermined" ]; then
+if [ "$LOOKUP_TYPE" = "undetermined" ] && [ -z "$PASS_TOKENS" ]; then
   echo "passes: none — resolve the type from the diff shape (references/pipeline.md step 1) and re-run with --type"
 elif [ -z "$PASS_TOKENS" ]; then
   echo "passes: none — no matrix row for $MODE/$LOOKUP_TYPE/$SCALE (check references/profiles.md)"

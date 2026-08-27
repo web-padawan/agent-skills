@@ -20,7 +20,7 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
 ### `name` (required)
 - **What:** the skill's identifier; what `/agent-skills:<name>` invokes.
 - **Convention:** **kebab-case**, and it **matches the skill's folder name**
-  (`arch-review/` → `name: arch-review`).
+  (`pr-review/` → `name: pr-review`).
 - No spaces, no uppercase, no underscores.
 
 ### `description` (required)
@@ -51,10 +51,9 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
   `mutation-coverage`) or that can **post outside the machine** (PR comments:
   `pr-review`, `adversarial-review`). Read-only, bounded skills
   (`guided-review`, `authoring-skills`) stay auto-triggerable — their
-  descriptions do the routing. `arch-review` is the documented middle case:
-  auto-triggerable because its common auto path (one change, three agents) is
-  bounded, with an in-body confirmation gate before a multi-change run spends
-  its full agent budget.
+  descriptions do the routing. The middle case — an auto-triggerable skill
+  whose common path is bounded but whose wide path is not — gets an in-body
+  confirmation gate before the wide path spends its budget.
 
 ### `allowed-tools`
 - **What:** restricts which tools the skill may call, e.g.
