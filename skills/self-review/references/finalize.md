@@ -2,9 +2,8 @@
 
 ## The gate (step 6)
 
-Render this from triage's frozen list ([`../../../references/pipeline.md`](../../../references/pipeline.md)
-§5.6) — never by re-reading the agent reports. The tier counts shown here are the counts the
-report will carry; if they disagree, the gate was built from something other than the list.
+Render from triage's frozen list ([`../../../references/pipeline.md`](../../../references/pipeline.md)
+§5.6), never from the agent reports.
 
 First in chat, compact and scannable — the full detail belongs in the report:
 
@@ -34,11 +33,8 @@ only`: a report file for a nit-only review of a 10-line diff is ceremony.
 restores each one."
 - `Yes — run it` *(Recommended)* · `Skip it`
 
-When the plan prints `mutant_pool: 0`, swap the recommendation to `Skip it` and say why in the
-description: the budget comes from the type × scale matrix, which is blind to what the diff is
-made of, and a diff that is all CSS, CSS-in-JS or markup holds nothing
-[`mutation.md`](mutation.md) would accept as a candidate. Still offer the run — the pool is a
-heuristic, and the author may know a mutable line it missed.
+When the plan prints `mutant_pool: 0`, swap the recommendation to `Skip it` (description: the
+prod diff has no mutable source lines). Still offer the run — the pool is a heuristic.
 
 Rules:
 
@@ -118,12 +114,9 @@ Fix the A findings, then re-run. Coverage gaps: `/agent-skills:mutation-coverage
   exactly two: `confirmed` (real, still open — this skill fixed nothing) and `accepted` (no
   action needed — false positive or deliberate choice). Add `[orchestrator]` to findings you
   raised yourself rather than a pass.
-- **Say how a claim was verified when it is not obvious from the claim.** Close the finding
-  with `— verified: <how>`: the command you ran, the browsers you reproduced in, the commit
-  you read. [`../../../references/delivery.md`](../../../references/delivery.md) has you
-  pre-verifying during the wait precisely so `confirmed` means something; a report that never
-  says how is indistinguishable from one that took the agents at their word. Corrections to an
-  agent's wording get the same treatment — say what was overstated, in one clause.
+- **Say how a claim was verified when not obvious from the claim** — close it with
+  `— verified: <how>` (the command run, the browsers reproduced in, the commit read). A
+  corrected agent claim says what was overstated, in one clause.
 - One section per category the `change`, `code` and `tests` passes report, in the order
   above; the category list is [`../../../references/pipeline.md`](../../../references/pipeline.md)
   §3's (`api` findings file under **Boundary**). Omit the `## Fix` section on a change that is
@@ -143,10 +136,8 @@ Fix the A findings, then re-run. Coverage gaps: `/agent-skills:mutation-coverage
   none>`. On a **fix**, prefix it with the whole-fix revert result: `regression test: <name>
   fails without the fix | none fails without the fix`.
 - **Follow-ups** indexes every `confirmed` B and C finding as a paste-ready list for the
-  follow-up issue: `file:line` plus the claim compressed to one line, and **not** the suggested
-  fix — that is three lines above under its category, and repeating it turns a third of the
-  report into a second copy of itself. A findings are not follow-ups — they are in the way of
-  the merge and belong in `## Next steps`.
+  follow-up issue: `file:line` plus a one-line claim, not the fix (it is above, under its
+  category). A findings are not follow-ups — they belong in `## Next steps`.
 - On a **fix**, a finding that the change reverses a behavior an existing test asserts on
   purpose leads the report: it questions the diff, not a line of it.
 - The report is never committed — it lives in the git-ignored path the plan named.

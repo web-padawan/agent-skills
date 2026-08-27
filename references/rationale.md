@@ -76,3 +76,20 @@ type-agnostic.
 **C findings are the point of a local review.** The CI review bot on the PR deliberately
 drops low-value findings. Nits, taste and cleanup surface here, judged by the author at zero
 round-trip cost — that is also why the cleanup questions moved into this pipeline.
+
+**What a styling-only fix branch taught.** One self-review run on a CSS fix with regenerated
+screenshot baselines exposed six gaps at once. Binaries were in the patch as `Bin N -> M`
+stubs — noise — and had they been dropped instead, no pass could ask whether the baselines
+were regenerated; hence the `binary_files:` lane, named not diffed. The squashed `base..head`
+diff hid that the fix landed *after* the commit that captured the baseline — a stale baseline
+and a `test:` before its `fix:` are both only visible in commit order; hence `commits:` in the
+plan. The type × scale matrix budgeted 15 mutants for a diff with zero mutable lines; hence the
+advisory `mutant_pool:`. The chat gate said `8 C` and the report `10 C` because each was
+derived separately from the agent reports; hence the frozen list. Follow-ups repeated every
+B/C finding with its fix and became a third of the report; hence the index. And a report full
+of `confirmed` never said *how* — indistinguishable from taking the agents at their word;
+hence `— verified: <how>`.
+
+**The escalation ladder's first rung was unreachable.** It pinged a named agent, and the
+launch rule forbids `name` — so every lost report wasted a turn before the re-spawn. The rung
+is gone; a ladder starts where the launch rule leaves you.

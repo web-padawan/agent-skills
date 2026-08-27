@@ -374,10 +374,8 @@ TEST_FILES=""
 PROD_FILES=""
 BINARY_FILES=""
 if [ -n "$CHANGED" ]; then
-  # Binaries get their own lane. `git diff` renders them as a one-line `Bin N -> M
-  # bytes` stub, so putting them in a prepared patch adds noise and no reviewable
-  # content — but dropping them silently hides screenshot baselines, which are the
-  # whole subject of a visual-regression review. Named, not diffed.
+  # Binaries get their own lane: named, not diffed (a patch would only hold a
+  # `Bin N -> M bytes` stub), and never dropped — screenshot baselines are evidence.
   BINARY_FILES=$(git diff --numstat "$BASE..$HEAD" 2>/dev/null | awk -F'\t' '$1 == "-" && $2 == "-" { print $3 }' | tr '\n' ' ' || true)
   TEXT_CHANGED="$CHANGED"
   if [ -n "$BINARY_FILES" ]; then
@@ -389,11 +387,9 @@ if [ -n "$CHANGED" ]; then
   PROD_FILES=$(printf '%s\n' "$TEXT_CHANGED" | grep -vE "$TEST_RE" | tr '\n' ' ' || true)
 fi
 
-# Mutant candidate pool — an advisory count, not a budget. The matrix sizes
-# `mutants:` from type and scale, both blind to what the diff is MADE of. A diff
-# that is all CSS, CSS-in-JS or markup has nothing mutation.md would accept as a
-# candidate (its selection rule skips styling outright), so a budget of 15 against
-# a pool of 0 sends the coverage stage looking for work that does not exist.
+# Mutant candidate pool — advisory, not a budget: non-styling source lines the
+# coverage stage could mutate (mutation.md skips styling), so a styling-only diff
+# reports 0 instead of sending the stage looking for work that does not exist.
 MUTANT_POOL=0
 if [ -n "$PROD_FILES" ] && [ -n "$BASE" ]; then
   MUTANT_POOL=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | awk '

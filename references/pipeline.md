@@ -64,11 +64,8 @@ agents open the few files they must — at that size the extra context costs mor
 saves. An empty `test_files:` means no test patch; say so in the context file rather than
 writing an empty one.
 
-**Never put the plan's `binary_files:` into either patch.** `git diff` renders a binary as a
-one-line `Bin N -> M bytes` stub — noise in the patch, and no reviewable content. Name them in
-the context file instead, with their count and what they are. Dropping them silently is the
-worse error: on a UI change the screenshot baselines *are* the test evidence, and a pass that
-does not know they exist cannot ask whether they were regenerated.
+**Never put the plan's `binary_files:` into either patch.** Name them in the context file
+instead, with their count and what they are — never drop them silently.
 
 These two files, the context file, and the skill's own report are the only files a review
 run creates.
@@ -93,11 +90,8 @@ summary of the parent PR/issue when one was given, the one-line intent and where
 from, [`severity.md`](severity.md)'s rubric and its two verbatim rules, plus the three
 sections below.
 
-Quote `commits:` as the plan printed it, oldest first. The squashed `base..head` diff hides
-the branch's own sequence, and the **order** is evidence no pass can recover from the patch:
-a fix commit landing after the commit that captured a baseline means the baseline is stale, a
-`test:` commit before the `fix:` it was meant to pin means it pins the old behavior. On a
-single-commit branch write `commits: one` and move on.
+Quote `commits:` as the plan printed it, oldest first — the order is evidence no pass can
+recover from the squashed patch. On a single-commit branch write `commits: one`.
 
 When you discover something the context gets wrong, append it under `## Orchestrator notes`
 (e.g. "the PR description is stale: it documents X, the code does Y") so every later agent
@@ -203,14 +197,11 @@ say. A pass that reported nothing has *not* come back clean.
    cannot confirm is `accepted` with a one-line reason — kept in the report, never silently
    dropped.
 2. **Dedup**: same file, line and claim from several agents is one finding; keep the
-   clearest wording, note which categories raised it. When the passes filed it under
-   *different* categories, the finding lives under the **owning pass's** category — the pass
-   whose checklist the claim belongs to — and the other category gets a one-line pointer, not
-   a second copy. Name both categories on the finding line so the dedup is visible.
-3. **Your own findings count.** [`delivery.md`](delivery.md) sends you to pre-verify while the
-   batch is in flight, and that turns up things no pass reported. Add them to the list tagged
-   `[orchestrator]`, under the category they belong to, held to exactly the verification bar
-   the agents' findings are held to. Finding it yourself is not evidence; verifying it is.
+   clearest wording, note which categories raised it. Filed under different categories, it
+   lives under the **owning pass's** category with a one-line pointer from the other — name
+   both on the finding line.
+3. **Your own findings count.** What pre-verification turned up and no pass reported goes on
+   the list tagged `[orchestrator]`, under its category, held to the same verification bar.
 4. **Judge, then tier.** Per finding, one sentence of judgement first — does the evidence
    hold, and what does the issue cost if the change merges as-is — then the final tier per
    [`severity.md`](severity.md), overriding the agent's proposal: the judgement is the
@@ -219,10 +210,8 @@ say. A pass that reported nothing has *not* come back clean.
 5. **Write the suggested fix as one line.** Concrete and specific to the file and line: "move
    the listener removal into `disconnectedCallback`", never "consider refactoring this".
 6. **Freeze the list.** Triage ends with one canonical list — file, line, tier, category,
-   status, claim, fix, and how it was verified when that was not obvious. Everything
-   downstream (the skill's chat summary, its tier counts, its report, any PR comment) renders
-   from that list and never re-derives it. Deriving the counts twice is how a review reports
-   `8 C` in chat and `10 C` in the file.
+   status, claim, fix, and how it was verified when not obvious. Chat summary, tier counts,
+   report and PR comments all render from it; nothing downstream re-derives it.
 
 Wording, because the report and any comment reuse these lines verbatim: every identifier,
 method, type and compared literal in backticks; plain developer words, no invented labels;
