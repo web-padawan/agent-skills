@@ -209,9 +209,12 @@ say. A pass that reported nothing has *not* come back clean.
    corrected version and say so in one clause.
 5. **Write the suggested fix as one line.** Concrete and specific to the file and line: "move
    the listener removal into `disconnectedCallback`", never "consider refactoring this".
-6. **Freeze the list.** Triage ends with one canonical list — file, line, tier, category,
-   status, claim, fix, and how it was verified when not obvious. Chat summary, tier counts,
-   report and PR comments all render from it; nothing downstream re-derives it.
+6. **Label, then freeze the list.** Give every finding its Conventional Comments label and
+   decorations per [`severity.md`](severity.md)'s rendering table — the tier says what it
+   costs, the label says what the reader should do with it. Triage ends with one canonical
+   list — file, line, tier, category, label, status, claim, fix, and how it was verified when
+   not obvious. Chat summary, tier counts, report and PR comments all render from it; nothing
+   downstream re-derives it, the label included.
 
 Wording, because the report and any comment reuse these lines verbatim: every identifier,
 method, type and compared literal in backticks; plain developer words, no invented labels;

@@ -103,3 +103,11 @@ See [references/output-format.md](references/output-format.md) for the canonical
 - **🟡 Low / Nitpicks** — style, docs, minor improvements. Author may ignore.
 
 When in doubt between two levels, pick the lower one. Inflated severity makes this skill useless.
+
+The buckets are the plugin's A / B / C scale under other names, and each finding heading
+carries the matching Conventional Comments label from
+[`../../references/severity.md`](../../references/severity.md) (*Rendering*): 🔴 High headings
+read `**issue (blocking):** <noun phrase>`, 🟠 Medium `**issue (non-blocking):**` or
+`**suggestion (non-blocking):**`, 🟡 Low `**nitpick:**`, and the ✅ bullets are the review's
+`praise`. A concern you could not confirm is a `**question:**` heading in the bucket its
+impact would earn if true, worded as a question.

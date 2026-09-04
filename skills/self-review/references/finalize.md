@@ -104,7 +104,7 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 - <file>:<line-range> — <reason it ranked below the line, or `covered by <block name>`>
 
 ## Follow-ups
-- [B] <file>:<line> — <one-line claim>
+- [B] <file>:<line> — **<label> (<category>, non-blocking):** <one-line claim>
 
 ## Next steps
 Fix the A findings, then re-run. Coverage gaps: `/agent-skills:mutation-coverage <file>`.
@@ -136,8 +136,11 @@ Fix the A findings, then re-run. Coverage gaps: `/agent-skills:mutation-coverage
   none>`. On a **fix**, prefix it with the whole-fix revert result: `regression test: <name>
   fails without the fix | none fails without the fix`.
 - **Follow-ups** indexes every `confirmed` B and C finding as a paste-ready list for the
-  follow-up issue: `file:line` plus a one-line claim, not the fix (it is above, under its
-  category). A findings are not follow-ups — they belong in `## Next steps`.
+  follow-up issue: `file:line`, the finding's Conventional Comments label and decorations from
+  the frozen list ([`../../../references/severity.md`](../../../references/severity.md),
+  *Rendering*), and the one-line claim — not the fix (it is above, under its category). Pasted
+  into an issue, each line already reads as a review comment. A findings are not follow-ups —
+  they belong in `## Next steps`.
 - On a **fix**, a finding that the change reverses a behavior an existing test asserts on
   purpose leads the report: it questions the diff, not a line of it.
 - The report is never committed — it lives in the git-ignored path the plan named.
