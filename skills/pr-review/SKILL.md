@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a GitHub pull request against a correctness/security/maintainability/performance rubric - gather context in one script call, detect the change type, fan the analysis out to the plugin's reviewer agents (a change pass and a code pass over the production diff, a tests pass over the test diff), triage, present findings tiered A (must fix) / B (follow-up) / C (nit), and after confirmation post them as inline positioned comments on the PR. Use for a full reviewer pass that leaves actionable line comments. Not for a single summary comment (adversarial-review), an interactive walkthrough that never posts (guided-review), or your own branch before it has a PR (self-review).
+description: Review a GitHub pull request against a correctness/security/maintainability/performance rubric - gather context in one script call, detect the change type, fan the analysis out to the plugin's reviewer agents (a change pass and a code pass over the production diff, a tests pass over the test diff), triage, present findings tiered A (must fix) / B (follow-up) / C (nit), and after confirmation post them as inline positioned Conventional Comments (issue / suggestion / question / nitpick with blocking or non-blocking decorations) on the PR. Use for a full reviewer pass that leaves actionable line comments. Not for a single summary comment (adversarial-review), an interactive walkthrough that never posts (guided-review), or your own branch before it has a PR (self-review).
 argument-hint: "[PR number or URL, or blank to auto-detect from current branch] [--deep N]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/post-comment.sh:*)
@@ -75,7 +75,8 @@ Rank A findings reachable in released behavior or security-relevant first.
 
 Read [`references/comment-guidelines.md`](references/comment-guidelines.md) before writing any
 finding text. Then output a structured review, opening with two or three sentences on what the
-PR does — the goal and the mechanism — so the findings have context:
+PR does — the goal and the mechanism — so the findings have context. Each finding renders from
+the frozen list in its Conventional Comments shape, with the tier kept in chat only:
 
 ```
 ## Review: <PR title> (#<number>)
@@ -83,46 +84,53 @@ PR does — the goal and the mechanism — so the findings have context:
 <2–3 sentences: what the PR does and how.>
 
 **Verdict**: Looks good / Needs attention
+<census by label: N issues (K blocking), N suggestions, N questions, N nitpicks, praise>
 
 ### Findings
 
-**[A: must fix] Title of finding**
-File: `path/to/file.ext`, lines 42–48
-Description of the issue and why it matters.
+[A] `path/to/file.ext:42`
+**issue (behavior, blocking):** <the frozen claim>
+<the one-line fix; verification when not obvious>
 ```
 
-If nothing qualifies, say explicitly that the code looks good.
+`Needs attention` whenever any `issue (…, blocking)` or `chore (blocking)` exists. If nothing
+qualifies, say explicitly that the code looks good — the `praise` finding, if there is one,
+still posts.
 
 Then a single `AskUserQuestion` with two questions. **Never post comments without confirmation.**
 
-- **Q1 — header `Post`**: "Post these as comments on the PR?" — `Yes — post all` / `Only A
-  findings` / `No — chat only`.
+- **Q1 — header `Post`**: "Post these as comments on the PR?" — `Yes — post all` / `Only
+  blocking issues` / `All, plus a summary comment` / `No — chat only`. The summary comment is
+  the three-move general comment in comment-guidelines.md; `Only blocking issues` posts the
+  `issue (…, blocking)` and `chore (blocking)` lines and nothing else.
 - **Q2 — header `Report`**: "Write the full review report?" — `Yes — write it` / `No`. The
   report goes to `<scratchpad>/pr-<number>-REVIEW.md`: the summary, the verdict, and **every**
-  triaged finding — including the ones step 3's filter kept off the PR, marked `not posted`.
-  It is the reviewer's own record, never committed or posted.
+  triaged finding with its tier, label and category — including the ones step 3's filter kept
+  off the PR, marked `not posted`. It is the reviewer's own record, never committed or posted.
 
 ### 5. Post comments (only after the user confirms)
 
 `${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh` prepends `:robot: AI-generated`
-to every comment and falls back to a clearly-labelled general comment when GitHub rejects the
-position (line not in the PR diff).
+to every comment, **refuses a message whose first line is not a bold Conventional Comments
+label** from severity.md's closed vocabulary (`--no-label` for a reply or the summary comment),
+and falls back to a clearly-labelled general comment when GitHub rejects the position (line not
+in the PR diff).
 
 Call it by its full path; the examples below abbreviate it to `post-comment.sh`:
 
 ```bash
 # Inline comment on an added/modified line (new side); --line 42:48 for a range
 ${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh \
-  --pr <number> --file path/to/file.ext --line 42 --message "**[A: must fix] Title**
+  --pr <number> --file path/to/file.ext --line 42 --message "**issue (behavior, blocking):** <claim>
 
-Description of the issue."
+<fix; verification when not obvious>"
 
 # Removed line (old side)
-post-comment.sh --pr <number> --file path/to/file.ext --old-line 10 --message "..."
+post-comment.sh --pr <number> --file path/to/file.ext --old-line 10 --message "**question (impact):** ..."
 
-# General (non-positioned) comment, and a reply to an existing thread
-post-comment.sh --pr <number> --message "Overall: looks good!"
-post-comment.sh --pr <number> --reply <comment-id> --message "Fixed, thanks."
+# The summary comment (three moves, no label), and a reply to an existing thread
+post-comment.sh --pr <number> --no-label --message "<praise line> <census> <what clearing them earns>"
+post-comment.sh --pr <number> --reply <comment-id> --no-label --message "Fixed, thanks."
 ```
 
 `--line` and `--old-line` cannot be combined. Pick the most relevant single line or narrow range.

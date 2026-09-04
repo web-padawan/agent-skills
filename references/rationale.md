@@ -90,6 +90,20 @@ B/C finding with its fix and became a third of the report; hence the index. And 
 of `confirmed` never said *how* — indistinguishable from taking the agents at their word;
 hence `— verified: <how>`.
 
+**The tier is not the comment.** A/B/C is the plugin's severity scale and it worked for the
+author's own report, but posted as `[B: follow-up]` it told a PR reader nothing they already
+knew the words for, and an unverified claim capped at B still posted as an assertion. The
+rendering table in severity.md fixes both by adopting Conventional Comments: the tier decides
+the label (`issue` / `suggestion` / `nitpick`) and the decoration says `blocking` or
+`non-blocking` in one token instead of a prose escape hatch, an unverified claim becomes a
+`question` worded as one, and a call that is not a code reviewer's to make — an AT verdict, a
+theme's intent, a semver classification — routes as `question (a11y|design|semver|flow)`
+naming the owner instead of concluding. The label is assigned once at triage and frozen with
+the tier, for the same reason the tier counts are: two renderings derived separately disagreed.
+The closed vocabulary is enforced by `post-comment.sh`, so a comment that would not parse never
+reaches the PR. The approach and the routing rule are borrowed from USWDS's review skill and
+the Conventional Comments spec.
+
 **The escalation ladder's first rung was unreachable.** It pinged a named agent, and the
 launch rule forbids `name` — so every lost report wasted a turn before the re-spawn. The rung
 is gone; a ladder starts where the launch rule leaves you.

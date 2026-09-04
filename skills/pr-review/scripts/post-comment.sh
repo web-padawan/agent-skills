@@ -9,6 +9,11 @@
 #   post-comment.sh [--pr <number-or-url>] --file <path> --old-line <N> --message <text>  # old side
 #   post-comment.sh [--pr <number-or-url>] --reply <comment-id> --message <text>  # reply in a diff thread
 #
+# The message must open with a bold Conventional Comments label from the closed
+# vocabulary in references/severity.md (Rendering) — e.g.
+# "**issue (behavior, blocking):** ..." — or the script refuses it before any
+# network call. --no-label skips that check, for replies and the summary comment.
+#
 # The target repo is derived from the PR itself (so a PR URL from another repo
 # posts to THAT repo, never to the cwd's repo by accident).
 #
@@ -26,6 +31,7 @@ LINE=""
 OLD_LINE=""
 REPLY_ID=""
 MESSAGE=""
+CHECK_LABEL=true
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -35,6 +41,7 @@ while [[ $# -gt 0 ]]; do
     --old-line) OLD_LINE="${2:?--old-line requires a value}"; shift 2 ;;
     --reply) REPLY_ID="${2:?--reply requires a value}"; shift 2 ;;
     --message) MESSAGE="${2:?--message requires a value}"; shift 2 ;;
+    --no-label) CHECK_LABEL=false; shift ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -42,6 +49,25 @@ done
 if [ -z "$MESSAGE" ]; then
   echo "error: --message is required" >&2
   exit 1
+fi
+
+# ── Conventional Comments label check ─────────────────────────────────
+# The first line must be `**<label>:**` or `**<label> (<deco>[, <deco>]):**`,
+# every token from the closed vocabulary in references/severity.md. A comment
+# that fails here never reaches GitHub — a refused post beats an unparseable one.
+if [ "$CHECK_LABEL" = true ]; then
+  LABELS='praise|nitpick|suggestion|issue|todo|question|thought|chore|note'
+  CATEGORIES='scope|behavior|fix|boundary|api|impact|logic|conventions|reuse|maintainability|comments|tests'
+  ROUTES='a11y|design|semver|flow'
+  MODIFIERS='blocking|non-blocking|if-minor'
+  DECO="($CATEGORIES|$ROUTES|$MODIFIERS)"
+  FIRST_LINE="${MESSAGE%%$'\n'*}"
+  if ! printf '%s' "$FIRST_LINE" | grep -Eq "^\*\*($LABELS)( \($DECO(, $DECO)?\))?:\*\* .+"; then
+    echo "error: the message must open with a bold Conventional Comments label, e.g. '**issue (behavior, blocking):** <claim>'" >&2
+    echo "hint: labels: ${LABELS//|/ } · decorations: a pipeline category, a11y/design/semver/flow, blocking/non-blocking/if-minor (at most two) · pass --no-label for a reply or the summary comment" >&2
+    echo "got: $FIRST_LINE" >&2
+    exit 1
+  fi
 fi
 
 if ! command -v gh >/dev/null 2>&1; then
