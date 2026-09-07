@@ -435,9 +435,12 @@ SLUG=$(printf '%s' "${BRANCH:-detached}" | tr '/' '-')
 if [ -z "$REPORT_DIR" ]; then
   case "$MODE" in
     self) REPORT_DIR=".omc/self-review" ;;
-    pr) REPORT_DIR=".omc/pr-review" ;;
+    # pr mode never writes into the repo: the review record is the reviewer's own,
+    # never committed or posted (skills/pr-review/SKILL.md step 4).
+    pr) REPORT_DIR="SCRATCHPAD" ;;
   esac
-  if [ -n "$REPORT_DIR" ] && ! git check-ignore -q "${REPORT_DIR%%/*}" 2>/dev/null; then
+  if [ -n "$REPORT_DIR" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] \
+     && ! git check-ignore -q "${REPORT_DIR%%/*}" 2>/dev/null; then
     REPORT_DIR="SCRATCHPAD"
   fi
 fi
@@ -613,7 +616,7 @@ CONTEXT_PATH=""
 CONTEXT_NOTE=""
 if [ -n "$CONTEXT_OUT" ]; then CONTEXT_PATH="$CONTEXT_OUT"
 elif [ -n "$REPORT_DIR" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ]; then CONTEXT_PATH="$REPORT_DIR/context.md"
-else CONTEXT_NOTE="not written — the report dir is not git-ignored; pass --context-out <path>"
+else CONTEXT_NOTE="not written — no git-ignored report dir to hold it; pass --context-out <path>"
 fi
 [ "$NO_WRITE" = true ] && { CONTEXT_PATH=""; CONTEXT_NOTE="not written (--no-write)"; }
 [ "$GUARD" != "ok" ] && { CONTEXT_PATH=""; CONTEXT_NOTE="not written — the guard refused this run"; }
@@ -890,6 +893,8 @@ else
       "$token" "$AGENT" "${READS:-both}" "${ADDS:--}"
   done
   echo "agents: $COUNT"
+  echo "launch: one message · no name · run_in_background=false · delivery clause verbatim (references/delivery.md)"
+  echo "prompt_parts: context path · lane · prompt adds · effort ceiling · delivery clause"
 fi
 
 echo "prod_files: ${PROD_FILES:-none}"
@@ -910,7 +915,13 @@ fi
 
 if [ -n "$REPORT_DIR" ]; then
   echo "report_dir: $REPORT_DIR"
-  echo "report: $REPORT_DIR/$SLUG-FINDINGS.md"
+  REPORT_PR="${PR_NUMBER:-}"
+  [ -z "$REPORT_PR" ] && REPORT_PR=$(printf '%s' "${PR:-}" | sed 's#.*/##')
+  if [ "$MODE" = "pr" ] && [ -n "$REPORT_PR" ]; then
+    echo "report: $REPORT_DIR/pr-$REPORT_PR-REVIEW.md"
+  else
+    echo "report: $REPORT_DIR/$SLUG-FINDINGS.md"
+  fi
 fi
 if [ -n "$CONTEXT_PATH" ]; then
   echo "context: $CONTEXT_PATH (written, $CONTEXT_LINES lines — append Settled facts, Open leads, Orchestrator notes; do not rewrite it)"

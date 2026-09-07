@@ -65,11 +65,15 @@ packages' shared and utility modules plus the files adjacent to the change; do i
 ```
 
 - One line per finding, at most **12** across all categories, ranked most severe first; `NO FINDINGS` explicitly when clean, and an empty reply is an error.
+- **Anchor on the declaration line** the claim is about — the selector, the statement, the
+  signature — never the enclosing block and never a range. Another pass may find the same
+  defect from its own angle; matched anchors let triage dedup mechanically.
 - No code blocks, no quoted diffs — the claim is one sentence, and a claim without a consequence is noise: name the input or state that misbehaves and what goes wrong.
 - **No preamble, no verification narrative, no summary of what you read.** The finding
   lines are the whole message. When the ceiling bound, one trailing line —
   `dropped: <what>` — and nothing else; verification that succeeded needs no sentence,
-  verification that failed is the `unverified` tag.
+  verification that failed is the `unverified` tag. A long result gets truncated from the
+  **end**, so every extra paragraph you add costs a finding, not a paragraph.
 - Your tier is a proposal; triage assigns the final one. A `logic` finding whose consequence is
   wrong behavior, and a convention violation a reviewer would block on, are A; `reuse` and
   `maintainability` are B or C; `comments` is C, B when it is wrong about the code.

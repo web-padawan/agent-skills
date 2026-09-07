@@ -73,14 +73,31 @@ These are ceilings, not targets — a pass that answers its checklist in six cal
 and a ceiling a pass never approaches makes it economize on nothing. Each `agents/<name>.md` names what that pass drops first. The orchestrator passes the tier's
 ceiling in the prompt the same way it passes the deep budget.
 
+Triage gets its own ceiling, because verifying findings is not free and the pass ceilings do
+not cover it:
+
+| scale | triage tool calls | spend them on |
+| --- | --- | --- |
+| trivial | ~5 | the one claim that decides the verdict |
+| lite | ~10 | every A candidate, then the B claims a pass marked `unverified` |
+| full | ~15 | the same, plus one runtime probe when a claim turns on real browser behavior |
+
+A claim that would cost more than its share stays `unverified` and caps at B (severity.md).
+Verifying by **running the thing** beats reading it again: a browser probe settles a CSS or
+shadow-DOM claim that no amount of re-reading will. With Playwright MCP, `file:` URLs are
+blocked — navigate to `about:blank` and build the tree inside `browser_evaluate`.
+
 ## Why the tables look like this
 
 - **Three questions, three passes.** A branch raises three questions — what the change
   *does and promises* (scope, behavior, fix correctness, boundary, impact), how the code is
   *written* (logic, conventions, reuse, maintainability, comments), and whether the *tests*
-  pin it. Each question has exactly one owner, so no two passes search for the same thing:
-  the consumer grep belongs to the change pass, the sibling sweep to the code pass, the test
-  patch to the tests pass.
+  pin it. Each question has one owner, so the searches do not repeat: the consumer grep
+  belongs to the change pass, the sibling sweep to the code pass, the test patch to the tests
+  pass. The **findings** still overlap where one defect answers two questions — a selector
+  that is both wrong behavior and a conventions breach reaches `change` and `code` alike. That
+  is cross-checking worth paying for, and it is why anchors are pinned to the declaration line
+  (pipeline.md §3): matched anchors make the dedup mechanical instead of manual.
 - **The change type is a prompt add, not a pass.** The fix, requirements and behavior passes
   each asked one type's question against the production patch. As checklist sections of the
   change pass they cost no agent and no extra read, and the code pass is type-agnostic.

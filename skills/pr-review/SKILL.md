@@ -52,9 +52,11 @@ The skeleton is complete: rules, rubric, PR body, lanes, diff, conventions excer
 read the diff or the conventions doc yourself. Per pipeline.md §2, append only what you can
 verify in a call or two and a pass would otherwise derive — a consumer in another repo (the
 Flow connector, a downstream app), pre-change behavior of a touched helper — plus **Open
-leads** with one owner pass each. Then launch the plan's `passes` in one message per
-pipeline.md §3 and delivery.md, each prompt naming the context path, its lane
-(`### The diff (prod)` / `(tests)` or the patch path), the plan's prompt adds and the ceiling.
+leads** with one owner pass each. Then launch the plan's `passes` in **one message** per the
+plan's own `launch:` and `prompt_parts:` lines: **no `name`**, `run_in_background: false`
+where the Agent tool has it, and five parts in every prompt — the context path, the pass's
+lane (`### The diff (prod)` / `(tests)` or the patch path), the plan's `prompt adds`, the
+`effort_per_pass:` ceiling, and delivery.md's delivery clause **verbatim**.
 
 Mode-specific rule: the code pass reports **no `reuse` or `maintainability` findings** here
 (say `no reuse/maintainability nits` in its prompt), and the coverage check does not run —
@@ -99,7 +101,31 @@ Each finding renders from the frozen list in its Conventional Comments shape, ti
 [A] `path/to/file.ext:42`
 **issue (behavior, blocking):** <the frozen claim>
 <the one-line fix; verification when not obvious>
+
+[B] `path/to/other.ext:17`
+**issue (behavior, non-blocking):** <the frozen claim>
+<the one-line fix>
+
+[B] `path/to/third.ext:88`
+**question (behavior):** <the frozen claim, worded as a question?>
+<what was checked, and what could not be>
+
+**praise** `path/to/test.ext:12`
+<what the author got right — no tier, no decoration, at most one per review>
+
+### Dropped at triage
+
+<one line: N findings dropped, and the single reason class — pre-existing, unverified,
+answered by a green check. Names only, no claims.>
 ```
+
+Every finding carries its decoration: a confirmed B where wrong behavior exists is
+`issue (<category>, non-blocking)`, not a bare `issue (<category>)`. `praise` and `nitpick`
+take no decoration, and `praise` takes no tier. severity.md's rendering table is the full set.
+
+The **Dropped at triage** line stays a count and a reason class. The per-finding detail is
+what the report in Q2 adds over this chat summary — spelling the dropped findings out here
+makes that report redundant and the offer pointless.
 
 `Needs attention` whenever any `issue` exists, blocking or not — an `issue` says wrong
 behavior exists, and `Looks good` over one reads as a clean bill of health the review did not

@@ -159,3 +159,15 @@ only on what the passes cannot reach — an external repo, a parent issue — ne
 they are reading at the same moment. The read-discipline block and every agent's "check the
 context file first" rule carry no measurement because this paragraph does: re-reading lines
 the context file already quoted was the single largest waste in both transcripts.
+
+**What a third PR review taught — the losses after the passes returned.** The change pass's
+result came back cut at the end behind a `[result truncated …]` marker, and the truncated tail
+was its deep blocks, because the findings sat behind prose; hence the output contracts now say
+the order is load-bearing and delivery.md has a truncation rung that reuses the live channel.
+The same defect reached two passes at different anchors — one on the enclosing block, one on a
+range — and triage matched them by reading; hence the declaration-line anchor. Verifying had no
+ceiling of its own and re-read what the passes had read; hence the triage table and the note
+that a browser probe settles a CSS claim re-reading cannot. Every forced completion turn
+restated the pass's brief; hence the one-line status rule. And `pr` mode's default report dir
+pointed inside the repo, for a record the skill says is never committed; hence `SCRATCHPAD` by
+default and a `pr-<n>-REVIEW.md` report path the skill already named.

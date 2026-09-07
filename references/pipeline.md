@@ -129,6 +129,10 @@ Findings come back one per line:
 <category> | <file>:<line> | <A|B|C> | <claim>
 ```
 
+`<line>` is the single declaration the claim is about — the selector, the statement, the
+signature — not the block that contains it and not a range. Two passes that find the same
+defect must land on the same line, or triage dedups by hand.
+
 Categories, by owning pass — `change`: `scope`, `behavior`, `fix`, `boundary`, `api`,
 `impact`; `code`: `logic`, `conventions`, `reuse`, `maintainability`, `comments`; `tests`:
 `tests`. The roll call goes by pass, the report by category. The change pass also returns its
@@ -147,7 +151,9 @@ looks exactly like a pass with nothing to say.
    one-line reason — kept in the report, never silently dropped.
 2. **Dedup**: same file, line and claim from several agents is one finding; keep the
    clearest wording. Filed under different categories, it lives under the owning pass's
-   category with a one-line pointer from the other.
+   category with a one-line pointer from the other. Two passes reaching the same defect is
+   cross-checking, not waste — when they disagree on confidence, keep the verified wording.
+   The declaration-line anchor (§3) is what lets this match on `file:line` instead of by hand.
 3. **Your own findings count.** What pre-verification turned up and no pass reported goes on
    the list tagged `[orchestrator]`, held to the same verification bar.
 4. **Judge, then tier.** One sentence of judgement per finding — does the evidence hold, what
