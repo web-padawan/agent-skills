@@ -16,13 +16,22 @@ Do not write them to a file, and do not end your turn without them.
 
 **Recognize a lost report.** A message like `{"type":"idle_notification","idleReason":"available"}`, or a completion carrying no findings, is a **delivery failure** — not a clean pass. Never record it as `NO FINDINGS`.
 
-## Waiting — pre-verify, do not poll
+## Waiting — verify what the passes cannot reach, do not poll
 
-When launches are asynchronous you will be re-invoked as each agent completes. Do not poll a listing tool in a loop, and do not emit "still waiting" turns — they cost a round trip and tell the reader nothing.
+When launches are asynchronous you will be re-invoked as each agent completes. Do not poll a
+listing tool in a loop, and do not emit "still waiting" turns — they cost a round trip and
+tell the reader nothing.
 
-Spend the wait on verification instead. The claims a reviewer agent is about to make are checkable before they arrive: does that API actually exist (disassemble the jar, grep the package), does the cited test actually cover that path, do the sibling files really set the precedent the agent will invoke, is the change's own description accurate about what shipped. This is triage work either way, so doing it early costs nothing — and it is what lets you report a finding as *corrected* rather than forwarding an overstatement. Log what you verified so the report can distinguish a confirmed claim from an accepted one.
+Spend the wait only on leads the passes **cannot** reach: a consumer in another repository
+(a Flow connector, a downstream app), a parent issue, a release note, a browser check. Do not
+re-read the files the passes are reading — the context skeleton already settled what you
+could settle before launch, and anything you verify now duplicates a pass that is verifying
+it at the same moment. Notes you append to the context file after fan-out reach only
+re-spawned agents. Log what you verified so the report can distinguish a confirmed claim
+from an accepted one.
 
-If a batch genuinely has nothing left to pre-verify, end the turn quietly and wait for the notification.
+If there is nothing outside the passes' reach to check, end the turn quietly and wait for the
+notification.
 
 ## Roll call — run before triage
 

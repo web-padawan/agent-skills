@@ -11,7 +11,7 @@ Four review skills with strict boundaries, one verification skill, one authoring
 | `self-review` | **Your own branch**, before opening or updating a PR. Detects the change type (feature / fix / refactor / chore) and runs three passes in one parallel batch — a change pass (what the diff does and promises: scope, behavior, fix correctness, plus boundary/impact blocks on the top significant changes), a code pass (how it is written: logic, conventions, reuse, maintainability, comments) and a tests pass over the test diff. Never edits code — classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste) and writes a `FINDINGS.md` with a ready / needs-work verdict. Coverage gaps are reported, not closed — `mutation-coverage` closes them. |
 | `guided-review` | **Someone else's PR, interactively.** Phase 1 explains the PR's goal and mechanism with a concrete example, then gates on your confirmation before Phase 2 reviews thoroughly. Read-only — never posts; you post any feedback yourself. |
 | `adversarial-review` | **Someone else's PR (or your own, pre-review), one skeptical pass.** Severity-bucketed report (🔴 High / 🟠 Medium / 🟡 Low / ✅ Done well + one-line summary), posted as a **single PR comment** after confirmation. |
-| `pr-review` | **Full reviewer pass with inline comments.** One context-script call, then the plugin's three reviewer agents in parallel (a change pass and a code pass over the production diff, a tests pass over the test diff; `--deep N` sizes the change pass's boundary/impact blocks) — the diff never enters the orchestrator's context. Findings triaged **A** (must fix) / **B** (follow-up) / **C** (nit) — the same scale as `self-review` — presented behind a short PR summary, then **positioned line comments** posted after confirmation as [Conventional Comments](https://conventionalcomments.org) (`issue (behavior, blocking):`, `suggestion (…, non-blocking):`, `question`, `nitpick`, one `praise`). The passes add analysis depth; the triage filter decides what reaches the PR. |
+| `pr-review` | **Full reviewer pass with inline comments.** One context-script call, then the plugin's three reviewer agents in parallel (a change pass and a code pass over the production diff, a tests pass over the test diff; `--deep N` sizes the change pass's boundary/impact blocks) — the plan script writes the shared context file, so the orchestrator reads the plan, not the diff. Findings triaged **A** (must fix) / **B** (follow-up) / **C** (nit) — the same scale as `self-review` — presented behind a short PR summary, then **positioned line comments** posted after confirmation as [Conventional Comments](https://conventionalcomments.org) (`issue (behavior, blocking):`, `suggestion (…, non-blocking):`, `question`, `nitpick`, one `praise`). The passes add analysis depth; the triage filter decides what reaches the PR. |
 | `mutation-coverage` | Finds code no test asserts on via mutation testing (line-removal or Stryker), then closes each gap with a test that fails when the code is broken. Estimates runtime before mutating; nothing committed or installed in the target repo. |
 | `pr-description` | **Writes** the PR body, doesn't review it. Turns the branch diff into the Vaadin PR template as short bullet lists — issue links, one bullet per behavior change, a `Type of change` label, and numbered `How to test` steps naming a real dev page. Scaffolds `Before / After` for visual changes. Drafts in chat; `gh pr edit` only after you confirm. |
 | `authoring-skills` | Meta: create or improve a skill in this plugin — trigger-shaped descriptions, body archetypes, references split, frontmatter conventions. |
@@ -66,8 +66,11 @@ Everything that posts (`adversarial-review`, `pr-review`) asks for confirmation 
 The pass list is data, not prose: `references/profiles.md` holds the pass table and the
 change type × scale matrix, and `scripts/review-plan.sh` resolves them into a launch plan
 (type + signal, scale tier + counts, each pass with its agent, read lane and prompt adds, the
-mutant budget, the report paths, and the guard verdict). One script call, nothing for a skill
-to re-derive — read that file rather than a copy of it here.
+mutant and deep budgets, the per-pass effort ceiling, the report paths, and the guard verdict),
+and writes the shared context file the passes read — framing, rules, rubric, PR body, lanes,
+the diff inline when small, the conventions chapters the touched file kinds select, CI as a
+settled fact. One script call, nothing for a skill to re-derive — read that file rather than a
+copy of it here.
 
 The short version: three passes, one per question — `change-reviewer` asks what the
 production diff *does and promises* (scope, behavior and compatibility, fix correctness, then
@@ -78,11 +81,13 @@ the comment-adjacent hunks), `test-reviewer` reads the test diff. The **type** (
 subjects, parent issue labels, the branch name, the diff shape) reaches the change pass as a
 prompt add rather than adding a pass: it decides whether fix correctness applies and how
 strictly behavior preservation is read; the code pass is type-agnostic. The diff's **scale**
-(trivial ≤10 lines, lite ≤100, full above) sizes two budgets and nothing else — the
-mutation-coverage mutants and the change pass's deep blocks (`--deep N` overrides the latter);
-public-API changes, weakened test assertions and CI/release files force the full tier
-regardless of size. The code pass reports C-tier comment and cleanup nits in `self-review`,
-where they cost nothing to judge, and is told to skip the cleanup half in `pr-review` — the CI
+(by production lines: trivial ≤10, lite ≤150, full above) sizes three budgets and nothing
+else — the mutation-coverage mutants, the change pass's deep blocks (further capped by the
+diff's deep candidates: `.d.ts` hunks, new exports, new public methods; `--deep N` overrides)
+and the per-pass tool-call ceiling; public-API changes, weakened test assertions and
+CI/release files force the full tier regardless of size. The code pass reports C-tier comment and cleanup nits in `self-review`,
+where they cost nothing to judge; in `pr-review` every pass reports a C only when it breaks a
+quoted convention or a comment is wrong, and the code pass skips the cleanup half — the CI
 review bot on the PR deliberately drops those too.
 
 **Deep review** is the change pass's second part: it selects the top N significant changes
