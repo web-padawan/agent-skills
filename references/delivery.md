@@ -16,11 +16,16 @@ Do not write them to a file, and do not end your turn without them.
 
 **Recognize a lost report.** A message like `{"type":"idle_notification","idleReason":"available"}`, or a completion carrying no findings, is a **delivery failure** — not a clean pass. Never record it as `NO FINDINGS`.
 
+**Recognize a truncated report.** A result ending in `[result truncated — ask the agent for the rest via SendMessage]`, or in a half-finished sentence, is a **partial delivery**. It is the normal outcome of naming an agent, and it silently drops whatever the pass ranked last — often its deep blocks or its `checked and cleared` notes. Do not triage on it. `SendMessage` the agent once for the remainder before triage; if it is gone, self-run only the missing section and tag those findings `self-run`. Mark the pass `⚠️ truncated` in the roll call until the remainder is in hand.
+
 ## Waiting — verify what the passes cannot reach, do not poll
 
-When launches are asynchronous you will be re-invoked as each agent completes. Do not poll a
-listing tool in a loop, and do not emit "still waiting" turns — they cost a round trip and
-tell the reader nothing.
+When launches are asynchronous you will be re-invoked as each agent completes, so a turn per
+completion is forced — that is the harness, not a choice. Do not poll a listing tool in a
+loop. For the forced turns, emit **at most one line** in the roll call's own vocabulary —
+`Done: code, tests. Waiting on: change.` — and nothing else: no partial triage, no preview of
+findings, no restatement of what the pass was asked. A bare "still waiting" costs the same
+round trip and names nothing.
 
 Spend the wait only on leads the passes **cannot** reach: a consumer in another repository
 (a Flow connector, a downstream app), a parent issue, a release note, a browser check. Do not
@@ -44,12 +49,13 @@ Delivery roll call
   tests               ✅ agent · 8 findings
 ```
 
-Markers: `✅ agent` · `⚠️ self-run` · `❌ missing` · `⏳ running`. The finding count makes the roll call double as a yield tally, which is what tells you later whether a pass earns its place. Use the same names in any mid-run status line — `Done: code, tests. Waiting on: change.` — so the reader never has to map a digit to a purpose.
+Markers: `✅ agent` · `⚠️ truncated` · `⚠️ self-run` · `❌ missing` · `⏳ running`. The finding count makes the roll call double as a yield tally, which is what tells you later whether a pass earns its place. Use the same names in any mid-run status line — `Done: code, tests. Waiting on: change.` — so the reader never has to map a digit to a purpose.
 
 ## Escalation — for each pass that delivered nothing
 
 Escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
 
+0. **Truncated, not missing?** `SendMessage` that agent once for the remainder. This is the only rung that reuses the existing channel, because the agent is alive and the channel worked — only the result was cut.
 1. **Re-spawn once** with no `name` (and `run_in_background: false` where the tool has it) — a different channel, not a second try down the broken one.
 2. **Self-run the pass**: read the files and answer that pass's questions yourself (the questions are in the pass's `agents/<name>.md` definition). Tag every finding it yields `self-run`.
 

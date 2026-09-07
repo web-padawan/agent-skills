@@ -80,11 +80,15 @@ tests | <file>:<line> | <A|B|C> | <claim>
 ```
 
 - One line per finding, at most **12**, ranked most severe first.
+- **Anchor on the declaration line** the claim is about — the selector, the statement, the
+  signature — never the enclosing block and never a range. Another pass may find the same
+  defect from its own angle; matched anchors let triage dedup mechanically.
 - No code blocks, no quoted diffs — the claim is one sentence.
 - **No preamble, no verification narrative, no summary of what you read.** The finding
   lines are the whole message. When the ceiling bound, one trailing line —
   `dropped: <what>` — and nothing else; verification that succeeded needs no sentence,
-  verification that failed is the `unverified` tag.
+  verification that failed is the `unverified` tag. A long result gets truncated from the
+  **end**, so every extra paragraph you add costs a finding, not a paragraph.
 - `NO FINDINGS` explicitly when clean; an empty reply is an error.
 - Your tier is a proposal; the invoker's triage assigns the final one. A test that lets a
   real bug through is A, and so is an assertion that contradicts the stated intent, a missing

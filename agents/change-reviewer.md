@@ -114,7 +114,8 @@ CHANGES` when nothing qualifies — a valid answer, and the deep part then ends 
 
 ## Output contract
 
-Finding lines first, then the blocks, then `BELOW LINE`:
+Finding lines first, then the blocks, then `BELOW LINE`. The order is load-bearing: a long
+result gets truncated from the **end**, so the findings must never sit behind the prose.
 
 ```
 <scope|behavior|fix|boundary|api|impact> | <file>:<line> | <A|B|C> | <claim>
@@ -122,6 +123,9 @@ Finding lines first, then the blocks, then `BELOW LINE`:
 
 - One line per finding, at most **12** across all categories, ranked most severe first;
   `NO FINDINGS` explicitly when the checklist is clean, and an empty reply is an error.
+- **Anchor on the declaration line** the claim is about — the selector, the statement, the
+  signature — never the enclosing block and never a range. Another pass may find the same
+  defect from its own angle; matched anchors let triage dedup mechanically.
 - Category `boundary` for a block's promise finding, `api` when the boundary is public API,
   `impact` for its propagation / blast-radius finding. Every block yields at least one line —
   or `NO FINDINGS` under it: a clean boundary verdict is exactly the record worth having six
