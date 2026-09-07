@@ -90,6 +90,29 @@ B/C finding with its fix and became a third of the report; hence the index. And 
 of `confirmed` never said *how* — indistinguishable from taking the agents at their word;
 hence `— verified: <how>`.
 
+**What a PR review of the same shape taught.** A `pr-review` run on a 6-file, 50-line CSS fix
+with 18 regenerated baselines cost 265k subagent tokens across three passes — the change pass
+alone 58 tool calls over 17 minutes. Two of those calls mattered and the rest were spent
+re-deriving things already knowable: the code pass copied three files to a scratchpad to run
+prettier and prove there was no lint failure, on a PR whose Lint check was green, and both the
+change and tests passes reasoned about whether the baselines were stale, on a PR whose Base,
+Lumo and Aura visual checks were green. `gh pr checks` answers all of it in one call and no
+script was making it; hence `=== CI_STATUS ===`, the plan's `ci:` digest, and severity.md's
+rule that a green check is authoritative. Nothing sized a pass either — scale capped only
+mutants and deep blocks — hence `effort_per_pass:` and the drop-order each agent now names.
+The one finding no pass produced came from decoding PNG headers by hand: `394x52 -> 394x45`
+said an element lost 7px, and three baselines came back `size unchanged`, meaning content moved
+inside a box that did not — the fix's own signature, invisible in a byte count; hence
+`binary_dims:`. Two posted comments then fell back to general comments because their files were
+not in the diff, discovered *after* the user had approved posting; hence the anchor check at
+step 5.6. And the verdict printed `Looks good` over a confirmed finding that the fix never
+reached one of three released themes, because the A/B tie-breaker — "can a follow-up PR fix
+this?" — always answers yes for a released sibling and so had quietly deleted the blast-radius
+rule; hence the tie-breaker's new scope limit and a verdict that any confirmed `issue` moves.
+The same run wrote a 50-line prod patch to its own file and every pass paid a second read for
+it — below ~300 lines the scaffolding outgrows the diff; hence the inline `### The diff`
+section for small patches.
+
 **The tier is not the comment.** A/B/C is the plugin's severity scale and it worked for the
 author's own report, but posted as `[B: follow-up]` it told a PR reader nothing they already
 knew the words for, and an unverified claim capped at B still posted as an assertion. The

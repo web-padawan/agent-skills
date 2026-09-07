@@ -15,9 +15,22 @@ invoking skill's triage assigns the final one. Agent-proposed tiers run high.
 **Tie-breaker between A and B:** can a follow-up PR fix this without a breaking change or
 a user-visible bug? No → **A**.
 
+**The tie-breaker never overrides an explicit A below.** It settles findings the rubric
+leaves between the two tiers, not ones a type-aware rule already named — a follow-up PR can
+always fix a released sibling, which would otherwise delete the blast-radius rule. Where the
+two disagree, the specific rule wins and the claim says why.
+
 **Verification caps the tier:** a finding whose key claim triage could not verify is **B**
 at most, with the unverified part named in the claim. Impact decides the tier only once
 the claim is confirmed.
+
+**CI is authoritative on a PR scope.** The plan's `ci:` digest settles lint, test and
+visual-baseline state for the head: a green check means no pass may report that failure, and
+none should re-run the command locally to prove one — a prettier or test run that contradicts
+a green check is a local-environment finding, not a PR finding. A failing or pending check is
+the reverse: a red lint or test check is **A** with the check named in the claim, and a
+pending one caps any claim that depends on it at **B**. When the plan says CI is unavailable,
+lint and test state is unknown, not clean.
 
 ## Type-aware tiering
 
@@ -79,7 +92,7 @@ tier, `pr-review`'s triage filter decides which ones are worth a line comment.
 The tier is the plugin's internal severity. Whatever a human reads — a PR comment, a
 follow-up line, a summary — renders it as a [Conventional Comment](https://conventionalcomments.org):
 `<label> (<decorations>): <subject>` and then the discussion. Triage assigns the label once,
-at step 5.6 of [`pipeline.md`](pipeline.md), and freezes it in the canonical list beside the
+at step 5.7 of [`pipeline.md`](pipeline.md), and freezes it in the canonical list beside the
 tier and category; nothing downstream picks a label from the tier again.
 
 | Frozen list | Label | Decorations |

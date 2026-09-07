@@ -79,6 +79,31 @@ anchor() {
   '
 }
 
+# One-line digest of what CI already proved, read from the context script's own
+# CI_STATUS section. Display only: check names come from the head's workflow files,
+# so they are never parsed for anything that reaches git.
+ci_summary() {
+  printf '%s\n' "$CTX" | awk '
+    /^=== CI_STATUS ===$/ { in_section = 1; next }
+    /^=== / { in_section = 0 }
+    in_section && index($0, "summary: ") == 1 { print substr($0, 10); exit }
+    in_section && index($0, "unavailable: ") == 1 { print "unavailable — " substr($0, 14); exit }
+  '
+}
+
+# Image baselines are the only machine-readable evidence a binary diff carries.
+# stdin: PNG bytes. stdout: WxH, or nothing when the stream is not a PNG.
+png_dims() {
+  od -An -tu1 -N24 2>/dev/null | awk '
+    { for (i = 1; i <= NF; i++) b[++n] = $i }
+    END {
+      if (n < 24) exit
+      if (b[1] != 137 || b[2] != 80 || b[3] != 78 || b[4] != 71) exit
+      printf "%dx%d", b[17]*16777216 + b[18]*65536 + b[19]*256 + b[20], \
+                      b[21]*16777216 + b[22]*65536 + b[23]*256 + b[24]
+    }'
+}
+
 BRANCH=$(git branch --show-current 2>/dev/null || echo "")
 HEAD0=$(git rev-parse HEAD 2>/dev/null || echo "")
 
@@ -387,6 +412,27 @@ if [ -n "$CHANGED" ]; then
   PROD_FILES=$(printf '%s\n' "$TEXT_CHANGED" | grep -vE "$TEST_RE" | tr '\n' ' ' || true)
 fi
 
+# Dimensions for every changed PNG. A changed WxH is a layout change and belongs
+# in the context file as a Settled fact; an unchanged WxH with moved bytes is a
+# repaint. Without this, passes are left guessing a baseline from its byte count.
+BINARY_DIMS=""
+if [ -n "$BINARY_FILES" ] && [ -n "$BASE" ]; then
+  for bin in $BINARY_FILES; do
+    case "$bin" in *.png|*.PNG) ;; *) continue ;; esac
+    BIN_BEFORE=$(git show "$BASE:$bin" 2>/dev/null | png_dims || true)
+    BIN_AFTER=$(git show "$HEAD:$bin" 2>/dev/null | png_dims || true)
+    [ -z "$BIN_BEFORE" ] && BIN_BEFORE="absent"
+    [ -z "$BIN_AFTER" ] && BIN_AFTER="absent"
+    if [ "$BIN_BEFORE" = "$BIN_AFTER" ]; then
+      BINARY_DIMS="${BINARY_DIMS}  $bin: $BIN_AFTER (size unchanged)
+"
+    else
+      BINARY_DIMS="${BINARY_DIMS}  $bin: $BIN_BEFORE -> $BIN_AFTER
+"
+    fi
+  done
+fi
+
 # Mutant candidate pool — advisory, not a budget: non-styling source lines the
 # coverage stage could mutate (mutation.md skips styling), so a styling-only diff
 # reports 0 instead of sending the stage looking for work that does not exist.
@@ -445,6 +491,12 @@ echo "base: ${BASE:-unresolved}"
 echo "head: ${HEAD:-unresolved}"
 echo "base_branch: ${BASE_BRANCH:-unknown} (base from: $BASE_SOURCE)"
 echo "pr: ${PR:-none}"
+if [ "$WANT_CONTEXT" = true ]; then
+  CI_LINE=$(ci_summary)
+  echo "ci: ${CI_LINE:-unavailable — the context script printed no CI_STATUS section}"
+else
+  echo "ci: not gathered (--no-context)"
+fi
 echo "type: $TYPE"
 echo "type_signal: $TYPE_SIGNAL"
 echo "type_conflict: $TYPE_CONFLICT"
@@ -452,7 +504,18 @@ echo "scale: $SCALE"
 echo "scale_counts: $LINES lines, $FILES files (lock, generated, snapshot and image files excluded)"
 echo "scale_reason: $SCALE_REASON"
 echo "deep: $DEEP_ROW (source: $DEEP_SOURCE)"
-echo "coverage: $COVERAGE"
+# Per-pass effort ceiling from the scale tier — references/profiles.md, "Pass effort".
+case "$SCALE" in
+  trivial) EFFORT=12 ;;
+  lite) EFFORT=25 ;;
+  *) EFFORT=60 ;;
+esac
+echo "effort_per_pass: ~$EFFORT tool calls (scale $SCALE)"
+if [ "$MODE" = "pr" ]; then
+  echo "coverage: n/a (pr mode — the coverage stage is self-review only)"
+else
+  echo "coverage: $COVERAGE"
+fi
 echo "mutants: $MUTANTS"
 if [ "$MUTANTS" -gt 0 ] 2>/dev/null; then
   if [ "$MUTANT_POOL" -eq 0 ]; then
@@ -491,6 +554,10 @@ fi
 echo "prod_files: ${PROD_FILES:-none}"
 echo "test_files: ${TEST_FILES:-none}"
 echo "binary_files: ${BINARY_FILES:-none}"
+if [ -n "$BINARY_DIMS" ]; then
+  echo "binary_dims:"
+  printf '%s' "$BINARY_DIMS"
+fi
 echo "comment_files: ${COMMENT_FILES:-none}"
 
 # The branch's own commit sequence. `base..head` flattens it, but the ORDER is
@@ -516,4 +583,6 @@ if [ -n "$REPORT_DIR" ]; then
 fi
 echo "commands: lint=${LINT_CMD:-unknown} test=${TEST_CMD:-unknown} src_glob=${SRC_GLOB:-unknown} (source: $CMD_SOURCE)"
 echo "affected_packages: ${AFFECTED:-none}"
-echo "risk_check_manual: a deleted or weakened assertion in an existing test also forces the full tier — this script cannot detect it, so check the test hunks yourself"
+if [ -n "$TEST_FILES" ]; then
+  echo "risk_check_manual: a deleted or weakened assertion in an existing test also forces the full tier — this script cannot detect it, so check the test hunks yourself"
+fi

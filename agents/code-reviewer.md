@@ -76,6 +76,18 @@ packages' shared and utility modules plus the files adjacent to the change; do i
 - Before naming an existing helper as the replacement, read it and confirm it covers the case — a near-miss helper is not reuse.
 - Before flagging "A does X but B does Y", or a pattern 3 or more sibling files share, check whether the difference has a semantic reason.
 - If you cannot verify a claim, append `unverified` to its finding line; if verification disproves it, drop it entirely.
+- **Never re-run lint or a formatter to prove a failure.** The context file's `ci:` digest is
+  authoritative: a green Lint check means there is no formatting or lint finding to report,
+  and copying files out to run the tool yourself buys nothing. Report a style rule only from
+  the quoted conventions excerpt.
+
+## Effort ceiling
+
+Your prompt names a tool-call ceiling from the scale tier. It is a ceiling, not a target.
+When it binds, drop work in this order and report what you have: the sibling-file sweep
+first, then reading candidate helpers for the reuse category, then the pre-change reads for
+`comments` findings — never the logic and conventions sweep over the patch itself. Say in
+your output which of these you dropped.
 
 Your findings are the deliverable — return them as the content of your final message, per
 the delivery clause in your prompt.

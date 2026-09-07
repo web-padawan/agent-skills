@@ -3,7 +3,7 @@
 ## The gate (step 6)
 
 Render from triage's frozen list ([`../../../references/pipeline.md`](../../../references/pipeline.md)
-§5.6), never from the agent reports.
+§5.7), never from the agent reports.
 
 First in chat, compact and scannable — the full detail belongs in the report:
 

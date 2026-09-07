@@ -64,11 +64,21 @@ agents open the few files they must — at that size the extra context costs mor
 saves. An empty `test_files:` means no test patch; say so in the context file rather than
 writing an empty one.
 
+**At the small end, drop the separate artifact.** If the prod patch is under ~300 lines,
+quote it inline in the context file under `### The diff` and write no patch file — the pass
+prompt names that section as its diff instead of a path. The test patch follows the same
+rule.
+
 **Never put the plan's `binary_files:` into either patch.** Name them in the context file
 instead, with their count and what they are — never drop them silently.
 
-These two files, the context file, and the skill's own report are the only files a review
-run creates.
+**Give every changed image its dimensions.** Copy the plan's `binary_dims:` block into the
+context file's Settled facts. A changed `WxH` is a layout change and says by how much; a
+`size unchanged` line means content moved inside the same box — the case for an image-diff
+tool. Say which of the two each baseline is.
+
+These two patches (when written), the context file, and the skill's own report are the only
+files a review run creates.
 
 ### The context file
 
@@ -83,8 +93,8 @@ It opens with this framing line, verbatim, so every pass judges against library 
 > its observable behavior is a contract, and it is maintained for years — judge it
 > accordingly.
 
-It holds: branch, the literal `base` and `head` SHAs, the two patch paths with the note
-that **the patches are the diff under review**, `git diff --stat`, the changed-file list
+It holds: branch, the literal `base` and `head` SHAs, the two patch paths — or the inline
+`### The diff` section — with the note that **the patches are the diff under review**, `git diff --stat`, the changed-file list
 split into prod, test and binary, the plan's `commits:` block, the type and its signal, the scale tier with counts and any override, PR title/body when a PR exists, a
 summary of the parent PR/issue when one was given, the one-line intent and where it came
 from, [`severity.md`](severity.md)'s rubric and its two verbatim rules, plus the three
@@ -112,7 +122,9 @@ this diff does not touch. Head the excerpt with this instruction, verbatim:
 
 **Settled facts** — what you verified in the plan step. One line per claim with its
 evidence (`file:line`, a SHA, an issue number, or the
-command that produced it). Head the section with this instruction, verbatim:
+command that produced it). The plan's `ci:` digest and `binary_dims:` block are settled
+facts by construction and always belong here, the CI one quoted check by check when
+anything is failing. Head the section with this instruction, verbatim:
 
 > Each entry is authoritative. Do not open the file it came from. If a finding of yours
 > depends on an entry being wrong, report that as a finding with your reasoning — one line,
@@ -142,9 +154,10 @@ Other passes do not investigate a lead they do not own; triage inherits the owne
 Launch the plan's `passes` list in **one message**, sharing one barrier. Each prompt is
 exactly: the context file path, the pass's `reads` lane resolved to the patch path(s) it
 names — for the code pass that is the prod patch *plus* the plan's `comment_files` list — the
-pass's `prompt adds` from the plan, and [`delivery.md`](delivery.md)'s delivery clause
-verbatim. Questions, categories, output contracts and verification rules live in the agent
-definitions (`agents/<name>.md`) — never paste them into a prompt.
+pass's `prompt adds` from the plan, the plan's `effort_per_pass:` ceiling, and
+[`delivery.md`](delivery.md)'s delivery clause verbatim. Questions, categories, output
+contracts and verification rules live in the agent definitions (`agents/<name>.md`) — never
+paste them into a prompt.
 
 Read [`delivery.md`](delivery.md) before the first launch and follow it exactly: it is what
 decides whether findings arrive at all. Its waiting rule applies here — pre-verify the
@@ -209,12 +222,18 @@ say. A pass that reported nothing has *not* come back clean.
    corrected version and say so in one clause.
 5. **Write the suggested fix as one line.** Concrete and specific to the file and line: "move
    the listener removal into `disconnectedCallback`", never "consider refactoring this".
-6. **Label, then freeze the list.** Give every finding its Conventional Comments label and
+6. **Check every anchor against the diff.** A finding's `file` must appear in the plan's
+   `prod_files` / `test_files` / `binary_files`, and its line must sit in a hunk. One that
+   does not cannot be posted inline — a coverage gap in an untouched suite is the usual
+   shape. Re-anchor it onto the diff line that motivates it (the changed behavior the
+   missing test would pin), or mark it `summary-only` and carry that mark into the frozen
+   list, so a skill offering to post never promises an inline comment the API will refuse.
+7. **Label, then freeze the list.** Give every finding its Conventional Comments label and
    decorations per [`severity.md`](severity.md)'s rendering table — the tier says what it
    costs, the label says what the reader should do with it. Triage ends with one canonical
-   list — file, line, tier, category, label, status, claim, fix, and how it was verified when
-   not obvious. Chat summary, tier counts, report and PR comments all render from it; nothing
-   downstream re-derives it, the label included.
+   list — file, line, tier, category, label, status, claim, fix, whether it is `summary-only`
+   from step 6, and how it was verified when not obvious. Chat summary, tier counts, report
+   and PR comments all render from it; nothing downstream re-derives it, the label included.
 
 Wording, because the report and any comment reuse these lines verbatim: every identifier,
 method, type and compared literal in backticks; plain developer words, no invented labels;
