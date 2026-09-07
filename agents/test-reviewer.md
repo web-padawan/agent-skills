@@ -81,6 +81,10 @@ tests | <file>:<line> | <A|B|C> | <claim>
 
 - One line per finding, at most **12**, ranked most severe first.
 - No code blocks, no quoted diffs — the claim is one sentence.
+- **No preamble, no verification narrative, no summary of what you read.** The finding
+  lines are the whole message. When the ceiling bound, one trailing line —
+  `dropped: <what>` — and nothing else; verification that succeeded needs no sentence,
+  verification that failed is the `unverified` tag.
 - `NO FINDINGS` explicitly when clean; an empty reply is an error.
 - Your tier is a proposal; the invoker's triage assigns the final one. A test that lets a
   real bug through is A, and so is an assertion that contradicts the stated intent, a missing
@@ -90,6 +94,9 @@ tests | <file>:<line> | <A|B|C> | <claim>
 
 ## Verify before reporting
 
+- **Check the context file before opening anything.** Its inline diff, `### Full file`
+  sections and Settled facts already quote most of what a claim needs. Open a file only for
+  lines it does not hold, and say which file and why in the finding.
 - A coverage claim requires reading the changed production hunk it targets, confirming the
   code path exists, and searching the whole suite before asserting no test covers it.
 - Verify what an assertion actually pins by reading the code it exercises — not from the

@@ -66,12 +66,19 @@ packages' shared and utility modules plus the files adjacent to the change; do i
 
 - One line per finding, at most **12** across all categories, ranked most severe first; `NO FINDINGS` explicitly when clean, and an empty reply is an error.
 - No code blocks, no quoted diffs — the claim is one sentence, and a claim without a consequence is noise: name the input or state that misbehaves and what goes wrong.
+- **No preamble, no verification narrative, no summary of what you read.** The finding
+  lines are the whole message. When the ceiling bound, one trailing line —
+  `dropped: <what>` — and nothing else; verification that succeeded needs no sentence,
+  verification that failed is the `unverified` tag.
 - Your tier is a proposal; triage assigns the final one. A `logic` finding whose consequence is
   wrong behavior, and a convention violation a reviewer would block on, are A; `reuse` and
   `maintainability` are B or C; `comments` is C, B when it is wrong about the code.
 
 ## Verify before reporting
 
+- **Check the context file before opening anything.** Its inline diff, `### Full file`
+  sections and Settled facts already quote most of what a claim needs. Open a file only for
+  lines it does not hold, and say which file and why in the finding.
 - Verify a logic claim by reading the surrounding code, and the pre-change source (`git show <BASE>:<path>`) when the claim is about what changed — never from pattern-matching on the diff alone.
 - Before naming an existing helper as the replacement, read it and confirm it covers the case — a near-miss helper is not reuse.
 - Before flagging "A does X but B does Y", or a pattern 3 or more sibling files share, check whether the difference has a semantic reason.

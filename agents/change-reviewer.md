@@ -128,6 +128,10 @@ Finding lines first, then the blocks, then `BELOW LINE`:
   months later, so the block is never optional once a change is selected.
 - No code blocks, no quoted diffs — the claim is one sentence, and a claim without a
   consequence is noise: name the input, consumer or state that misbehaves and what goes wrong.
+- **No preamble, no verification narrative, no summary of what you read.** The finding
+  lines, the blocks and `BELOW LINE` are the whole message. When the ceiling bound, one trailing line —
+  `dropped: <what>` — and nothing else; verification that succeeded needs no sentence,
+  verification that failed is the `unverified` tag.
 - Your tier is a proposal; triage assigns the final one. A promise that cannot be walked back
   without a breaking change *and* has consumers is A, always; `Consumers: none yet` drops it
   to B — an unreleased boundary is still cheap to move. A propagation path that reaches
@@ -137,6 +141,9 @@ Finding lines first, then the blocks, then `BELOW LINE`:
 
 ## Verify before reporting
 
+- **Check the context file before opening anything.** Its inline diff, `### Full file`
+  sections and Settled facts already quote most of what a claim needs. Open a file only for
+  lines it does not hold, and say which file and why in the finding.
 - Verify behavioral claims by reading the pre-change source (`git show <BASE>:<path>`) — never
   from pattern-matching on the diff alone.
 - Confirm each named consumer actually references the boundary; trace every propagation path

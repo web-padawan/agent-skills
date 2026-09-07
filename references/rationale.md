@@ -130,3 +130,32 @@ the Conventional Comments spec.
 **The escalation ladder's first rung was unreachable.** It pinged a named agent, and the
 launch rule forbids `name` — so every lost report wasted a turn before the re-spawn. The rung
 is gone; a ladder starts where the launch rule leaves you.
+
+**What a second PR review taught — where the tokens went.** A `pr-review` run on a
+6-file, 115-line combo-box fix (89 production lines) cost ~157k subagent tokens for 12
+findings, of which the pr-mode filter kept one B suggestion, one C nit and a praise. The
+accounting, from the transcripts: the orchestrator-written context file was 35k chars, read
+three times (~29k); the change pass spent ~22k output tokens, 5.7k of them on three deep
+blocks that yielded a praise, because 115 total lines had tipped `lite` (≤100) into `full`
+with deep 3 and a 60-call ceiling that no pass came within 50 calls of — so nobody
+economized, and both the change and code passes re-read `setProperties` and the whole head
+mixin file that the context file already quoted as Settled facts and -U10 hunks. Nine of the
+twelve findings were C, requested by a "C findings are wanted" rule copied verbatim into a
+mode whose filter drops them by design. The orchestrator itself read five procedure docs
+(~9k tokens), CONVENTIONS.md in full to quote 400 words, fetched the PR body twice, re-typed
+five verbatim rule blocks, and after fan-out appended notes nobody read — every pass reads
+the file once, at launch. Hence: the C rule is mode-variant (`c-rule-pr` asks for C only
+against a quoted convention); scale is sized by production lines with `lite` at 150; the deep
+budget is capped by `deep_candidates` the script counts, so a fix with no public surface gets
+one block; the ceilings are 10/20/30; the plan script writes the whole deterministic
+skeleton — rules and rubric extracted from the reference docs by `<!-- block:… -->` marker,
+PR body, lanes, inline diff, conventions chapters selected by touched file kinds and the
+signals in the added lines, CI — and the
+orchestrator appends only Settled facts it verified and Open leads; a small file touched in
+several places is quoted whole once instead of pulled by each pass; the test diff runs at
+-U15 so the `beforeEach` is in view; every agent checks the context file before opening a
+file and returns no narrative around its finding lines; and the wait after fan-out is spent
+only on what the passes cannot reach — an external repo, a parent issue — never on the files
+they are reading at the same moment. The read-discipline block and every agent's "check the
+context file first" rule carry no measurement because this paragraph does: re-reading lines
+the context file already quoted was the single largest waste in both transcripts.
