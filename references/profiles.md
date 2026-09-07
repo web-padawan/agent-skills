@@ -44,6 +44,20 @@ capped numbers, so `mutants` and `deep` above are the type's budgets, not the ef
 `--deep N` overrides the deep budget outright; `--deep 0` keeps the change pass but skips its
 blocks.
 
+## Pass effort
+
+The tier also caps what a single pass may spend, because the deep budget alone does not.
+
+| scale | tool calls per pass | when the ceiling binds |
+| --- | --- | --- |
+| trivial | ~12 | report what you have |
+| lite | ~25 | report what you have |
+| full | ~60 | say in the report which checklist sections you could not finish |
+
+These are ceilings, not targets — a pass that answers its checklist in six calls is done.
+Each `agents/<name>.md` names what that pass drops first. The orchestrator passes the tier's
+ceiling in the prompt the same way it passes the deep budget.
+
 ## Why the tables look like this
 
 - **Three questions, three passes.** A branch raises three questions — what the change
@@ -58,7 +72,7 @@ blocks.
 - **Deep review is a budget inside the change pass, not a second stage.** The boundary and
   impact blocks run on the top changes the pass selects itself, in the same barrier as the
   other passes; `deep` sizes how many, the same way `mutants` sizes the coverage stage.
-- **Scale sizes budgets and nothing else** — mutants and deep blocks. It never changes the
-  pass list: with three passes covering three questions there is nothing left to drop, and
-  the tier still appears in the plan and the report because it is what the budgets are
-  sized by.
+- **Scale sizes budgets, never the pass list** — mutants, deep blocks, and the per-pass
+  effort ceiling above. With three passes covering three questions there is nothing left to
+  drop, so the tier buys smaller passes rather than fewer of them, and it stays in the plan
+  and the report because it is what the budgets are sized by.

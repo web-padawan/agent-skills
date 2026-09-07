@@ -204,6 +204,37 @@ else
   echo "hint: fetch the PR head (git fetch origin pull/<n>/head) or check the base branch, then re-run"
 fi
 
+# ── Section: CI status ────────────────────────────────────────────────
+# What CI has already proved about this head. A green lint / test / visual check
+# is authoritative: no pass should re-run it locally to prove a failure CI shows
+# as passing, and a red one is evidence a finding can cite directly.
+echo ""
+echo "=== CI_STATUS ==="
+
+if [ -z "$PR_JSON" ]; then
+  echo "unavailable: no PR resolved"
+else
+  CHECKS=$(gh pr checks ${PR_ARGS[@]+"${PR_ARGS[@]}"} 2>/dev/null || true)
+  if [ -z "$CHECKS" ]; then
+    echo "unavailable: gh pr checks reported nothing (none configured, or not started yet)"
+    echo "note: absence of checks is not a green run — treat lint and test state as unknown"
+  else
+    # Columns are TAB-separated: name, state, elapsed, link.
+    CHECK_TOTAL=$(printf '%s\n' "$CHECKS" | wc -l | tr -d ' ')
+    CHECK_PASS=$(printf '%s\n' "$CHECKS" | awk -F'\t' '$2=="pass"' | wc -l | tr -d ' ')
+    CHECK_FAIL=$(printf '%s\n' "$CHECKS" | awk -F'\t' '$2=="fail"' | wc -l | tr -d ' ')
+    CHECK_PEND=$(printf '%s\n' "$CHECKS" | awk -F'\t' '$2=="pending"' | wc -l | tr -d ' ')
+    CHECK_SKIP=$(printf '%s\n' "$CHECKS" | awk -F'\t' '$2=="skipping"' | wc -l | tr -d ' ')
+    echo "summary: $CHECK_TOTAL checks — $CHECK_PASS pass, $CHECK_FAIL fail, $CHECK_PEND pending, $CHECK_SKIP skipped"
+    echo "checks:"
+    printf '%s\n' "$CHECKS" | awk -F'\t' '{printf "  %s: %s\n", $1, $2}'
+    if [ "$CHECK_FAIL" != "0" ]; then
+      echo "hint: a failing check is an A-tier finding on its own — name the check in the claim"
+      printf '%s\n' "$CHECKS" | awk -F'\t' '$2=="fail" {printf "  failing: %s — %s\n", $1, $4}'
+    fi
+  fi
+fi
+
 # ── Section: review instructions ──────────────────────────────────────
 echo ""
 echo "=== REVIEW_INSTRUCTIONS ==="

@@ -99,6 +99,22 @@ tests | <file>:<line> | <A|B|C> | <claim>
   not the whole file, and never re-derive the diff yourself.
 - If you cannot verify a claim, append `unverified` to its finding line; if verification
   disproves it, drop it entirely.
+- **The context file settles CI and image baselines.** Its `ci:` digest tells you whether the
+  committed baselines match the code — a green visual check means no stale-baseline finding —
+  and its image dimensions tell you which baselines moved and how. A `size unchanged` line
+  with moved bytes means content shifted inside the same box: that is a baseline the fix
+  actually exercised, not an unrelated one.
+- **Anchor a coverage finding on the diff.** A gap in a suite this PR never touches cannot be
+  posted as an inline comment. Cite the changed production hunk the missing test would pin as
+  the finding's `file:line`, and name the untouched suite in the claim.
+
+## Effort ceiling
+
+Your prompt names a tool-call ceiling from the scale tier. It is a ceiling, not a target.
+When it binds, drop work in this order and report what you have: the repo-wide suite searches
+first, then the over-testing and structure categories, then reading sibling suites for
+convention precedent — never the assertion-quality and coverage read of the changed tests
+themselves. Say in your output which of these you dropped.
 
 Your findings are the deliverable — return them as the content of your final message, per
 the delivery clause in your prompt.

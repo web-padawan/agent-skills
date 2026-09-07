@@ -144,6 +144,32 @@ Finding lines first, then the blocks, then `BELOW LINE`:
 - Before asserting a path is untested, search the suite for it.
 - If you cannot verify a claim, append `unverified` to its finding line; if verification
   disproves it, drop it entirely.
+- **CI is settled.** The context file's `ci:` digest is authoritative for lint, test and
+  baseline state — do not re-run lint or a test suite to prove a failure a green check
+  already contradicts.
+
+### Running the code
+
+Measuring a behavior beats arguing about it: a claim like "the element grows 28px" is worth
+far more than "the offset may be wrong". You may run the code to check one — a script, a
+harness, a browser — within your effort ceiling.
+
+Two rules make a measurement usable:
+
+- **Say how you got it.** Name the mechanism and the numbers in the finding: what you ran,
+  the input you set, the before and after values.
+- **Say whether it was the real head.** Measuring the checked-out base with the head's
+  changes reconstructed on top is a *reconstruction*, not the head, and a reader cannot tell
+  the difference from the number alone. Label it as one, and mark the finding `unverified`
+  when the reconstruction is the only thing separating your result from the base's.
+
+## Effort ceiling
+
+Your prompt names a tool-call ceiling from the scale tier. It is a ceiling, not a target.
+When it binds, drop work in this order and report what you have: the deep blocks below the
+budget's top change first, then the *Before merge* suite searches, then consumer tracing
+beyond the first hop — never the Part 1 checklist sweep, which is the one thing no other pass
+covers. Say in your output which of these you dropped.
 
 Your findings are the deliverable — return them as the content of your final message, per
 the delivery clause in your prompt.
