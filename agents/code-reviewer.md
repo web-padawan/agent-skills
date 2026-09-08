@@ -80,17 +80,10 @@ packages' shared and utility modules plus the files adjacent to the change; do i
 
 ## Verify before reporting
 
-- **Check the context file before opening anything.** Its inline diff, `### Full file`
-  sections and Settled facts already quote most of what a claim needs. Open a file only for
-  lines it does not hold, and say which file and why in the finding.
 - Verify a logic claim by reading the surrounding code, and the pre-change source (`git show <BASE>:<path>`) when the claim is about what changed — never from pattern-matching on the diff alone.
 - Before naming an existing helper as the replacement, read it and confirm it covers the case — a near-miss helper is not reuse.
 - Before flagging "A does X but B does Y", or a pattern 3 or more sibling files share, check whether the difference has a semantic reason.
 - If you cannot verify a claim, append `unverified` to its finding line; if verification disproves it, drop it entirely.
-- **Never re-run lint or a formatter to prove a failure.** The context file's `ci:` digest is
-  authoritative: a green Lint check means there is no formatting or lint finding to report,
-  and copying files out to run the tool yourself buys nothing. Report a style rule only from
-  the quoted conventions excerpt.
 
 ## Effort ceiling
 

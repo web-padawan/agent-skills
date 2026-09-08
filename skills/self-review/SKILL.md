@@ -17,15 +17,16 @@ Three rules outrank everything else:
   (`Edit` is in `allowed-tools` for that carve-out alone.)
 - **Never commit or stage.** No commit, amend, push, `git add`, `stash`, `reset --hard`, or
   `git clean` — ever. `HEAD` and the index end exactly as found.
-- **The only files this skill creates are the context file, the patch files when the diff
-  is too large to inline, and the report** — the first two written by the plan script in the
-  git-ignored report directory it names, the report only after step 6's gate approves it.
+- **The only files this skill creates are the context file, its notes file, the patch files
+  when the diff is too large to inline, and the report** — the skeleton and patches written
+  by the plan script in the git-ignored report directory it names, the notes file by you
+  before fan-out, the report only after step 6's gate approves it.
 
 Every finding ends up in the report as `confirmed` or `accepted`. Nothing is silently dropped.
 
 | Reference | Covers |
 | --- | --- |
-| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the script-written context file and what you append, the fan-out, the roll call, triage |
+| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the script-written context file and your notes file, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering, deep-block severities |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
 | [`references/mutation.md`](references/mutation.md) | Step 7: mutant selection, restore safety, survivors as findings |
@@ -49,20 +50,19 @@ resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<
    When the plan prints `report_dir: SCRATCHPAD` (the default `.omc/` is not git-ignored
    here) the skeleton is not written: re-run with `--report-dir <scratchpad>/self-review` so
    the context, patches and report all land there.
-2. **Append to the context file.** Per pipeline.md §2: Settled facts you verified beyond the
-   skeleton (a helper's behavior, pre-change source, a consumer elsewhere — a call or two
-   each), Open leads with one owner pass each, and a one-line summary of `$0` when given. Do
-   not re-quote the diff, the conventions, the rubric or the rules — the skeleton holds them.
-3. **Fan out.** Launch the plan's `passes` in one message, per pipeline.md and delivery.md.
-   Give each pass **only the lane its `reads` column names** — the `### The diff (prod)` /
-   `(tests)` section or the patch path the plan printed: that column, not the pass count, is
-   what the profile's token cost turns on.
-   The plan's `deep` number reaches the change pass as its block budget (`--deep N`
-   overrides it; `0` skips the blocks, never the pass).
+2. **Write the notes file.** At the plan's `notes:` path, with Write, per pipeline.md §2:
+   Settled facts you verified beyond the skeleton (a helper's behavior, pre-change source, a
+   consumer elsewhere — a call or two each), Open leads with one owner pass each, and a
+   one-line summary of `$0` when given. Never Edit the skeleton — the Read it forces pulls
+   the diff through your context. Skip the file when you have nothing to add.
+3. **Fan out.** One message, one Agent call per pass: the `subagent_type`, `model` and
+   prompt from the plan's `=== PROMPTS ===` block, verbatim, and no `name` (delivery.md).
+   The block already carries each pass's lane, the deep budget (`--deep N` overrides it;
+   `0` skips the blocks, never the pass) and the effort ceiling.
 4. **Assert nothing changed.** `git status --porcelain --untracked-files=no` still empty. If a
    pass edited anyway: revert those tracked files with `git checkout -- <path>`, delete files
-   it created **by path**, keep only its output as findings. The context and patch files live
-   in the git-ignored report directory, so they never show up here. Never `git clean`; never touch
+   it created **by path**, keep only its output as findings. The context, notes and patch
+   files live in the git-ignored report directory, so they never show up here. Never `git clean`; never touch
    pre-existing untracked files.
 5. **Roll call, then triage.** Both per pipeline.md — the roll call first, by pass name.
 6. **Gate.** Per finalize.md: the classified list in chat, then one `AskUserQuestion` — write

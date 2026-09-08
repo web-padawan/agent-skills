@@ -171,3 +171,17 @@ that a browser probe settles a CSS claim re-reading cannot. Every forced complet
 restated the pass's brief; hence the one-line status rule. And `pr` mode's default report dir
 pointed inside the repo, for a record the skill says is never committed; hence `SCRATCHPAD` by
 default and a `pr-<n>-REVIEW.md` report path the skill already named.
+
+**What the three PR-review bills said together — the fixed costs.** Every pass ran on the
+orchestrator's model, because no agent definition named one, and two of the three are
+checklist sweeps over a diff the skeleton already quotes; hence profiles.md's `Pass model`
+table — opus for the change pass at every tier, sonnet for the other two below `full` — read
+by the script and printed in each prompt's header. Every launch was assembled from five parts
+read out of three documents; hence `=== PROMPTS ===`, the literal prompt per pass, with the
+delivery clause copied from delivery.md by marker so the prompts are word-for-word the same
+from run to run. Appending to the skeleton needed Edit, Edit needs a Read, and that Read
+pulled the inline diff into the orchestrator's context — the one cost the skeleton was
+written to remove; hence the `notes:` file, created once with Write and read by every pass
+after the skeleton. And "the context file already holds it" stood in the skeleton three
+times and in every agent definition twice more, paid for by each agent on both reads; it now
+lives in the skeleton's read-discipline and rubric blocks alone.

@@ -98,9 +98,6 @@ tests | <file>:<line> | <A|B|C> | <claim>
 
 ## Verify before reporting
 
-- **Check the context file before opening anything.** Its inline diff, `### Full file`
-  sections and Settled facts already quote most of what a claim needs. Open a file only for
-  lines it does not hold, and say which file and why in the finding.
 - A coverage claim requires reading the changed production hunk it targets, confirming the
   code path exists, and searching the whole suite before asserting no test covers it.
 - Verify what an assertion actually pins by reading the code it exercises — not from the
@@ -110,11 +107,6 @@ tests | <file>:<line> | <A|B|C> | <claim>
   not the whole file, and never re-derive the diff yourself.
 - If you cannot verify a claim, append `unverified` to its finding line; if verification
   disproves it, drop it entirely.
-- **The context file settles CI and image baselines.** Its `ci:` digest tells you whether the
-  committed baselines match the code — a green visual check means no stale-baseline finding —
-  and its image dimensions tell you which baselines moved and how. A `size unchanged` line
-  with moved bytes means content shifted inside the same box: that is a baseline the fix
-  actually exercised, not an unrelated one.
 - **Anchor a coverage finding on the diff.** A gap in a suite this PR never touches cannot be
   posted as an inline comment. Cite the changed production hunk the missing test would pin as
   the finding's `file:line`, and name the untouched suite in the claim.
