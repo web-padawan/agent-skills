@@ -31,7 +31,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode pr [--pr <number-or-url>] [-
   --context-out <scratchpad>/pr-<number>-context.md
 ```
 
-It prints the context script's sections and `=== PLAN ===` with the literal `base`/`head`
+It prints the PR metadata, CI and existing-comments sections, then `=== PLAN ===` with the literal `base`/`head`
 SHAs, the change type and its signal, the `ci:` digest, the `existing_comments:` count, the
 `binary_dims:` block, the `deep:` / `deep_candidates:` budget, the `effort_per_pass:` ceiling,
 the pass list with each pass's model, a `context:` line confirming the skeleton was written

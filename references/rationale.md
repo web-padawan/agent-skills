@@ -1,209 +1,58 @@
 # Why the pipeline is shaped this way
 
-Measured on real runs, not guessed. Read this when a rule looks like ceremony and you are
-tempted to drop it — each one is here because its absence cost something.
+One line per principle. Each was measured on a real run before it became a rule; the runs,
+their costs and what they exposed are in [`retrospective.md`](retrospective.md), which no
+skill loads. Read this when a rule looks like ceremony and you are tempted to drop it.
 
-**One barrier, one message.** Triage needs every pass's findings before it verifies
-anything. Passes launched in separate messages serialize the barrier for no gain.
-
-**Named agents lose their reports.** A named agent becomes an addressable teammate: it ends
-its turn idle and still alive, and its final text never comes back. That is why
-`delivery.md` forbids `name` and why the delivery clause exists as a second channel.
-
-**A lost report looks exactly like a clean pass.** Hence the roll call before triage, the
-escalation ladder that changes the *mechanism* rather than retrying the broken channel, and
-the `self-run` marker — reviewing with the same context that produced the diff makes you the
-reader least likely to notice what it takes for granted.
-
-**Deep review is a budget, not a fan-out.** A fix branch reviewed with the old full profile
-ran 16 agents and reported the same two A findings from two and three lenses each, in a
-1000-line report whose findings were 60% about code the accepted fix did not contain. The
-three lens agents were then folded into one change pass by the same reasoning that folded the
-seven breadth passes (below): they read the same change, ran the same consumer grep, and
-their convergence was cost deduped at triage, not signal. A disagreement between the boundary
-and impact questions still surfaces — as two finding lines with two tiers from one agent.
-
-**A settled-fact ledger must not invite challenge.** A ledger headed "do not re-derive, *do
-challenge*" was re-derived from source by three of four agents. The invitation is what
-licenses the spend: a sceptical reading of a settled fact costs as much as establishing it.
-
-**Unowned leads multiply.** Three leads handed to four agents without an owner produced four
-independent verifications of one non-issue — the single largest waste in that run. One lead,
-one owner pass.
-
-**Clustering before ranking is the cheapest win in the deep blocks.** A four-file feature in
-one module is usually one decision, so one block. When the blocks ran as agent trios, getting
-it wrong cost full agent runs; now it costs the block budget, which is why the change pass
-clusters before it spends.
-
-**An agent handed a list writes a survey.** Measured on the lens agents, and the open risk of
-the merged change pass: it now selects and block-reviews up to a few changes itself. The
-hedge is the block format, the small budget, and checklist-before-blocks ordering; the
-fallback, if surveys appear, is a change pass per named change — its prompt accepts a list.
-
-**The dominant cost is agents x diff, not agents.** Eight passes each running their own
-`git diff` paid for every line of the branch eight times — and the test hunks, usually most
-of the branch, were paid for by seven passes that do not review tests. Hence the two
-prepared patches and the `reads` lane in `profiles.md`: one owner per lane, and only the
-tests pass — whose coverage question spans both — reads both.
-
-**One question, one owner — including across passes that share material.** Four passes were
-reading the test diff to ask four overlapping versions of "does this assertion pin the right
-thing". The tests pass now owns every assertion question, added and pre-existing alike, and
-it is the only pass that opens the test patch. Overlapping *questions* are worth debating;
-overlapping *reads* were the measurable cost, and the lanes are what removed them.
-
-**Restating a shared fact is cheaper than N agents finding it.** Naming the conventions doc
-still left the code pass reading all of it, most of which governs untouched code. The
-orchestrator now quotes the governing chapters into the context file, the way Settled facts
-already worked.
-
-**Size is a proxy for risk, not risk itself.** A three-line change to a public API or a
-release workflow is not trivial, which is why the scale tier has risk overrides — and why
-scale only sizes the mutant budget instead of dropping a pass.
-
-**Seven breadth agents were one checklist read seven times.** The type-specific passes
-(requirements, fix, behavior) and the split of the general questions across general, fit and
-slop all judged the same production patch against the same reference material, so triage
-spent its verification budget deduping findings the batch had already paid to produce twice.
-The checklist now splits along the one seam where the *searches* differ, not the questions:
-what the change does and promises (scope, behavior, fix, boundary, impact — the pass that
-greps consumers) and how the code is written (logic, conventions, reuse, maintainability,
-comments — the pass that sweeps siblings). The type reaches the first as a prompt add — which
-is what makes a question type-specific without making it a pass — and the second is
-type-agnostic.
-
-**C findings are the point of a local review.** The CI review bot on the PR deliberately
-drops low-value findings. Nits, taste and cleanup surface here, judged by the author at zero
-round-trip cost — that is also why the cleanup questions moved into this pipeline.
-
-**What a styling-only fix branch taught.** One self-review run on a CSS fix with regenerated
-screenshot baselines exposed six gaps at once. Binaries were in the patch as `Bin N -> M`
-stubs — noise — and had they been dropped instead, no pass could ask whether the baselines
-were regenerated; hence the `binary_files:` lane, named not diffed. The squashed `base..head`
-diff hid that the fix landed *after* the commit that captured the baseline — a stale baseline
-and a `test:` before its `fix:` are both only visible in commit order; hence `commits:` in the
-plan. The type × scale matrix budgeted 15 mutants for a diff with zero mutable lines; hence the
-advisory `mutant_pool:`. The chat gate said `8 C` and the report `10 C` because each was
-derived separately from the agent reports; hence the frozen list. Follow-ups repeated every
-B/C finding with its fix and became a third of the report; hence the index. And a report full
-of `confirmed` never said *how* — indistinguishable from taking the agents at their word;
-hence `— verified: <how>`.
-
-**What a PR review of the same shape taught.** A `pr-review` run on a 6-file, 50-line CSS fix
-with 18 regenerated baselines cost 265k subagent tokens across three passes — the change pass
-alone 58 tool calls over 17 minutes. Two of those calls mattered and the rest were spent
-re-deriving things already knowable: the code pass copied three files to a scratchpad to run
-prettier and prove there was no lint failure, on a PR whose Lint check was green, and both the
-change and tests passes reasoned about whether the baselines were stale, on a PR whose Base,
-Lumo and Aura visual checks were green. `gh pr checks` answers all of it in one call and no
-script was making it; hence `=== CI_STATUS ===`, the plan's `ci:` digest, and severity.md's
-rule that a green check is authoritative. Nothing sized a pass either — scale capped only
-mutants and deep blocks — hence `effort_per_pass:` and the drop-order each agent now names.
-The one finding no pass produced came from decoding PNG headers by hand: `394x52 -> 394x45`
-said an element lost 7px, and three baselines came back `size unchanged`, meaning content moved
-inside a box that did not — the fix's own signature, invisible in a byte count; hence
-`binary_dims:`. Two posted comments then fell back to general comments because their files were
-not in the diff, discovered *after* the user had approved posting; hence the anchor check at
-step 5.6. And the verdict printed `Looks good` over a confirmed finding that the fix never
-reached one of three released themes, because the A/B tie-breaker — "can a follow-up PR fix
-this?" — always answers yes for a released sibling and so had quietly deleted the blast-radius
-rule; hence the tie-breaker's new scope limit and a verdict that any confirmed `issue` moves.
-The same run wrote a 50-line prod patch to its own file and every pass paid a second read for
-it — below ~300 lines the scaffolding outgrows the diff; hence the inline `### The diff`
-section for small patches.
-
-**The tier is not the comment.** A/B/C is the plugin's severity scale and it worked for the
-author's own report, but posted as `[B: follow-up]` it told a PR reader nothing they already
-knew the words for, and an unverified claim capped at B still posted as an assertion. The
-rendering table in severity.md fixes both by adopting Conventional Comments: the tier decides
-the label (`issue` / `suggestion` / `nitpick`) and the decoration says `blocking` or
-`non-blocking` in one token instead of a prose escape hatch, an unverified claim becomes a
-`question` worded as one, and a call that is not a code reviewer's to make — an AT verdict, a
-theme's intent, a semver classification — routes as `question (a11y|design|semver|flow)`
-naming the owner instead of concluding. The label is assigned once at triage and frozen with
-the tier, for the same reason the tier counts are: two renderings derived separately disagreed.
-The closed vocabulary is enforced by `post-comment.sh`, so a comment that would not parse never
-reaches the PR. The approach and the routing rule are borrowed from USWDS's review skill and
-the Conventional Comments spec.
-
-**The escalation ladder's first rung was unreachable.** It pinged a named agent, and the
-launch rule forbids `name` — so every lost report wasted a turn before the re-spawn. The rung
-is gone; a ladder starts where the launch rule leaves you.
-
-**What a second PR review taught — where the tokens went.** A `pr-review` run on a
-6-file, 115-line combo-box fix (89 production lines) cost ~157k subagent tokens for 12
-findings, of which the pr-mode filter kept one B suggestion, one C nit and a praise. The
-accounting, from the transcripts: the orchestrator-written context file was 35k chars, read
-three times (~29k); the change pass spent ~22k output tokens, 5.7k of them on three deep
-blocks that yielded a praise, because 115 total lines had tipped `lite` (≤100) into `full`
-with deep 3 and a 60-call ceiling that no pass came within 50 calls of — so nobody
-economized, and both the change and code passes re-read `setProperties` and the whole head
-mixin file that the context file already quoted as Settled facts and -U10 hunks. Nine of the
-twelve findings were C, requested by a "C findings are wanted" rule copied verbatim into a
-mode whose filter drops them by design. The orchestrator itself read five procedure docs
-(~9k tokens), CONVENTIONS.md in full to quote 400 words, fetched the PR body twice, re-typed
-five verbatim rule blocks, and after fan-out appended notes nobody read — every pass reads
-the file once, at launch. Hence: the C rule is mode-variant (`c-rule-pr` asks for C only
-against a quoted convention); scale is sized by production lines with `lite` at 150; the deep
-budget is capped by `deep_candidates` the script counts, so a fix with no public surface gets
-one block; the ceilings are 10/20/30; the plan script writes the whole deterministic
-skeleton — rules and rubric extracted from the reference docs by `<!-- block:… -->` marker,
-PR body, lanes, inline diff, conventions chapters selected by touched file kinds and the
-signals in the added lines, CI — and the
-orchestrator appends only Settled facts it verified and Open leads; a small file touched in
-several places is quoted whole once instead of pulled by each pass; the test diff runs at
--U15 so the `beforeEach` is in view; every agent checks the context file before opening a
-file and returns no narrative around its finding lines; and the wait after fan-out is spent
-only on what the passes cannot reach — an external repo, a parent issue — never on the files
-they are reading at the same moment. The read-discipline block and every agent's "check the
-context file first" rule carry no measurement because this paragraph does: re-reading lines
-the context file already quoted was the single largest waste in both transcripts.
-
-**What a third PR review taught — the losses after the passes returned.** The change pass's
-result came back cut at the end behind a `[result truncated …]` marker, and the truncated tail
-was its deep blocks, because the findings sat behind prose; hence the output contracts now say
-the order is load-bearing and delivery.md has a truncation rung that reuses the live channel.
-The same defect reached two passes at different anchors — one on the enclosing block, one on a
-range — and triage matched them by reading; hence the declaration-line anchor. Verifying had no
-ceiling of its own and re-read what the passes had read; hence the triage table and the note
-that a browser probe settles a CSS claim re-reading cannot. Every forced completion turn
-restated the pass's brief; hence the one-line status rule. And `pr` mode's default report dir
-pointed inside the repo, for a record the skill says is never committed; hence `SCRATCHPAD` by
-default and a `pr-<n>-REVIEW.md` report path the skill already named.
-
-**What the three PR-review bills said together — the fixed costs.** Every pass ran on the
-orchestrator's model, because no agent definition named one, and two of the three are
-checklist sweeps over a diff the skeleton already quotes; hence profiles.md's `Pass model`
-table — opus for the change pass at every tier, sonnet for the other two below `full` — read
-by the script and printed in each prompt's header. Every launch was assembled from five parts
-read out of three documents; hence `=== PROMPTS ===`, the literal prompt per pass, with the
-delivery clause copied from delivery.md by marker so the prompts are word-for-word the same
-from run to run. Appending to the skeleton needed Edit, Edit needs a Read, and that Read
-pulled the inline diff into the orchestrator's context — the one cost the skeleton was
-written to remove; hence the `notes:` file, created once with Write and read by every pass
-after the skeleton. And "the context file already holds it" stood in the skeleton three
-times and in every agent definition twice more, paid for by each agent on both reads; it now
-lives in the skeleton's read-discipline and rubric blocks alone.
-
-**What a fourth PR review taught — the review that was already on the PR.** A `pr-review` run
-on a 33-file, 126-line feature ran forty minutes after a review bot had left four inline
-comments, and after the reviewer had left five more. Six of the nine findings offered at the
-gate were already on the PR — three matched the bot, three the reviewer's own comments — so
-`Yes — post all` would have doubled the author's reading for nothing. Nothing in the pipeline
-fetched existing comments: the context script had metadata, anchors, CI and diffs, and the
-skeleton carried none of what other people had said. The one bot comment none of the three
-passes reproduced was a real conventions gap — two public CSS properties absent from every
-styling table — so the existing comments are a recall source as well as a duplicate filter.
-Hence `=== EXISTING_COMMENTS ===` (thread roots with their resolved state, one GraphQL call),
-the skeleton's `## Already on the PR` section, the `dup:<id>` tag on a finding line, triage's
-`already raised` status with a `confirms` / `contradicts` verdict, a gate that never offers a
-match as a new comment, and `post-comment.sh` refusing to open a second thread within two
-lines of an existing one. The bot's claim is not authoritative — the pass still reads the
-diff — only its existence is. The same run showed why that missed finding was missed: the
-orchestrator had written it as an Open lead owned by the change pass ("check the `.d.ts` and
-JSDoc styling docs describe them"), the pass ran two greps toward it and never reported a
-verdict, and the output contract had no slot for one — so the lead vanished between the notes
-file and triage. Hence the `lead cleared:` line: every owned lead ends as a finding or as one
-line saying how it was closed, and a lead that ends as neither is triage's own work, not a
-drop.
+- **One barrier, one message.** Triage needs every pass's findings before it verifies
+  anything; passes launched in separate messages serialize the barrier for no gain.
+- **Named agents lose their reports.** A named agent ends its turn idle and alive, and its
+  final text never comes back — hence no `name`, and the delivery clause as a second channel.
+- **A lost report looks exactly like a clean pass.** Hence the roll call before triage, an
+  escalation ladder that changes the mechanism instead of retrying the broken channel, and the
+  `self-run` marker for findings the orchestrator had to produce itself.
+- **Deep review is a budget, not a fan-out.** Lens agents on the same change converged on the
+  same findings; one change pass with a block budget keeps the disagreement and drops the
+  duplicate spend.
+- **A settled-fact ledger must not invite challenge.** "Do challenge" licenses re-derivation,
+  which costs as much as establishing the fact did.
+- **One lead, one owner, one verdict.** Unowned leads are verified by every pass; an owned
+  lead with no reported verdict vanishes. Every lead names its pass and ends as a finding or a
+  `lead cleared:` line.
+- **Cluster before ranking.** A multi-file feature in one module is usually one decision, so
+  one block; getting that wrong should cost a block, not an agent run.
+- **An agent handed a list writes a survey.** The block format, the small budget and
+  checklist-before-blocks ordering are the hedge.
+- **The dominant cost is agents × diff, not agents.** Hence the prepared patches and one
+  owner per lane; only the tests pass reads both.
+- **One question, one owner — including across passes that share material.** Overlapping
+  questions are worth debating; overlapping reads are the measurable cost.
+- **Restating a shared fact is cheaper than N agents finding it.** Settled facts, the
+  conventions excerpt, CI and the existing comments are quoted once into the skeleton.
+- **Re-reading what the skeleton already quotes is the largest waste.** Hence the read
+  discipline block and the inline diff below ~300 lines.
+- **Size is a proxy for risk, not risk itself.** The scale tier has risk overrides, and it
+  sizes budgets, never the pass list.
+- **Three questions, three passes.** What the change does and promises, how the code is
+  written, whether the tests pin it — split along the seam where the searches differ, not the
+  questions. The change type is a prompt add, not a pass.
+- **CI is authoritative on a PR.** A green check retires that class of finding; a red one is
+  an A by itself. No pass re-runs locally what CI already proved.
+- **C findings are the point of a local review, and noise on a PR.** Hence the mode-variant
+  C rule.
+- **The tier is not the comment.** A/B/C is the plugin's scale; a PR reader gets a
+  Conventional Comment whose label and decoration say the same thing in words they know, and an
+  unverified claim posts as a question. The label is frozen with the tier so two renderings
+  cannot disagree.
+- **The model is a column, not a rule.** No agent definition pins a model; the tier picks it
+  per pass and the plan prints it.
+- **The plan is the launch.** Literal prompts, literal SHAs, literal paths — nothing about a
+  launch is re-derived from prose, so every run's prompts are the same.
+- **Never Edit the skeleton.** Edit needs a Read, and the Read pulls the diff through the
+  orchestrator's context — the one cost the skeleton exists to remove. Notes go in their own
+  file, written once before fan-out.
+- **Existing comments are a filter and a recall source.** A finding already on the PR is not
+  posted again; an open thread no pass reproduced is verified. The bot's claim is not
+  authoritative, only its existence is.
+- **Loaded docs carry rules; the retrospective carries the measurements.** Every token in a
+  document a run reads is paid on every run.

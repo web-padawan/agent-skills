@@ -107,29 +107,4 @@ the full tier.
 The plan prints the model beside each pass and in its `=== PROMPTS ===` header; the
 orchestrator passes it as the Agent tool's `model`. A new pass is a new column.
 
-## Why the tables look like this
-
-- **Three questions, three passes.** A branch raises three questions — what the change
-  *does and promises* (scope, behavior, fix correctness, boundary, impact), how the code is
-  *written* (logic, conventions, reuse, maintainability, comments), and whether the *tests*
-  pin it. Each question has one owner, so the searches do not repeat: the consumer grep
-  belongs to the change pass, the sibling sweep to the code pass, the test patch to the tests
-  pass. The **findings** still overlap where one defect answers two questions — a selector
-  that is both wrong behavior and a conventions breach reaches `change` and `code` alike. That
-  is cross-checking worth paying for, and it is why anchors are pinned to the declaration line
-  (pipeline.md §3): matched anchors make the dedup mechanical instead of manual.
-- **The change type is a prompt add, not a pass.** The fix, requirements and behavior passes
-  each asked one type's question against the production patch. As checklist sections of the
-  change pass they cost no agent and no extra read, and the code pass is type-agnostic.
-- **Deep review is a budget inside the change pass, not a second stage.** The boundary and
-  impact blocks run on the top changes the pass selects itself, in the same barrier as the
-  other passes; `deep` sizes how many, the same way `mutants` sizes the coverage stage.
-- **Scale sizes budgets, never the pass list** — mutants, deep blocks (further capped by the
-  diff's deep candidates), the per-pass effort ceiling and the model per pass above. With
-  three passes covering three questions there is nothing left to drop, so the tier buys
-  smaller and cheaper passes rather than fewer of them, and it stays in the plan and the
-  report because it is what the budgets are sized by.
-- **The model is a column, not a rule.** No agent definition pins a model, so every pass
-  inherited the orchestrator's — the most expensive one — for a checklist sweep the
-  skeleton had already quoted the diff for. The table above is the whole mechanism: the
-  script reads it, the plan prints it, the prompt header carries it.
+Why the tables look like this: [`rationale.md`](rationale.md).

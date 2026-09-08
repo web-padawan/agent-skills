@@ -3,8 +3,8 @@
 One rubric for every review skill in this plugin. Agents **propose** a tier; the
 invoking skill's triage assigns the final one. Agent-proposed tiers run high.
 
-The marked blocks below (`<!-- block:… -->`) are copied into every context file by
-`scripts/review-plan.sh` — edit them here, never in a skill or an agent definition.
+The rubric block below (`<!-- block:rubric -->`) is copied into every context file by
+`scripts/review-plan.sh` — edit it here, never in a skill or an agent definition.
 
 <!-- block:rubric -->
 - **A — critical, must fix before merge.** Wrong behavior, regression, a test that lets a
@@ -77,30 +77,11 @@ literally, nothing else discriminates as sharply:
 - **Impact** — A when a propagation path reaches released behavior with no test on it. B when
   the path is internal or test-covered. C when the ripple is cosmetic.
 
-## Rules the plan script copies into every context file
+## What a skill does with a tier
 
-The first rides with the rubric in both modes. The C rule has a mode variant: a local
-self-review is where nits are cheap to judge, while `pr-review`'s triage filter drops style
-nits by design — asking three agents to find them there only buys output to discard.
-
-<!-- block:rule-report -->
-> **Report, don't self-censor.** Every candidate with a nameable failure scenario or
-> concrete cost goes in your report — `unverified` when you cannot verify it. Triage
-> verifies and dedups; a finder that silently drops half-believed candidates bypasses
-> triage and is the dominant cause of misses.
-<!-- /block -->
-
-<!-- block:c-rule-self -->
-> **C findings are wanted.** The PR-side CI review deliberately drops low-value findings;
-> a local review is where nits surface, judged by the author at zero round-trip cost.
-<!-- /block -->
-
-<!-- block:c-rule-pr -->
-> **C findings only when they carry a rule.** This review posts to the PR, where style nits
-> are dropped at triage by design. Report a C only when it breaks a rule quoted in the
-> conventions excerpt, or when a comment is wrong about the code. Do not report taste,
-> ordering, phrasing or "could be shorter" — nothing downstream keeps them.
-<!-- /block -->
+The report rule and the mode-variant C rule the plan script copies into every skeleton are in
+[`skeleton-blocks.md`](skeleton-blocks.md); the rubric block above is the one piece of this
+file that travels too.
 
 What a skill **does** with a tier is the skill's own business: `self-review` reports every
 tier, `pr-review`'s triage filter decides which ones are worth a line comment.

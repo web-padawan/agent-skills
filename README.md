@@ -141,7 +141,9 @@ references/          # shared by every review skill — the single source for ea
   profiles.md        # the pass table + the type x scale matrix (parsed by review-plan.sh)
   severity.md        # A / B / C, the tie-breaker, type-aware tiering, deep-block severities
   delivery.md        # launch rules, the delivery clause, roll call, escalation ladder
-  rationale.md       # why the pipeline is shaped this way, measured on real runs
+  skeleton-blocks.md # the rules and headers review-plan.sh copies into every context skeleton
+  rationale.md       # why the pipeline is shaped this way — one line per principle
+  retrospective.md   # the runs that taught them: costs, what they exposed, what changed (not loaded)
 scripts/
   get-pr-context.sh  # PR metadata, branch state, ANCHORS SHAs, CI, existing comments, diffs
   review-plan.sh     # wraps it and prints === PLAN ===: type, scale, pass list, budgets, paths

@@ -77,5 +77,4 @@ resolve from this file; if a read fails, use `${CLAUDE_PLUGIN_ROOT}/references/<
 
 The profile itself — which passes run, the mutant budget and the deep-block budget — lives in
 [`../../references/profiles.md`](../../references/profiles.md) and reaches you through the
-plan. Do not re-derive it here. Why the pipeline is shaped this way:
-[`../../references/rationale.md`](../../references/rationale.md).
+plan. Do not re-derive it here.

@@ -12,7 +12,8 @@
 #                  [--deep N] [--no-coverage] [--report-dir <path>] [--no-context]
 #                  [--context-out <path>] [--no-write]
 #
-# Prints get-pr-context.sh's sections (skip with --no-context) then === PLAN ===, and
+# Prints get-pr-context.sh's PR_METADATA, CI_STATUS and EXISTING_COMMENTS sections (skip
+# with --no-context; the other sections are restated by the plan) then === PLAN ===, and
 # writes the shared context skeleton the passes read (references/pipeline.md §2) at the
 # plan's `context:` path — `--context-out` picks the path, `--no-write` skips it. The
 # skeleton and, for a large diff, the two patch files beside it are the only files this
@@ -76,7 +77,16 @@ if [ "$WANT_CONTEXT" = true ]; then
   if ! CTX=$("$SCRIPT_DIR/get-pr-context.sh" "${CTX_ARGS[@]}" 2>&1); then
     CTX_NOTE="context script failed — plan uses git-only facts"
   fi
-  [ -n "$CTX" ] && printf '%s\n\n' "$CTX"
+  # Print only what the orchestrator acts on: PR metadata, CI and the existing
+  # comments, plus any error line from the rest. BRANCH_STATE, ANCHORS and
+  # REVIEW_INSTRUCTIONS are restated by the plan (branch, guard, base/head,
+  # conventions_doc), and the ANCHORS file lists repeat the plan's lanes — on a
+  # 33-file PR they were a third of a plan output too large to show inline.
+  [ -n "$CTX" ] && printf '%s\n' "$CTX" | awk '
+    /^=== / { keep = ($0 ~ /^=== (PR_METADATA|CI_STATUS|EXISTING_COMMENTS) ===$/); if (keep) print; else held = $0; next }
+    keep { print; next }
+    /^error: / { if (held != "") { print ""; print held; held = "" } print }
+  ' | awk 'NF || !blank { print } { blank = !NF }'
 fi
 
 # Read a key from the ANCHORS section only. Everything before it can contain a PR
@@ -487,6 +497,7 @@ fi
 # in the context file as a Settled fact; an unchanged WxH with moved bytes is a
 # repaint. Without this, passes are left guessing a baseline from its byte count.
 BINARY_DIMS=""
+DIMS_NEW=0; DIMS_GONE=0; DIMS_RESIZED=0; DIMS_SAME=0
 if [ -n "$BINARY_FILES" ] && [ -n "$BASE" ]; then
   for bin in $BINARY_FILES; do
     case "$bin" in *.png|*.PNG) ;; *) continue ;; esac
@@ -497,9 +508,13 @@ if [ -n "$BINARY_FILES" ] && [ -n "$BASE" ]; then
     if [ "$BIN_BEFORE" = "$BIN_AFTER" ]; then
       BINARY_DIMS="${BINARY_DIMS}  $bin: $BIN_AFTER (size unchanged)
 "
+      DIMS_SAME=$((DIMS_SAME + 1))
     else
       BINARY_DIMS="${BINARY_DIMS}  $bin: $BIN_BEFORE -> $BIN_AFTER
 "
+      if [ "$BIN_BEFORE" = absent ]; then DIMS_NEW=$((DIMS_NEW + 1))
+      elif [ "$BIN_AFTER" = absent ]; then DIMS_GONE=$((DIMS_GONE + 1))
+      else DIMS_RESIZED=$((DIMS_RESIZED + 1)); fi
     fi
   done
 fi
@@ -744,7 +759,7 @@ if [ -n "$CONTEXT_PATH" ]; then
   {
     echo "# Review context — ${PR_URL:-$BRANCH}"
     echo
-    block "$PLUGIN_ROOT/references/pipeline.md" framing
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" framing
     echo
     echo "## Identity"
     echo
@@ -772,19 +787,19 @@ if [ -n "$CONTEXT_PATH" ]; then
     echo
     echo "## Rules"
     echo
-    block "$PLUGIN_ROOT/references/pipeline.md" scope-rule
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" scope-rule
     echo
     echo "### Read discipline"
     echo
-    block "$PLUGIN_ROOT/references/pipeline.md" read-discipline
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" read-discipline
     echo
     echo "## Severity rubric"
     echo
     block "$PLUGIN_ROOT/references/severity.md" rubric
     echo
-    block "$PLUGIN_ROOT/references/severity.md" rule-report
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" rule-report
     echo
-    block "$PLUGIN_ROOT/references/severity.md" "c-rule-$MODE"
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" "c-rule-$MODE"
     echo
     echo 'Findings come back one per line: `<category> | <file>:<line> | <A|B|C> | <claim>`.'
     if [ -n "$PR_BODY" ]; then
@@ -798,15 +813,18 @@ if [ -n "$CONTEXT_PATH" ]; then
     echo
     echo "prod:"; for f in $PROD_FILES; do echo "- $f"; done; [ -z "$PROD_FILES" ] && echo "- none"
     echo; echo "tests:"; for f in $TEST_FILES; do echo "- $f"; done; [ -z "$TEST_FILES" ] && echo "- none"
-    echo; echo "binary:"; for f in $BINARY_FILES; do echo "- $f"; done; [ -z "$BINARY_FILES" ] && echo "- none"
+    echo; echo "binary (never diffed; for images, WxH on base -> head — a changed size is a layout change, \`size unchanged\` means content moved inside the same box):"
+    for f in $BINARY_FILES; do
+      DIMS=$(printf '%s' "$BINARY_DIMS" | awk -v p="  $f: " 'index($0, p) == 1 { print substr($0, length(p) + 1); exit }')
+      echo "- $f${DIMS:+ — $DIMS}"
+    done
+    [ -z "$BINARY_FILES" ] && echo "- none"
     echo
-    echo '```'
-    git diff --stat "$BASE..$HEAD" 2>/dev/null || true
-    echo '```'
+    echo "$(git diff --shortstat "$BASE..$HEAD" 2>/dev/null | sed 's/^ *//')"
     echo
     echo "## Conventions excerpt"
     echo
-    block "$PLUGIN_ROOT/references/pipeline.md" conventions-header
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" conventions-header
     echo
     if [ -n "$CONVENTIONS" ]; then
       echo "Source: \`$CONVENTIONS\`. Chapters selected by signals: ${SIGNALS:-(none)}."
@@ -818,7 +836,7 @@ if [ -n "$CONTEXT_PATH" ]; then
     echo
     echo "## Settled facts"
     echo
-    block "$PLUGIN_ROOT/references/pipeline.md" settled-header
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" settled-header
     echo
     if [ -n "$CI_SECTION" ]; then
       echo "- CI (authoritative for lint, test and baseline state at the head; a green check retires that class of finding):"
@@ -826,14 +844,10 @@ if [ -n "$CONTEXT_PATH" ]; then
     else
       echo "- CI: not gathered — lint and test state is unknown, not clean."
     fi
-    if [ -n "$BINARY_DIMS" ]; then
-      echo "- Image baselines (a changed WxH is a layout change; \`size unchanged\` means content moved inside the same box):"
-      printf '%s' "$BINARY_DIMS" | sed 's/^/  /'
-    fi
     echo
     echo "## Already on the PR"
     echo
-    block "$PLUGIN_ROOT/references/pipeline.md" existing-comments-header
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" existing-comments-header
     echo
     case "$COMMENTS_SECTION" in
       ""|none|unavailable:*) echo "(no comments on the PR yet — every finding is new)" ;;
@@ -929,12 +943,11 @@ else
     INFO=$(pass_agent "$token")
     AGENT=$(printf '%s' "$INFO" | cut -f1)
     READS=$(printf '%s' "$INFO" | cut -f2)
-    ADDS=$(printf '%s' "$INFO" | cut -f3)
     [ -z "$AGENT" ] && AGENT="(no agent in references/profiles.md for '$token')"
     MODEL=$(pass_model "$SCALE" "$token")
     COUNT=$((COUNT + 1))
-    printf '  %-7s %-28s model: %-7s reads: %-14s prompt adds: %s\n' \
-      "$token" "$AGENT" "${MODEL:-inherit}" "${READS:-both}" "${ADDS:--}"
+    printf '  %-7s %-28s model: %-7s reads: %s\n' \
+      "$token" "$AGENT" "${MODEL:-inherit}" "${READS:-both}"
   done
   echo "agents: $COUNT"
   echo "launch: one message · one Agent call per pass · subagent_type, model and prompt from === PROMPTS === verbatim · no name (references/delivery.md)"
@@ -944,8 +957,10 @@ echo "prod_files: ${PROD_FILES:-none}"
 echo "test_files: ${TEST_FILES:-none}"
 echo "binary_files: ${BINARY_FILES:-none}"
 if [ -n "$BINARY_DIMS" ]; then
-  echo "binary_dims:"
-  printf '%s' "$BINARY_DIMS"
+  echo "binary_dims: $((DIMS_NEW + DIMS_GONE + DIMS_RESIZED + DIMS_SAME)) png — $DIMS_NEW new, $DIMS_GONE removed, $DIMS_RESIZED resized, $DIMS_SAME same size (per-file WxH beside each binary in the skeleton)"
+  # New and removed files carry no before/after story; the resized and same-size
+  # ones are the evidence — a size that did not change while content did is a fix's signature.
+  printf '%s' "$BINARY_DIMS" | grep -v ': absent -> \|-> absent$' || true
 fi
 echo "comment_files: ${COMMENT_FILES:-none}"
 
