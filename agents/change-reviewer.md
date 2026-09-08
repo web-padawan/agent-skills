@@ -145,9 +145,6 @@ result gets truncated from the **end**, so the findings must never sit behind th
 
 ## Verify before reporting
 
-- **Check the context file before opening anything.** Its inline diff, `### Full file`
-  sections and Settled facts already quote most of what a claim needs. Open a file only for
-  lines it does not hold, and say which file and why in the finding.
 - Verify behavioral claims by reading the pre-change source (`git show <BASE>:<path>`) — never
   from pattern-matching on the diff alone.
 - Confirm each named consumer actually references the boundary; trace every propagation path
@@ -155,9 +152,6 @@ result gets truncated from the **end**, so the findings must never sit behind th
 - Before asserting a path is untested, search the suite for it.
 - If you cannot verify a claim, append `unverified` to its finding line; if verification
   disproves it, drop it entirely.
-- **CI is settled.** The context file's `ci:` digest is authoritative for lint, test and
-  baseline state — do not re-run lint or a test suite to prove a failure a green check
-  already contradicts.
 
 ### Running the code
 

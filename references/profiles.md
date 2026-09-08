@@ -1,14 +1,18 @@
 # Review profiles — the single source
 
-Two tables. Everything else in this plugin reads them from here, and
-`scripts/review-plan.sh` parses them so no skill has to join them by hand.
+The tables below are the single source. Everything else in this plugin reads them
+from here, and `scripts/review-plan.sh` parses them so no skill has to join them by hand.
 
 - **Passes** — the pass id, the agent that runs it, which prepared patch it
-  reads, and what its prompt must add beyond the context file path and the
-  delivery clause. Every other contract (questions, category, output format,
-  verification rules) lives in the agent definition at `agents/<name>.md`.
+  reads, and what its prompt adds beyond the context file path and the
+  delivery clause. The script resolves that column into the literal prompt it
+  prints under `=== PROMPTS ===`. Every other contract (questions, category,
+  output format, verification rules) lives in the agent definition at
+  `agents/<name>.md`.
 - **Matrix** — for a mode, change type and scale tier: which passes run, and the
   mutant budget. The plan script resolves a row into a launch list.
+- **Pass effort** and **Pass model** — what the scale tier caps per pass, and
+  which model runs it.
 
 ## Passes
 
@@ -87,6 +91,22 @@ Verifying by **running the thing** beats reading it again: a browser probe settl
 shadow-DOM claim that no amount of re-reading will. With Playwright MCP, `file:` URLs are
 blocked — navigate to `about:blank` and build the tree inside `browser_evaluate`.
 
+## Pass model
+
+The tier also picks the model per pass. The change pass carries the boundary and impact
+judgement and keeps the strongest model at every tier; the code and tests passes run a
+checklist over a diff the skeleton already quotes, which a smaller model does as well below
+the full tier.
+
+| scale | change | code | tests |
+| --- | --- | --- | --- |
+| trivial | opus | sonnet | sonnet |
+| lite | opus | sonnet | sonnet |
+| full | opus | opus | opus |
+
+The plan prints the model beside each pass and in its `=== PROMPTS ===` header; the
+orchestrator passes it as the Agent tool's `model`. A new pass is a new column.
+
 ## Why the tables look like this
 
 - **Three questions, three passes.** A branch raises three questions — what the change
@@ -105,6 +125,11 @@ blocked — navigate to `about:blank` and build the tree inside `browser_evaluat
   impact blocks run on the top changes the pass selects itself, in the same barrier as the
   other passes; `deep` sizes how many, the same way `mutants` sizes the coverage stage.
 - **Scale sizes budgets, never the pass list** — mutants, deep blocks (further capped by the
-  diff's deep candidates), and the per-pass effort ceiling above. With three passes covering three questions there is nothing left to
-  drop, so the tier buys smaller passes rather than fewer of them, and it stays in the plan
-  and the report because it is what the budgets are sized by.
+  diff's deep candidates), the per-pass effort ceiling and the model per pass above. With
+  three passes covering three questions there is nothing left to drop, so the tier buys
+  smaller and cheaper passes rather than fewer of them, and it stays in the plan and the
+  report because it is what the budgets are sized by.
+- **The model is a column, not a rule.** No agent definition pins a model, so every pass
+  inherited the orchestrator's — the most expensive one — for a checklist sweep the
+  skeleton had already quoted the diff for. The table above is the whole mechanism: the
+  script reads it, the plan prints it, the prompt header carries it.

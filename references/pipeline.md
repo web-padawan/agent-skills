@@ -5,8 +5,8 @@ what is different about it — this file is the shared part.
 
 ```
 1 plan      run scripts/review-plan.sh — anchors, type, scale, budgets, pass list; writes the context skeleton
-2 context   append Settled facts and Open leads to the skeleton — nothing else
-3 fan out   launch the plan's pass list; delivery.md decides whether findings arrive
+2 context   write the notes file — Settled facts and Open leads, nothing else
+3 fan out   paste the plan's prompts, one agent each; delivery.md decides whether findings arrive
 4 roll call delivery.md's roll call, then escalate anything that delivered nothing
 5 triage    verify · dedup · tier · one-line suggested fix · label · freeze
 6 deliver   the skill's own output: chat report, findings file, or PR comments
@@ -51,7 +51,10 @@ by the kinds of file touched and what the added lines use — the severity rubri
 **Do not re-quote, rewrite or re-derive any of it**, and do not read the conventions doc or
 the diff yourself to check the skeleton — that is the spend the skeleton exists to remove.
 
-You append three sections, in this order, and launch:
+You write **one file**, at the plan's `notes:` path, with the Write tool — never Edit the
+skeleton. Edit needs a Read first, and that Read pulls the inline diff through your context,
+the one cost the skeleton exists to remove. The skeleton's last section points every pass at
+the notes file, so skip writing it when you have nothing to add. Three sections, in this order:
 
 - **Settled facts** — facts you verified that a pass would otherwise derive: what a shared
   helper does, pre-change behavior, a consumer in another repo, a Flow connector's call.
@@ -61,8 +64,8 @@ You append three sections, in this order, and launch:
   one owner pass (`[owner: change|code|tests]`); other passes do not investigate a lead
   they do not own, and triage inherits the owner's verdict.
 - **Orchestrator notes** — only when the skeleton is wrong (a stale PR description, a
-  mis-detected type). Notes appended **after** fan-out reach only re-spawned agents: every
-  pass reads the file once, at launch.
+  mis-detected type). A notes file written **after** fan-out reaches only re-spawned agents:
+  every pass reads once, at launch.
 
 ### Blocks the script copies into the skeleton
 
@@ -112,13 +115,13 @@ Edit them here; the script extracts them by marker. The rubric and the mode rule
 
 ## 3 — Fan out
 
-Launch the plan's `passes` list in **one message**, sharing one barrier. Each prompt is
-exactly: the context file path, the pass's `reads` lane resolved to the section or patch it
-names — for the code pass that is the prod lane *plus* the plan's `comment_files` list — the
-pass's `prompt adds` from the plan, the plan's `effort_per_pass:` ceiling, and
-[`delivery.md`](delivery.md)'s delivery clause verbatim. Questions, categories, output
-contracts and verification rules live in the agent definitions (`agents/<name>.md`) — never
-paste them into a prompt. Read delivery.md before the first launch and follow it exactly.
+Launch the plan's `passes` in **one message**, sharing one barrier. The plan's
+`=== PROMPTS ===` block is the prompt for each pass, verbatim — context and notes paths,
+lane, resolved prompt adds, effort ceiling, delivery clause — with the `subagent_type` and
+`model` its header names. Add nothing: questions, categories, output contracts and
+verification rules live in the agent definitions (`agents/<name>.md`). Read
+[`delivery.md`](delivery.md) before the first launch for the two launch rules the block
+cannot enforce.
 
 **Fallback**, only when the plugin's agents are unavailable: use `general-purpose` and paste
 the body of the corresponding `agents/<name>.md` into the prompt.
@@ -179,4 +182,5 @@ the author knows the code; do not re-tell the trace that produced the finding.
 The skill's own step. Nothing in this pipeline edits code, stages, or commits; the one
 carve-out anywhere in the plugin is self-review's coverage stage, which restores every
 mutant before the next. The files a run creates are the context skeleton, the patch files
-when the diff is too large to inline, and the skill's own report.
+when the diff is too large to inline, the orchestrator's notes file, and the skill's own
+report.

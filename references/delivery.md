@@ -2,17 +2,25 @@
 
 Shared by every skill in this plugin that launches reviewer agents (`self-review`, `pr-review`). A pass that never reports is worse than a pass you skipped: it looks done. A few launch choices decide whether findings arrive at all, and the **defaults lose them** — and how you spend the wait decides whether the findings you get are worth reporting.
 
-## Launch rules — all three mandatory
+## Launch rules
 
-- **Pass `run_in_background: false` on every agent, if your Agent tool has that parameter.** Triage is a barrier — you need all findings before verifying anything — so a synchronous run is what you actually want, and it makes each agent's report arrive as its tool result. Where the tool exposes no such parameter, every launch is asynchronous and reports arrive as task notifications instead: that is the harness working normally, **not** a delivery failure, and not a reason to relaunch. Check the tool's schema rather than assuming either shape.
+The plan's `=== PROMPTS ===` block is each pass's prompt. Paste it verbatim, with the
+`subagent_type` and `model` its header names, one Agent call per pass, all in one message.
+Two things the block cannot do for you:
+
 - **Do not pass `name`.** A named agent becomes an addressable teammate: it ends its turn *idle and still alive*, and its final text is never returned to you. Name an agent only when you genuinely need to message it mid-run.
-- **This clause verbatim in every prompt**, so a second channel exists:
+- **Where the Agent tool has `run_in_background`, pass `false`.** Triage is a barrier, so a synchronous run is what you want. Without the parameter every launch is asynchronous and reports arrive as task notifications — the harness working normally, **not** a delivery failure, and not a reason to relaunch.
 
+Every printed prompt ends with this clause, so a second channel exists. The script copies it
+from here by marker — edit it here only:
+
+<!-- block:delivery-clause -->
 ```
 Your findings are the deliverable. Return them as the CONTENT of your final message.
 If you have a SendMessage tool, ALSO send them to `main` in the same format.
 Do not write them to a file, and do not end your turn without them.
 ```
+<!-- /block -->
 
 **Recognize a lost report.** A message like `{"type":"idle_notification","idleReason":"available"}`, or a completion carrying no findings, is a **delivery failure** — not a clean pass. Never record it as `NO FINDINGS`.
 
@@ -56,7 +64,7 @@ Markers: `✅ agent` · `⚠️ truncated` · `⚠️ self-run` · `❌ missing`
 Escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
 
 0. **Truncated, not missing?** `SendMessage` that agent once for the remainder. This is the only rung that reuses the existing channel, because the agent is alive and the channel worked — only the result was cut.
-1. **Re-spawn once** with no `name` (and `run_in_background: false` where the tool has it) — a different channel, not a second try down the broken one.
+1. **Re-spawn once** from the same `=== PROMPTS ===` block, no `name` — a different channel, not a second try down the broken one.
 2. **Self-run the pass**: read the files and answer that pass's questions yourself (the questions are in the pass's `agents/<name>.md` definition). Tag every finding it yields `self-run`.
 
 (Only if you named an agent against the launch rule: ping it once before re-spawning — restate the output contract and what you have already verified.)

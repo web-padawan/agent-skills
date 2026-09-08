@@ -65,12 +65,13 @@ Everything that posts (`adversarial-review`, `pr-review`) asks for confirmation 
 
 The pass list is data, not prose: `references/profiles.md` holds the pass table and the
 change type × scale matrix, and `scripts/review-plan.sh` resolves them into a launch plan
-(type + signal, scale tier + counts, each pass with its agent, read lane and prompt adds, the
-mutant and deep budgets, the per-pass effort ceiling, the report paths, and the guard verdict),
-and writes the shared context file the passes read — framing, rules, rubric, PR body, lanes,
-the diff inline when small, the conventions chapters the touched file kinds select, CI as a
-settled fact. One script call, nothing for a skill to re-derive — read that file rather than a
-copy of it here.
+(type + signal, scale tier + counts, each pass with its agent, model, read lane and prompt
+adds, the mutant and deep budgets, the per-pass effort ceiling, the report paths, and the guard
+verdict), writes the shared context file the passes read — framing, rules, rubric, PR body,
+lanes, the diff inline when small, the conventions chapters the touched file kinds select, CI
+as a settled fact — and prints the literal prompt per pass. The orchestrator adds its own
+verified facts in a sibling notes file, never by editing the skeleton. One script call, nothing
+for a skill to re-derive — read that file rather than a copy of it here.
 
 The short version: three passes, one per question — `change-reviewer` asks what the
 production diff *does and promises* (scope, behavior and compatibility, fix correctness, then
@@ -81,11 +82,12 @@ the comment-adjacent hunks), `test-reviewer` reads the test diff. The **type** (
 subjects, parent issue labels, the branch name, the diff shape) reaches the change pass as a
 prompt add rather than adding a pass: it decides whether fix correctness applies and how
 strictly behavior preservation is read; the code pass is type-agnostic. The diff's **scale**
-(by production lines: trivial ≤10, lite ≤150, full above) sizes three budgets and nothing
+(by production lines: trivial ≤10, lite ≤150, full above) sizes four things and nothing
 else — the mutation-coverage mutants, the change pass's deep blocks (further capped by the
-diff's deep candidates: `.d.ts` hunks, new exports, new public methods; `--deep N` overrides)
-and the per-pass tool-call ceiling; public-API changes, weakened test assertions and
-CI/release files force the full tier regardless of size. The code pass reports C-tier comment and cleanup nits in `self-review`,
+diff's deep candidates: `.d.ts` hunks, new exports, new public methods; `--deep N` overrides),
+the per-pass tool-call ceiling, and the model per pass (the change pass keeps opus at every
+tier; code and tests run on sonnet below full); public-API changes, weakened test assertions
+and CI/release files force the full tier regardless of size. The code pass reports C-tier comment and cleanup nits in `self-review`,
 where they cost nothing to judge; in `pr-review` every pass reports a C only when it breaks a
 quoted convention or a comment is wrong, and the code pass skips the cleanup half — the CI
 review bot on the PR deliberately drops those too.

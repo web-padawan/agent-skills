@@ -16,7 +16,10 @@
 # writes the shared context skeleton the passes read (references/pipeline.md §2) at the
 # plan's `context:` path — `--context-out` picks the path, `--no-write` skips it. The
 # skeleton and, for a large diff, the two patch files beside it are the only files this
-# script creates. It never stages, commits, or touches tracked files.
+# script creates; it names (never writes) the `notes:` file the orchestrator adds beside
+# them. After the plan it prints `=== PROMPTS ===`: the literal prompt for each pass, with
+# the pass's agent and model, so a launch copies a block instead of assembling one.
+# It never stages, commits, or touches tracked files.
 #
 # Exit codes: 0 ok · 1 usage/environment error · 2 guard refused the run.
 set -euo pipefail
@@ -360,6 +363,22 @@ pass_agent() {
   ' "$PROFILES"
 }
 
+# Model per pass by scale — references/profiles.md, "Pass model". The header row names
+# the pass columns, so a new pass is a new column, not a script change.
+pass_model() {  # pass_model <scale> <id>
+  awk -F'|' -v scale="$1" -v id="$2" '
+    /^## Pass model/ { in_tbl = 1; next }
+    /^## / { in_tbl = 0 }
+    !in_tbl || NF < 4 { next }
+    {
+      for (i = 2; i < NF; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
+      if ($2 == "scale") { for (i = 3; i < NF; i++) if ($i == id) col = i; next }
+      if ($2 ~ /^-+$/) next
+      if ($2 == scale && col) { print $col; exit }
+    }
+  ' "$PROFILES"
+}
+
 # `undetermined` is a matrix row in pr mode (the base passes still apply) but not in self
 # mode, where the type picks the whole profile: the caller resolves it from the diff shape
 # and re-runs with --type rather than getting a silently chosen profile.
@@ -622,6 +641,12 @@ fi
 [ "$GUARD" != "ok" ] && { CONTEXT_PATH=""; CONTEXT_NOTE="not written — the guard refused this run"; }
 [ -z "$BASE" ] || [ -z "$HEAD" ] && { CONTEXT_PATH=""; CONTEXT_NOTE="not written — anchors unresolved"; }
 
+# The orchestrator's own additions go in a sibling file it creates with Write. Editing the
+# skeleton would need a Read first, and that Read pulls the inline diff through the
+# orchestrator's context — the one cost the skeleton exists to remove.
+NOTES_PATH=""
+[ -n "$CONTEXT_PATH" ] && NOTES_PATH="${CONTEXT_PATH%.md}-notes.md"
+
 PROD_DIFF_WHERE="none"
 TESTS_DIFF_WHERE="none"
 CONTEXT_LINES=0
@@ -825,6 +850,10 @@ if [ -n "$CONTEXT_PATH" ]; then
       *) echo "Too large to inline — read \`$TESTS_DIFF_WHERE\` once." ;;
     esac
     echo
+    echo "## Orchestrator notes — \`$NOTES_PATH\`"
+    echo
+    echo "The orchestrator writes that file after this skeleton when it has something to add: Settled facts it verified (authoritative, under the same rule as above), Open leads with one owner pass each, and corrections to this skeleton. Read it once, after this file, if it exists. Nothing is ever appended here."
+    echo
   } > "$CONTEXT_PATH"
   CONTEXT_LINES=$(wc -l < "$CONTEXT_PATH" | tr -d ' ')
 fi
@@ -888,13 +917,13 @@ else
     READS=$(printf '%s' "$INFO" | cut -f2)
     ADDS=$(printf '%s' "$INFO" | cut -f3)
     [ -z "$AGENT" ] && AGENT="(no agent in references/profiles.md for '$token')"
+    MODEL=$(pass_model "$SCALE" "$token")
     COUNT=$((COUNT + 1))
-    printf '  %-7s %-28s reads: %-14s prompt adds: %s\n' \
-      "$token" "$AGENT" "${READS:-both}" "${ADDS:--}"
+    printf '  %-7s %-28s model: %-7s reads: %-14s prompt adds: %s\n' \
+      "$token" "$AGENT" "${MODEL:-inherit}" "${READS:-both}" "${ADDS:--}"
   done
   echo "agents: $COUNT"
-  echo "launch: one message · no name · run_in_background=false · delivery clause verbatim (references/delivery.md)"
-  echo "prompt_parts: context path · lane · prompt adds · effort ceiling · delivery clause"
+  echo "launch: one message · one Agent call per pass · subagent_type, model and prompt from === PROMPTS === verbatim · no name (references/delivery.md)"
 fi
 
 echo "prod_files: ${PROD_FILES:-none}"
@@ -924,7 +953,8 @@ if [ -n "$REPORT_DIR" ]; then
   fi
 fi
 if [ -n "$CONTEXT_PATH" ]; then
-  echo "context: $CONTEXT_PATH (written, $CONTEXT_LINES lines — append Settled facts, Open leads, Orchestrator notes; do not rewrite it)"
+  echo "context: $CONTEXT_PATH (written, $CONTEXT_LINES lines — never Edit it; every pass reads it first)"
+  echo "notes: $NOTES_PATH (not written — Write it once before fan-out with your Settled facts, Open leads and corrections; skip it when you have none)"
   echo "diff_prod: $PROD_DIFF_WHERE"
   echo "diff_tests: $TESTS_DIFF_WHERE"
 else
@@ -934,4 +964,63 @@ echo "commands: lint=${LINT_CMD:-unknown} test=${TEST_CMD:-unknown} src_glob=${S
 echo "affected_packages: ${AFFECTED:-none}"
 if [ -n "$TEST_FILES" ]; then
   echo "risk_check_manual: a deleted or weakened assertion in an existing test also forces the full tier — this script cannot detect it, so check the test hunks yourself"
+fi
+
+# ── Prompts ───────────────────────────────────────────────────────────
+# The literal prompt per pass: context and notes paths, the lane, the resolved prompt
+# adds, the effort ceiling, and the delivery clause copied from references/delivery.md by
+# marker. The orchestrator pastes a block as-is — nothing about a launch is re-derived
+# from prose, and every run's prompts are word-for-word the same.
+if [ -n "$PASS_TOKENS" ] && [ -n "$CONTEXT_PATH" ]; then
+  lane_prod() {
+    case "$PROD_DIFF_WHERE" in
+      inline) echo "the \`### The diff (prod)\` section of the context file" ;;
+      none) echo "none — no production files changed" ;;
+      *) echo "the patch \`$PROD_DIFF_WHERE\`, read once" ;;
+    esac
+  }
+  lane_tests() {
+    case "$TESTS_DIFF_WHERE" in
+      inline) echo "the \`### The diff (tests)\` section of the context file" ;;
+      none) echo "none — no test files changed" ;;
+      *) echo "the patch \`$TESTS_DIFF_WHERE\`, read once" ;;
+    esac
+  }
+  CLAUSE=$(block "$PLUGIN_ROOT/references/delivery.md" delivery-clause | grep -v '^```')
+  echo
+  echo "=== PROMPTS ==="
+  for token in $PASS_TOKENS; do
+    INFO=$(pass_agent "$token")
+    AGENT=$(printf '%s' "$INFO" | cut -f1)
+    MODEL=$(pass_model "$SCALE" "$token")
+    echo "--- $token · subagent_type: $AGENT · model: ${MODEL:-inherit} ---"
+    echo "Context file: \`$CONTEXT_PATH\` — read it first. Then \`$NOTES_PATH\` if it exists."
+    case "$token" in
+      change)
+        echo "Your diff: $(lane_prod)."
+        echo "Change type: $TYPE."
+        [ "$TYPE_CONFLICT" != "none" ] && echo "type_conflict: $TYPE_CONFLICT"
+        echo "Deep budget: $DEEP_ROW."
+        ;;
+      code)
+        echo "Your diff: $(lane_prod)."
+        [ -n "$COMMENT_FILES" ] && echo "Comment-adjacent files for the \`comments\` category: $COMMENT_FILES"
+        [ "$MODE" = "pr" ] && echo "No reuse/maintainability nits."
+        ;;
+      tests)
+        echo "Your diff: $(lane_tests) — your subject. The production patch, for the coverage category: $(lane_prod)."
+        ;;
+      *)
+        echo "Your diff: $(lane_prod)."
+        ;;
+    esac
+    echo "Effort ceiling: ~$EFFORT tool calls (scale $SCALE) — a ceiling, not a target; your definition names the drop order."
+    echo
+    printf '%s\n' "$CLAUSE"
+    echo "--- end ---"
+  done
+elif [ -n "$PASS_TOKENS" ]; then
+  echo
+  echo "=== PROMPTS ==="
+  echo "not printed — the context skeleton was not written (see context:)"
 fi
