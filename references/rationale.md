@@ -185,3 +185,25 @@ written to remove; hence the `notes:` file, created once with Write and read by 
 after the skeleton. And "the context file already holds it" stood in the skeleton three
 times and in every agent definition twice more, paid for by each agent on both reads; it now
 lives in the skeleton's read-discipline and rubric blocks alone.
+
+**What a fourth PR review taught — the review that was already on the PR.** A `pr-review` run
+on a 33-file, 126-line feature ran forty minutes after a review bot had left four inline
+comments, and after the reviewer had left five more. Six of the nine findings offered at the
+gate were already on the PR — three matched the bot, three the reviewer's own comments — so
+`Yes — post all` would have doubled the author's reading for nothing. Nothing in the pipeline
+fetched existing comments: the context script had metadata, anchors, CI and diffs, and the
+skeleton carried none of what other people had said. The one bot comment none of the three
+passes reproduced was a real conventions gap — two public CSS properties absent from every
+styling table — so the existing comments are a recall source as well as a duplicate filter.
+Hence `=== EXISTING_COMMENTS ===` (thread roots with their resolved state, one GraphQL call),
+the skeleton's `## Already on the PR` section, the `dup:<id>` tag on a finding line, triage's
+`already raised` status with a `confirms` / `contradicts` verdict, a gate that never offers a
+match as a new comment, and `post-comment.sh` refusing to open a second thread within two
+lines of an existing one. The bot's claim is not authoritative — the pass still reads the
+diff — only its existence is. The same run showed why that missed finding was missed: the
+orchestrator had written it as an Open lead owned by the change pass ("check the `.d.ts` and
+JSDoc styling docs describe them"), the pass ran two greps toward it and never reported a
+verdict, and the output contract had no slot for one — so the lead vanished between the notes
+file and triage. Hence the `lead cleared:` line: every owned lead ends as a finding or as one
+line saying how it was closed, and a lead that ends as neither is triage's own work, not a
+drop.
