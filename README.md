@@ -159,7 +159,7 @@ skills/
   pr-review/
     SKILL.md         # agent-pipeline review → inline comments
     scripts/         # post-comment.sh (gh)
-    references/      # comment wording guidelines
+    references/      # comment wording guidelines, single-context fallback
   mutation-coverage/
     SKILL.md         # engine/scope selection + workflow
     scripts/         # mutate.mjs (line-removal), stryker-diff.mjs (PR-diff mode)
