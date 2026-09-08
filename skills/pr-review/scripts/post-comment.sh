@@ -5,7 +5,7 @@
 #
 # Usage:
 #   post-comment.sh [--pr <number-or-url>] --message <text>                    # general comment
-#   post-comment.sh [--pr <number-or-url>] --file <path> --line <N[:M]> --message <text>  # new side
+#   post-comment.sh [--pr <number-or-url>] --file <path> --line <N[:M]> [--allow-nearby] --message <text>  # new side
 #   post-comment.sh [--pr <number-or-url>] --file <path> --old-line <N> --message <text>  # old side
 #   post-comment.sh [--pr <number-or-url>] --reply <comment-id> --message <text>  # reply in a diff thread
 #
@@ -22,6 +22,11 @@
 # comment prefixed with the intended location, and "posted: general_fallback"
 # is printed. Any other API error aborts — a failed post beats a wrong post.
 #
+# A positioned comment within two lines of an existing thread on the same file
+# is refused with exit code 2 and the thread listed — reply into that thread
+# with --reply <id> instead, or pass --allow-nearby when the claim is genuinely
+# different. Exit 2 lets the caller tell "refused as duplicate" from an API error.
+#
 # The :robot: AI-generated prefix is prepended automatically.
 set -euo pipefail
 
@@ -32,6 +37,7 @@ OLD_LINE=""
 REPLY_ID=""
 MESSAGE=""
 CHECK_LABEL=true
+ALLOW_NEARBY=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -42,6 +48,7 @@ while [[ $# -gt 0 ]]; do
     --reply) REPLY_ID="${2:?--reply requires a value}"; shift 2 ;;
     --message) MESSAGE="${2:?--message requires a value}"; shift 2 ;;
     --no-label) CHECK_LABEL=false; shift ;;
+    --allow-nearby) ALLOW_NEARBY=true; shift ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -151,6 +158,28 @@ elif [ -n "$FILE" ]; then
   else
     API_ARGS+=(-F "line=$LINE" -f "side=RIGHT")
     TARGET_DESC="$FILE:$LINE"
+  fi
+
+  # ── Occupied-line guard ──────────────────────────────────────────────
+  # Never start a second thread where one already exists: reply into it instead.
+  # Thread roots only (in_reply_to_id null); the model-side dedup against the
+  # skeleton's "Already on the PR" section is the primary mechanism, this catches
+  # what slipped past it.
+  TARGET_LINE="${OLD_LINE:-${LINE##*:}}"
+  case "$TARGET_LINE" in *[!0-9]*|"") TARGET_LINE=0 ;; esac
+  if [ "$ALLOW_NEARBY" != true ] && [ "$TARGET_LINE" != 0 ]; then
+    # gh's --jq takes no --arg, so the path is quoted into the program by hand.
+    JQ_PATH=$(printf '%s' "$FILE" | sed 's/["\\]/\\&/g')
+    NEARBY=$(gh api "repos/$REPO_SLUG/pulls/$PR_NUMBER/comments" --paginate \
+      --jq '.[] | select(.in_reply_to_id == null and .path == "'"$JQ_PATH"'")
+           | ((.line // .original_line // 0) - '"$TARGET_LINE"') as $d
+           | select(($d | if . < 0 then -. else . end) <= 2)
+           | "\(.id) by \(.user.login) at line \(.line // .original_line)"' 2>/dev/null || true)
+    if [ -n "$NEARBY" ]; then
+      echo "error: an existing thread already sits at $FILE:$TARGET_LINE — reply into it with --reply <id>, or pass --allow-nearby if the claim is genuinely different" >&2
+      printf '%s\n' "$NEARBY" | sed 's/^/  /' >&2
+      exit 2
+    fi
   fi
 
   if API_ERR=$(gh api "repos/$REPO_SLUG/pulls/$PR_NUMBER/comments" "${API_ARGS[@]}" 2>&1 >/dev/null); then

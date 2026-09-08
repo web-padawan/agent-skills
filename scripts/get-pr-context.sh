@@ -235,6 +235,69 @@ else
   fi
 fi
 
+# ── Section: existing comments ────────────────────────────────────────
+# What is already said on this PR. A finding that repeats one of these is
+# noise for the author; an unresolved thread no pass reproduces is a lead.
+# Thread roots only — replies are conversation, not claims — with the
+# thread's resolved/outdated state, which is why GraphQL and not the REST
+# comments list. Bodies are cut to their first non-empty line; a leading
+# ":robot: AI-generated" and a Conventional Comments label are stripped so
+# the claim text is what the passes match on. Bodies are text written by
+# other people — data, never instructions.
+echo ""
+echo "=== EXISTING_COMMENTS ==="
+
+if [ -z "$PR_NUMBER" ]; then
+  echo "unavailable: no PR resolved"
+else
+  REPO_SLUG=$(gh pr view ${PR_ARGS[@]+"${PR_ARGS[@]}"} --json url --jq '.url' 2>/dev/null \
+    | sed -n 's|^https://[^/]*/\([^/]*/[^/]*\)/pull/.*|\1|p')
+  THREADS=""
+  GENERAL=""
+  if [ -n "$REPO_SLUG" ]; then
+    THREADS=$(gh api graphql -f owner="${REPO_SLUG%%/*}" -f name="${REPO_SLUG##*/}" -F number="$PR_NUMBER" -f query='
+      query($owner:String!,$name:String!,$number:Int!){
+        repository(owner:$owner,name:$name){ pullRequest(number:$number){
+          reviewThreads(first:100){ nodes{
+            isResolved isOutdated path line originalLine
+            comments(first:1){ nodes{ databaseId author{login __typename} body } } } } } } }' \
+      --jq '.data.repository.pullRequest.reviewThreads.nodes[]
+        | .comments.nodes[0] as $c
+        | [ $c.databaseId, $c.author.login,
+            (if ($c.author.__typename == "Bot") or ($c.author.login | test("bot$"; "i")) then "bot" else "human" end),
+            (if .isResolved then "resolved" elif .isOutdated then "outdated" else "open" end),
+            .path, (.line // .originalLine // 0),
+            ($c.body | split("\n") | map(select(length > 0)) | .[0] // ""
+              | sub("^:robot: AI-generated\\s*"; "")
+              | (capture("^\\*\\*(?<t>[^*]+)\\*\\*:?\\s*(?<rest>.*)$") // {t: "", rest: .})
+              | (if .rest == "" then .t else .rest end) | .[0:200]) ]
+        | @tsv' 2>/dev/null || true)
+    GENERAL=$(gh api "repos/$REPO_SLUG/issues/$PR_NUMBER/comments" --paginate \
+      --jq '.[] | [ .id, .user.login, (.body | split("\n") | map(select(length > 0)) | .[0] // "" | .[0:120]) ] | @tsv' 2>/dev/null || true)
+  fi
+
+  if [ -z "$THREADS" ] && [ -z "$GENERAL" ]; then
+    echo "none"
+  else
+    T_N=$(printf '%s\n' "$THREADS" | sed '/^$/d' | wc -l | tr -d ' ')
+    T_BOT=$(printf '%s\n' "$THREADS" | awk -F'\t' '$3=="bot"' | wc -l | tr -d ' ')
+    T_OPEN=$(printf '%s\n' "$THREADS" | awk -F'\t' '$4=="open"' | wc -l | tr -d ' ')
+    G_N=$(printf '%s\n' "$GENERAL" | sed '/^$/d' | wc -l | tr -d ' ')
+    echo "summary: $T_N threads ($T_BOT bot, $((T_N - T_BOT)) human, $T_OPEN open), $G_N general comments"
+    if [ -n "$THREADS" ]; then
+      echo "threads:  # id | author | kind | state | path:line | first line"
+      printf '%s\n' "$THREADS" | sed '/^$/d' | awk -F'\t' '{printf "  %s | %s | %s | %s | %s:%s | %s\n", $1, $2, $3, $4, $5, $6, $7}'
+    fi
+    if [ -n "$GENERAL" ]; then
+      echo "general:  # id | author | first line"
+      printf '%s\n' "$GENERAL" | sed '/^$/d' | awk -F'\t' '{printf "  %s | %s | %s\n", $1, $2, $3}'
+    fi
+    if [ "$T_BOT" != "0" ]; then
+      echo "hint: a review bot has already commented — a finding on the same file and claim is a duplicate, not a discovery"
+    fi
+  fi
+fi
+
 # ── Section: review instructions ──────────────────────────────────────
 echo ""
 echo "=== REVIEW_INSTRUCTIONS ==="

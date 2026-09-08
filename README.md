@@ -143,7 +143,7 @@ references/          # shared by every review skill — the single source for ea
   delivery.md        # launch rules, the delivery clause, roll call, escalation ladder
   rationale.md       # why the pipeline is shaped this way, measured on real runs
 scripts/
-  get-pr-context.sh  # PR metadata, branch state, ANCHORS SHAs, diffs
+  get-pr-context.sh  # PR metadata, branch state, ANCHORS SHAs, CI, existing comments, diffs
   review-plan.sh     # wraps it and prints === PLAN ===: type, scale, pass list, budgets, paths
 skills/
   self-review/

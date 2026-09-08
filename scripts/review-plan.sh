@@ -739,6 +739,7 @@ if [ -n "$CONTEXT_PATH" ]; then
   fi
 
   CI_SECTION=$(printf '%s\n' "$CTX" | awk '/^=== CI_STATUS ===$/ { f = 1; next } /^=== / { f = 0 } f' | sed '/^$/d')
+  COMMENTS_SECTION=$(printf '%s\n' "$CTX" | awk '/^=== EXISTING_COMMENTS ===$/ { f = 1; next } /^=== / { f = 0 } f' | sed '/^$/d')
 
   {
     echo "# Review context — ${PR_URL:-$BRANCH}"
@@ -830,6 +831,15 @@ if [ -n "$CONTEXT_PATH" ]; then
       printf '%s' "$BINARY_DIMS" | sed 's/^/  /'
     fi
     echo
+    echo "## Already on the PR"
+    echo
+    block "$PLUGIN_ROOT/references/pipeline.md" existing-comments-header
+    echo
+    case "$COMMENTS_SECTION" in
+      ""|none|unavailable:*) echo "(no comments on the PR yet — every finding is new)" ;;
+      *) printf '%s\n' "$COMMENTS_SECTION" | grep -v '^hint:' | sed 's/^/    /' ;;
+    esac
+    echo
     echo "## Diff"
     echo
     echo "**These sections (or the patch files they name) are the diff under review.**"
@@ -852,7 +862,7 @@ if [ -n "$CONTEXT_PATH" ]; then
     echo
     echo "## Orchestrator notes — \`$NOTES_PATH\`"
     echo
-    echo "The orchestrator writes that file after this skeleton when it has something to add: Settled facts it verified (authoritative, under the same rule as above), Open leads with one owner pass each, and corrections to this skeleton. Read it once, after this file, if it exists. Nothing is ever appended here."
+    echo "The orchestrator writes that file after this skeleton when it has something to add: Settled facts it verified (authoritative, under the same rule as above), Open leads with one owner pass each, and corrections to this skeleton. Read it once, after this file, if it exists. Nothing is ever appended here. An Open lead tagged with your pass is yours to close: it ends as a finding line or as a \`lead cleared: <lead> — <how>\` line after your findings, never in silence."
     echo
   } > "$CONTEXT_PATH"
   CONTEXT_LINES=$(wc -l < "$CONTEXT_PATH" | tr -d ' ')
@@ -872,8 +882,12 @@ echo "pr: ${PR:-none}"
 if [ "$WANT_CONTEXT" = true ]; then
   CI_LINE=$(ci_summary)
   echo "ci: ${CI_LINE:-unavailable — the context script printed no CI_STATUS section}"
+  COMMENTS_LINE=$(printf '%s\n' "${COMMENTS_SECTION:-}" | awk '/^summary: / { sub(/^summary: /, ""); print; exit } /^unavailable: / { print "none (" substr($0, 14) ")"; exit }')
+  echo "existing_comments: ${COMMENTS_LINE:-none}"
+  printf '%s\n' "${COMMENTS_SECTION:-}" | grep '^hint:' || true
 else
   echo "ci: not gathered (--no-context)"
+  echo "existing_comments: not gathered (--no-context)"
 fi
 echo "type: $TYPE"
 echo "type_signal: $TYPE_SIGNAL"

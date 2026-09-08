@@ -83,6 +83,15 @@ tests | <file>:<line> | <A|B|C> | <claim>
 - **Anchor on the declaration line** the claim is about — the selector, the statement, the
   signature — never the enclosing block and never a range. Another pass may find the same
   defect from its own angle; matched anchors let triage dedup mechanically.
+- **Owned leads.** Every Open lead in the notes file tagged with your pass ends in your
+  output: as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
+  after the findings. A lead that ends in neither was not worked, and triage treats it so.
+- **Already on the PR.** When the context file's `## Already on the PR` section lists a
+  thread on the same file whose first line makes your claim, append ` | dup:<id>` to the
+  finding line. Report it anyway — triage records whether the review confirms the thread —
+  but spend no call re-arguing what the thread already said; your own reading of the diff is
+  the evidence. A thread you **disagree** with is a normal finding with the disagreement in
+  the claim and `dup:<id>` on the line.
 - No code blocks, no quoted diffs — the claim is one sentence.
 - **No preamble, no verification narrative, no summary of what you read.** The finding
   lines are the whole message. When the ceiling bound, one trailing line —
@@ -107,6 +116,7 @@ tests | <file>:<line> | <A|B|C> | <claim>
   not the whole file, and never re-derive the diff yourself.
 - If you cannot verify a claim, append `unverified` to its finding line; if verification
   disproves it, drop it entirely.
+- A `dup:` finding needs no verification call beyond the diff read — it is confirmation, not discovery.
 - **Anchor a coverage finding on the diff.** A gap in a suite this PR never touches cannot be
   posted as an inline comment. Cite the changed production hunk the missing test would pin as
   the finding's `file:line`, and name the untouched suite in the claim.
