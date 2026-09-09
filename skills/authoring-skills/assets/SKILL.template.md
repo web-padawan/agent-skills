@@ -21,13 +21,13 @@ description: <one trigger-shaped sentence — lead with the verbs/phrases a user
 
 ## When to use this skill
 
-<!-- The situations that should trigger it. Mirror the description's triggers. -->
+<!-- The situations that should trigger it. Mirror the triggers of the description. -->
 - <situation 1>
 - <situation 2>
 
 ## When NOT to use it
 
-<!-- Boundaries. One-off work → not a skill. Restating model defaults → cut. -->
+<!-- Boundaries. One-off work does not need a skill. Cut a restatement of model defaults. -->
 - <non-trigger / sibling-skill case>
 
 <!-- ===================================================================== -->
@@ -39,8 +39,8 @@ description: <one trigger-shaped sentence — lead with the verbs/phrases a user
 
 ## Gotchas
 
-[Highest-signal content. Real failure points the agent hits by default.
-Prefer concrete "X is actually Y" facts over generic advice. Grow over time.]
+[Highest-signal content. Real failure points that the agent hits by default.
+Prefer concrete "X is actually Y" facts over generic advice. Grow this list over time.]
 - <gotcha 1>
 
 ## Technique / Steps
@@ -50,16 +50,16 @@ Prefer concrete "X is actually Y" facts over generic advice. Grow over time.]
 
 ## Rules
 
-- <hard do/don't>
+- <hard rule>
 -->
 
 <!-- ---------- ARCHETYPE B: PHASE / REFERENCE-TABLE WORKFLOW ----------
      For a multi-step process where each step has depth. Example: self-review.
-     Keep the table inline; push each phase's detail into references/.
+     Keep the table inline. Push the detail of each phase into references/.
 
 ## Overview
 
-[One-paragraph summary of the loop/flow.]
+[A one-paragraph summary of the loop or flow.]
 
 ## Phases
 
@@ -74,15 +74,15 @@ Prefer concrete "X is actually Y" facts over generic advice. Grow over time.]
 
 ## Safety Rules
 
-- <hard constraint, esp. for destructive/irreversible steps>
+- <hard constraint, in particular for destructive or irreversible steps>
 -->
 
 <!-- ---------- ARCHETYPE C: DEEP REFERENCE + GUARDRAILS ----------
-     For a tool/engine with many footguns, budgets, caveats. Example: mutation-coverage.
+     For a tool or engine with many footguns, budgets, and caveats. Example: mutation-coverage.
 
 ## Discovery / Usage
 
-[How to find the authoritative usage; prefer bundled recipes over re-deriving.]
+[How to find the authoritative usage. Prefer bundled recipes over a new derivation.]
 
 ## Common pitfalls
 
@@ -91,7 +91,7 @@ Prefer concrete "X is actually Y" facts over generic advice. Grow over time.]
 
 ## Iteration budget
 
-[How hard to try before giving up; cap attempts; give up loudly.]
+[How hard to try before you stop. Cap the attempts. Stop loudly.]
 
 ## Reporting results
 
@@ -102,16 +102,16 @@ Prefer concrete "X is actually Y" facts over generic advice. Grow over time.]
 
 ## Agent Guidelines
 
-<!-- Optional but common: a scannable numbered do/don't contract the agent can
+<!-- Optional but common: a scannable numbered contract of rules that the agent can
      re-check. -->
 1. <guideline>
 2. <guideline>
 
 ## References
 
-<!-- List bundled files so the agent knows they exist and loads them on demand.
-     Paths are relative to the skill root; note the ${CLAUDE_PLUGIN_ROOT}
-     fallback if the skill reads files at run time. Delete if fully inline. -->
+<!-- List bundled files, so that the agent knows that they exist and loads them on demand.
+     Paths are relative to the skill root. If the skill reads files at run time, note the
+     ${CLAUDE_PLUGIN_ROOT} fallback. Delete this section if the skill is fully inline. -->
 | Topic | Location |
 |---|---|
 | <topic> | `references/<file>.md` |
