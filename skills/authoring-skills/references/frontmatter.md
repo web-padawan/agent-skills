@@ -81,3 +81,5 @@ is pinned per commit, so they are noise; do not add them.
       externally.
 - [ ] `argument-hint` present if the skill takes arguments.
 - [ ] No secrets or machine-specific absolute paths in frontmatter.
+- [ ] The body obeys `.claude/rules/writing-style.md`. The `description` field is
+      exempt: it follows the trigger conventions in `descriptions.md`.
