@@ -11,9 +11,13 @@ description: <one trigger-shaped sentence — lead with the verbs/phrases a user
 
 # my-skill-name
 
+<!-- Write the body in Simplified Technical English. See .claude/rules/writing-style.md.
+     Use no more than 20 words in an instruction. Use the imperative for steps.
+     Do not use semicolons or em-dashes. -->
+
 <!-- One or two sentences: what this skill does and what it assumes.
-     State the value proposition — what it makes the agent do that it would not
-     do well by default. (Cut anything the model already does well.) -->
+     State what it makes the agent do that the agent does not do well by default.
+     Cut anything that the model already does well. -->
 
 ## When to use this skill
 

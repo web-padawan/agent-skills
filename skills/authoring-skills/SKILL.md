@@ -67,6 +67,8 @@ Don't pre-build a `references/` tree you don't yet need.
 ## Step 3 — Write the body
 
 1. Open with one or two sentences on what the skill does and what it assumes.
+   Write the body in Simplified Technical English. `.claude/rules/writing-style.md`
+   gives the limits: 20 words per instruction, imperative steps, no semicolons or dashes.
 2. **Lead with the gotchas** — the highest-signal content is what the agent gets
    wrong by default. Prefer concrete "X is actually Y" facts over generic advice;
    grow this section as new edge cases surface.
@@ -116,7 +118,10 @@ exclusive-use description clause, read-only tool rules, the fallback clause):
    should not; read only the `description` and predict; adjust until correct.
 2. **Cold-read test:** would an agent with no prior context follow the body
    without guessing at paths or commands? Resolve every relative path.
-3. **Live test:** reinstall the plugin (`claude plugin update agent-skills@local`
+3. **Style test:** read each new or changed paragraph against
+   `.claude/rules/writing-style.md`. Count the words in the longest sentence.
+   Search the diff for `;` and `—` outside code blocks.
+4. **Live test:** reinstall the plugin (`claude plugin update agent-skills@local`
    after committing) and run the skill once on a real case before relying on it.
 
 ## Improving an existing skill
@@ -138,6 +143,7 @@ compound in value.
 - **Straddling categories** — one skill, one job.
 - **Description-as-summary** — omits trigger words; the skill silently never fires.
 - **Railroading** — a rigid transcript that breaks when reality differs.
+- **Dense prose.** Long sentences, semicolons and dashes hide the instruction from the agent.
 - **Premature `references/`** — splitting before the skill is big enough.
 - **Reconstructing boilerplate in prose** instead of shipping a script.
 - **Baking in environment specifics** (paths, repo names) instead of resolving
