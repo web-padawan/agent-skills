@@ -1,18 +1,27 @@
 # Delivery — how agent findings reach the orchestrator
 
-Shared by every skill in this plugin that launches reviewer agents (`self-review`, `pr-review`). A pass that never reports is worse than a pass you skipped: it looks done. A few launch choices decide whether findings arrive at all, and the **defaults lose them** — and how you spend the wait decides whether the findings you get are worth reporting.
+Every skill in this plugin that launches reviewer agents shares this file (`self-review`,
+`pr-review`). A pass that never reports is worse than a pass that you skipped, because it
+looks done. A few launch choices decide whether findings arrive at all, and the **defaults
+lose them**. How you spend the wait decides whether the findings that you get are worth a
+report.
 
 ## Launch rules
 
-The plan's `=== PROMPTS ===` block is each pass's prompt. Paste it verbatim, with the
-`subagent_type` and `model` its header names, one Agent call per pass, all in one message.
-Two things the block cannot do for you:
+The `=== PROMPTS ===` block of the plan is the prompt of each pass. Paste it verbatim, with
+the `subagent_type` and `model` that its header names. Make one Agent call per pass, all in
+one message. The block cannot do two things for you:
 
-- **Do not pass `name`.** A named agent becomes an addressable teammate: it ends its turn *idle and still alive*, and its final text is never returned to you. Name an agent only when you genuinely need to message it mid-run.
-- **Where the Agent tool has `run_in_background`, pass `false`.** Triage is a barrier, so a synchronous run is what you want. Without the parameter every launch is asynchronous and reports arrive as task notifications — the harness working normally, **not** a delivery failure, and not a reason to relaunch.
+- **Do not pass `name`.** A named agent becomes an addressable teammate. It ends its turn
+  *idle and still alive*, and its final text never returns to you. Name an agent only when
+  you genuinely need to message it mid-run.
+- **Where the Agent tool has `run_in_background`, pass `false`.** Triage is a barrier, so a
+  synchronous run is what you want. Without the parameter, every launch is asynchronous and
+  reports arrive as task notifications. That is normal harness behavior, **not** a delivery
+  failure, and not a reason to relaunch.
 
-Every printed prompt ends with this clause, so a second channel exists. The script copies it
-from here by marker — edit it here only:
+Every printed prompt ends with this clause, so that a second channel exists. The script
+copies the clause from here by marker. Edit the clause here only:
 
 <!-- block:delivery-clause -->
 ```
@@ -22,33 +31,51 @@ Do not write them to a file, and do not end your turn without them.
 ```
 <!-- /block -->
 
-**Recognize a lost report.** A message like `{"type":"idle_notification","idleReason":"available"}`, or a completion carrying no findings, is a **delivery failure** — not a clean pass. Never record it as `NO FINDINGS`.
+**Recognize a lost report.** A message like
+`{"type":"idle_notification","idleReason":"available"}`, or a completion that carries no
+findings, is a **delivery failure**, not a clean pass. Never record it as `NO FINDINGS`.
 
-**Recognize a truncated report.** A result ending in `[result truncated — ask the agent for the rest via SendMessage]`, or in a half-finished sentence, is a **partial delivery**. It is the normal outcome of naming an agent, and it silently drops whatever the pass ranked last — often its deep blocks or its `checked and cleared` notes. Do not triage on it. `SendMessage` the agent once for the remainder before triage; if it is gone, self-run only the missing section and tag those findings `self-run`. Mark the pass `⚠️ truncated` in the roll call until the remainder is in hand.
+**Recognize a truncated report.** A result that ends in
+`[result truncated — ask the agent for the rest via SendMessage]`, or in a half-finished
+sentence, is a **partial delivery**. Partial delivery is the normal outcome when you name an
+agent. It silently drops whatever the pass ranked last, often its deep blocks or its
+`checked and cleared` notes.
+
+Do not triage on a partial delivery. `SendMessage` the agent once for the remainder before
+triage. If the agent is gone, self-run only the missing section and tag those findings
+`self-run`. Mark the pass `⚠️ truncated` in the roll call until you hold the remainder.
 
 ## Waiting — verify what the passes cannot reach, do not poll
 
-When launches are asynchronous you will be re-invoked as each agent completes, so a turn per
-completion is forced — that is the harness, not a choice. Do not poll a listing tool in a
-loop. For the forced turns, emit **at most one line** in the roll call's own vocabulary —
-`Done: code, tests. Waiting on: change.` — and nothing else: no partial triage, no preview of
-findings, no restatement of what the pass was asked. A bare "still waiting" costs the same
+When launches are asynchronous, the harness re-invokes you as each agent completes. The
+harness forces that turn, so you cannot avoid it. Do not poll a listing tool in a loop. For
+the forced turns, emit **at most one line**, in the vocabulary of the roll call:
+`Done: code, tests. Waiting on: change.` Emit nothing else: no partial triage, no preview of
+findings, no restatement of what you asked the pass. A bare "still waiting" costs the same
 round trip and names nothing.
 
-Spend the wait only on leads the passes **cannot** reach: a consumer in another repository
-(a Flow connector, a downstream app), a parent issue, a release note, a browser check. Do not
-re-read the files the passes are reading — the context skeleton already settled what you
-could settle before launch, and anything you verify now duplicates a pass that is verifying
-it at the same moment. Notes you append to the context file after fan-out reach only
-re-spawned agents. Log what you verified so the report can distinguish a confirmed claim
-from an accepted one.
+Spend the wait only on leads that the passes **cannot** reach:
 
-If there is nothing outside the passes' reach to check, end the turn quietly and wait for the
+- a consumer in another repository (a Flow connector, a downstream app)
+- a parent issue
+- a release note
+- a browser check
+
+Do not re-read the files that the passes read. The context skeleton already settled what you
+could settle before launch. Anything that you verify now duplicates a pass that verifies it
+at the same moment. Notes that you append to the context file after fan-out reach only
+re-spawned agents. Log what you verified, so that the report can distinguish a confirmed
+claim from an accepted one.
+
+If no lead lies outside the reach of the passes, end the turn quietly and wait for the
 notification.
 
 ## Roll call — run before triage
 
-List every agent you launched and tick the ones whose findings you actually hold. **Print it by pass name, one per line, with the finding count.** Never by number: a line like `11 ✅ · 5 ✅ · boundary ✅` mixes two identifier systems and tells the reader nothing about what was checked.
+List every agent that you launched and tick the ones whose findings you hold. **Print the
+roll call by pass name, one per line, with the finding count.** Never print it by number. A
+line like `11 ✅ · 5 ✅ · boundary ✅` mixes two identifier systems and tells the reader nothing
+about what the pass checked.
 
 ```
 Delivery roll call
@@ -57,18 +84,40 @@ Delivery roll call
   tests               ✅ agent · 8 findings
 ```
 
-Markers: `✅ agent` · `⚠️ truncated` · `⚠️ self-run` · `❌ missing` · `⏳ running`. The finding count makes the roll call double as a yield tally, which is what tells you later whether a pass earns its place. Use the same names in any mid-run status line — `Done: code, tests. Waiting on: change.` — so the reader never has to map a digit to a purpose.
+Markers:
+
+- `✅ agent`
+- `⚠️ truncated`
+- `⚠️ self-run`
+- `❌ missing`
+- `⏳ running`
+
+The finding count also makes the roll call a yield tally. The tally tells you later whether a
+pass earns its place. Use the same names in any mid-run status line:
+`Done: code, tests. Waiting on: change.` The reader then never has to map a digit to a
+purpose.
 
 ## Escalation — for each pass that delivered nothing
 
-Escalate the **mechanism** — a retry down the same channel fails identically, so never just re-send the same call:
+Escalate the **mechanism**. A retry down the same channel fails identically, so never
+re-send the same call:
 
-0. **Truncated, not missing?** `SendMessage` that agent once for the remainder. This is the only rung that reuses the existing channel, because the agent is alive and the channel worked — only the result was cut.
-1. **Re-spawn once** from the same `=== PROMPTS ===` block, no `name` — a different channel, not a second try down the broken one.
-2. **Self-run the pass**: read the files and answer that pass's questions yourself (the questions are in the pass's `agents/<name>.md` definition). Tag every finding it yields `self-run`.
+0. **Truncated, not missing?** `SendMessage` that agent once for the remainder. This is the
+   only rung that reuses the existing channel. The agent is alive and the channel worked.
+   Only the result is incomplete.
+1. **Re-spawn once** from the same `=== PROMPTS ===` block, with no `name`. That is a
+   different channel, not a second try down the broken one.
+2. **Self-run the pass**: read the files and answer the questions of that pass yourself. The
+   questions are in the `agents/<name>.md` definition of the pass. Tag every finding that the
+   self-run yields `self-run`.
 
-(Only if you named an agent against the launch rule: ping it once before re-spawning — restate the output contract and what you have already verified.)
+If you named an agent against the launch rule, ping it once before you re-spawn. Restate the
+output contract and what you have already verified.
 
-Never drop a pass silently, and never let a lost report pass for a clean one. Carry each pass's status — `agent`, `self-run`, or `missing` — into the report.
+Never drop a pass silently, and never let a lost report pass for a clean one. Carry the
+status of each pass, `agent`, `self-run`, or `missing`, into the report.
 
-Treat a self-run pass as **weaker evidence** than an agent pass: you are reviewing with the same context that produced the diff, which makes you the reader least likely to notice what it takes for granted. Say which passes were self-run when presenting findings, rather than presenting them as independent confirmation.
+Treat a self-run pass as **weaker evidence** than an agent pass. You review with the same
+context that produced the diff. That context makes you the reader least likely to notice the
+assumptions of the diff. When you present findings, say which passes were self-run. Do not
+present them as independent confirmation.

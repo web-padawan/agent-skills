@@ -34,7 +34,7 @@ words, and explain an unfamiliar word where you first use it. No word list is en
 - Use an `-ing` form only as a technical noun or as a modifier in a technical noun.
 - Use full forms instead of contractions.
 - Use `that` to mark the start of a dependent clause.
-- Make sure that each pronoun refers to one clear object. If it does not, write the name again.
+- Check that each pronoun refers to one clear object. If it does not, write the name again.
 - Use `with` in one meaning only in a sentence.
 
 ## Punctuation
@@ -62,7 +62,7 @@ words, and explain an unfamiliar word where you first use it. No word list is en
 
 ## Existing text
 
-- When you edit a paragraph, rewrite that paragraph to this standard.
-- Do not rewrite paragraphs that your change does not touch. Keep each diff small.
+- Every tracked markdown file obeys this rule, except the exempt text above.
+- When you edit a paragraph, keep it at this standard. Do not add a sentence that breaks a rule.
 - Files in `agents/` and `references/` are tuned prompts. A rewrite can change review behavior. Rewrite one file per change, keep the meaning, and run the skill once on a known PR after the change.
-- Do not add a sentence that breaks a rule to a file that already obeys it.
+- The plan script copies marked blocks from `references/` into the shared context file. Keep the `<!-- block:name -->` markers and the tables in `references/profiles.md` intact.
