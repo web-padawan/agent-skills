@@ -39,24 +39,17 @@ For each piece that you moved:
 3. Restore the file with `git checkout HEAD -- <path>`. Confirm that the working tree is clean.
 4. Repeat for the next piece.
 
-Record one line per piece. The table belongs in the pull request body.
+Record one line per piece: the piece, the mutation, and the count of failures. The table
+belongs in the pull request body.
 
-## Two ways the isolation fails silently
+## How the isolation fails silently
 
-A stash of a path that holds no uncommitted change creates no stash entry. The run then
-measures the committed code and reports a false pass. A later `git stash pop` restores an
-unrelated stash from an earlier session.
+A stash of a path that holds no uncommitted change creates no stash entry. The run then measures
+the committed code and reports a false pass. Do not use `git stash` for the isolation.
 
-A `git checkout HEAD -- <path>` discards uncommitted work in that path. Commit first, or the
-restore step deletes the change that you want to verify.
+A `git checkout HEAD -- <path>` discards uncommitted work in that path. Commit first.
 
-Both failures look like a passing run. Check `git status` before each toggle and after it. Use
-a committed state as the toggle target.
-
-```bash
-git checkout <base> -- <paths>   # measure the old code
-git checkout HEAD -- <paths>     # restore the new code
-```
+Both failures look like a passing run. Check `git status` after each restore.
 
 ## How to read an uncaught mutation
 
@@ -68,18 +61,6 @@ Use the `mutation-coverage` skill to find the full gap and to close it.
 An unreachable change. No public path can produce a difference. A change that only aligns one
 call site with the rest of a file is often in this class. Keep the change and state in the pull
 request that no test can catch it. Do not build a test that constructs an unreachable state.
-
-## A fix that changes a decision input
-
-A fix sometimes changes the value that a branch reads, such as a direction, a locale, or a
-feature flag. List every source that can set that value. Measure the observable outcome for
-each source, before the change and after it.
-
-A probe of the value alone is not proof. A correct value on one element and a stale value on
-another still produce a wrong outcome. Only the behavior shows the difference.
-
-Record a table of source, input, before, after. Put it in the pull request body. State every
-source that the new tests leave uncovered.
 
 ## Consumers outside the repository
 

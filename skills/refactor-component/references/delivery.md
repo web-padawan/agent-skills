@@ -13,19 +13,15 @@ test that found it.
 
 ## A fix and a refactor on the same lines
 
-Exclude every refactor from the fix branch. Write the fix against the code as it stands, even
-when a rename would read better.
+A refactor often exposes a defect. Branch the fix from the main branch, never from the refactor
+branch. Exclude every refactor from the fix branch. Write the fix against the code as it stands,
+even when a rename would read better.
 
 Land the fix first. The refactor then rebases over it and absorbs those lines. The reverse
 order makes the fix wait for a review that carries no urgency.
 
 Do not move a refactor hunk into the fix branch to avoid a conflict. A conflict on a few lines
 costs less than a pull request that mixes two categories.
-
-## Confirm the shape before you push
-
-State the branch, the base branch, and the number of pull requests. Get an answer before you
-push. A rebuild of a stacked branch costs more than one question.
 
 ## Prove that the move is pure
 
