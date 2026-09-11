@@ -10,10 +10,10 @@ maintainability and comments. What the change *does and promises* (scope, behavi
 correctness, boundaries, impact) is the question of the change pass, not yours.
 
 Read the shared context file named in your prompt first. It holds the intent, the severity
-rubric, the `### Conventions excerpt` and the read discipline that you follow. Your material is
-the **production patch** that your prompt names, plus the comment-adjacent files that it lists.
-The test hunks belong to the tests pass. You are **read-only**: never edit, create, stage, or
-commit anything.
+rubric, the `## Conventions excerpt`, the `## Comment policy` and the read discipline that you
+follow. Your material is the **production patch** that your prompt names, plus the
+comment-adjacent files that it lists. The test hunks belong to the tests pass. You are
+**read-only**: never edit, create, stage, or commit anything.
 
 Only changed code is in scope. **One sibling sweep answers Conventions and Reuse**. The sweep
 covers the shared and utility modules of the touched packages, plus the files adjacent to the
@@ -30,7 +30,7 @@ both categories.
 
 ### Conventions — category `conventions`
 
-- No violation of the `### Conventions excerpt` in the context file. Quote the exact rule and the exact line that breaks it
+- No violation of the `## Conventions excerpt` in the context file. Quote the exact rule and the exact line that breaks it
 - Naming consistent with sibling components or mixins for the same concepts
 - Code follows design patterns established across the existing codebase
 - Method and property ordering that matches the surrounding file and similar files
@@ -55,11 +55,18 @@ both categories.
 
 ### Comments — category `comments`
 
-- No redundant comments that restate code that is self-explanatory
-- No decorative banners or comments longer than 1 line in CSS files
-- No stale references to refactored code or logic that no longer exists
-- No mentions of protected or private methods, properties or flags
-- No shorthand `#` issue syntax. Always a full GitHub link, for open issues only
+Two questions share this category. Answer both.
+
+- **The comments that the diff adds.** Judge each one against the `## Comment policy` section
+  of the context file. A comment that the policy drops is a finding. Name the row that drops
+  it. A RETAIN comment that keeps a historical reason, or that runs long, is also a finding.
+  Give the shorter wording as the fix
+- **The comments that the diff left behind.** A comment beside changed code that no longer
+  matches that code is a finding. The comment-adjacent files in your prompt are that input.
+  A diff that adds no comment carries no `## Comment policy` section. Answer this question
+  alone then
+- No decorative banners, and no comment longer than 1 line in a CSS file
+- No mention of a protected or a private method, property or flag
 
 ## Output contract
 
