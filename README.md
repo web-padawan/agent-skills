@@ -4,7 +4,7 @@ Private Claude Code plugin with personal skills. The repository is both the plug
 
 ## Skills
 
-Four review skills with strict boundaries, one verification skill, one authoring skill, one meta skill.
+Four review skills with strict boundaries, one verification skill, one refactoring skill, one authoring skill, one meta skill.
 
 | Skill | When to use |
 | --- | --- |
@@ -13,6 +13,7 @@ Four review skills with strict boundaries, one verification skill, one authoring
 | `adversarial-review` | **Someone else's PR (or your own, pre-review), one skeptical pass.** Produces a severity-bucketed report: 🔴 High / 🟠 Medium / 🟡 Low / ✅ Done well, plus a one-line summary. Posts it as a **single PR comment** after confirmation. |
 | `pr-review` | **Full reviewer pass with inline comments.** One context-script call, then the three reviewer agents of the plugin in parallel: a change pass and a code pass over the production diff, a tests pass over the test diff. `--deep N` sizes the boundary/impact blocks of the change pass. The plan script writes the shared context file, so the orchestrator reads the plan, not the diff. Triages findings **A** (must fix) / **B** (follow-up) / **C** (nit), the same scale as `self-review`. Presents them behind a short PR summary. After confirmation, posts **positioned line comments** as [Conventional Comments](https://conventionalcomments.org): `issue (behavior, blocking):`, `suggestion (…, non-blocking):`, `question`, `nitpick`, one `praise`. The passes add analysis depth. The triage filter decides what reaches the PR. |
 | `mutation-coverage` | Finds code that no test asserts on, via mutation testing (line-removal or Stryker). Then closes each gap with a test that fails when the code is broken. Estimates runtime before it mutates. Commits nothing and installs nothing in the target repo. |
+| `refactor-component` | **Moves web component code without a behavior change.** Starts from the mixin chain, because the chain decides where moved code can live. Proves the result with the suites of every package that applies the changed mixin, then per-piece mutation checks. Splits pure motion from a behavior change into two PRs. |
 | `pr-description` | **Writes** the PR body. Does not review it. Turns the branch diff into the Vaadin PR template as short bullet lists: issue links, one bullet per behavior change, a `Type of change` label, and numbered `How to test` steps that name a real dev page. Scaffolds `Before / After` for visual changes. Drafts in chat. Runs `gh pr edit` only after you confirm. |
 | `authoring-skills` | Meta: create or improve a skill in this plugin. Covers trigger-shaped descriptions, body archetypes, references split, frontmatter conventions. |
 
@@ -44,6 +45,9 @@ claude plugin list
 
 /agent-skills:mutation-coverage packages/upload/src/vaadin-upload-mixin.js   # one file, line-removal
 /agent-skills:mutation-coverage --diff                                       # branch diff, per package
+
+/agent-skills:refactor-component                       # evaluate options for the current package, then sequence them
+/agent-skills:refactor-component packages/<name>       # refactor one package
 
 /agent-skills:pr-description                    # current branch → draft body, apply after you confirm
 /agent-skills:pr-description 9042               # rewrite an existing PR's description
@@ -183,6 +187,9 @@ skills/
     scripts/         # mutate.mjs (line-removal), stryker-diff.mjs (PR-diff mode)
     assets/stryker/  # config templates materialized into the target repo
     references/      # stryker procedure, survivor taxonomy
+  refactor-component/
+    SKILL.md         # map, place, move, prove, deliver
+    references/      # mixin-placement.md, verification.md, delivery.md
   pr-description/
     SKILL.md         # gather → classify → draft → deliver (confirmation-gated)
     references/      # TEMPLATE.md (output skeleton), STYLE.md (bullet voice, anti-patterns)

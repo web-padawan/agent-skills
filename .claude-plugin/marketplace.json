@@ -11,7 +11,7 @@
     {
       "name": "agent-skills",
       "source": "./",
-      "description": "Personal skills: four review skills (self-review, guided-review, adversarial-review, pr-review), mutation-coverage, authoring-skills.",
+      "description": "Personal skills for developing Vaadin components.",
       "category": "workflow"
     }
   ]
