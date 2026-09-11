@@ -3,13 +3,13 @@
 Anthropic catalogued their internal skills and found that they cluster into a
 small number of categories. The value of the framework for authoring: *the best
 skills fit cleanly into one; the ones that try to do too much straddle several
-and confuse the agent.* This repo needs four buckets. Use the list to (a)
+and confuse the agent.* This repo needs five buckets. Use the list to (a)
 sanity-check that your idea is one job, and (b) spot gaps in the skill library.
 
 Each category points at a real skill **in this repository** (in backticks), so
 that you can open that skill and copy the shape.
 
-## The four categories
+## The five categories
 
 ### 1. Code quality & review
 Reviews code against a rubric, a checklist, or a skeptical stance. May post
@@ -28,11 +28,25 @@ measurable impact on output quality — worth the effort to make excellent.*
 - In this repo: **`mutation-coverage`** (mutation testing + closing the gaps
   with tests).
 
-### 3. Meta / authoring
+### 3. Code transformation
+Changes production source and keeps the behavior. Writes code, not a report. This
+is the only bucket that edits the files that the other buckets read.
+- In this repo: **`refactor-component`** (structural refactor of component
+  sources, from the mixin chain outward).
+- Boundary against bucket 2: a transformation skill rewrites production code. A
+  verification skill adds tests. `mutation-coverage` writes tests, so it belongs
+  to bucket 2.
+- Boundary against bucket 1: a transformation skill edits. A review skill reports
+  and leaves the decision to you.
+- Every new skill here **must** carry a boundary clause against the built-in
+  `simplify`, which cleans up an uncommitted diff.
+- Candidates: a codemod skill for a repeated API migration, a deprecation skill.
+
+### 4. Meta / authoring
 Skills about the skill system itself.
 - In this repo: **`authoring-skills`** (this skill).
 
-### 4. Development workflow
+### 5. Development workflow
 Automates a repetitive git/GitHub workflow end to end. Examples: watch CI,
 shepherd a PR, keep commit hygiene. May be long-running or post externally.
 - In this repo: none yet. Candidates: a `babysit-pr` (watch the checks of a PR,
@@ -48,7 +62,8 @@ Before you write anything, answer these questions in order:
      categories confuses the trigger and the body. For example, split
      "review *and* fix" into a report-only review skill and an apply skill that
      reads its report. That is the exact split between `self-review` and
-     `mutation-coverage`.
+     `mutation-coverage`. A skill that reports, a skill that proves and a skill
+     that changes the source are three skills, not one.
    - Fits none → it may not be a skill at all. Re-check Step 0.2/0.3 below.
 2. **Does it push the model off its defaults?** If it only restates what the
    model already does well, **stop and write nothing**. See the SKILL.md
