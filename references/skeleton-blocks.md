@@ -6,7 +6,9 @@ That is why they live here and not in [`pipeline.md`](pipeline.md) or
 [`severity.md`](severity.md). Edit them here only.
 
 The severity rubric block stays in severity.md, because triage reads it too. The delivery
-clause stays in [`delivery.md`](delivery.md) beside the launch rules that it completes.
+clause stays in [`delivery.md`](delivery.md) beside the launch rules that it completes. The
+comment policy block stays in [`comments.md`](comments.md), because the `comment-cleanup`
+skill reads it too.
 
 ## Framing — the first line of the skeleton
 

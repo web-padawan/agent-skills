@@ -61,6 +61,7 @@ The script wrote the skeleton. The skeleton already holds these parts:
   `path:line`, first line
 - the conventions excerpt: chapters selected by the kinds of file touched and by what the
   added lines use
+- the comment policy, when the diff touches a comment
 - the severity rubric
 - the rules of the mode
 - the read discipline
