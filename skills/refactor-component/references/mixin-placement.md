@@ -18,7 +18,7 @@ type error on every render of an item. No type check and no lint rule reports it
 the call goes through a plain object reference.
 
 A host that fails this rule carries a bug today. Probe the value on each host before you plan
-anything. Report the bug and exclude it from the refactor.
+anything.
 
 ## Rule 2 — Split a neutral default from an override
 

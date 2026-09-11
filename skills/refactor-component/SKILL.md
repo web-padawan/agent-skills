@@ -49,8 +49,9 @@ or rename one.
 3. Find the shared child elements and the methods that they call on their owner.
 4. Count the duplication with history. Search the log for a distinctive line of the candidate
    code across the packages. A fix that landed three times marks three copies.
-5. Record every defect that the map finds. Do not fix one now. Follow
-   [A bug found during a refactor](#a-bug-found-during-a-refactor).
+5. Record every defect that the map finds. Prove it with a probe, not with a read of the
+   source. Do not fix it now. [references/delivery.md](references/delivery.md) holds the
+   branch rule for a fix.
 
 ## Phase 2 — Place
 
@@ -90,28 +91,14 @@ program of several refactors. The short form: put pure motion in one pull reques
 behavior change in a second one. Land a refactor that shrinks an in-flight feature before that
 feature. Land the rest after it.
 
-## A bug found during a refactor
-
-The map finds defects. Rule 1 of the placement procedure finds a mixin that reads a property
-that a host never declares. The property round trip finds a write that no code reads.
-
-1. Prove the defect with a probe before you plan a fix. Measure the wrong value or the wrong
-   outcome. A read of the source is not proof.
-2. Report the defect and let the maintainer choose the order.
-3. Branch the fix from the main branch, never from the refactor branch.
-4. Exclude every refactor from the fix branch. Write the fix against the code as it stands,
-   even when a rename would read better.
-5. When the fix and the refactor touch the same lines, land the fix first. The refactor then
-   rebases over it.
-
 ## Rules
 
-- Never mix a move and a behavior change in one pull request.
+- Never mix a move and a behavior change in one pull request. A bug fix branch carries no
+  refactor.
 - Never add a helper that has no caller until a later feature arrives.
 - Prove the placement with a run, not with an argument.
 - Name the failing test that justifies a behavior change, in the pull request body.
 - State every piece that no test covers. Silence about it reads as coverage.
-- Never put a refactor in a bug fix branch. A rename and a modernization both count.
 - Propose a separate fix for a defect that the map finds.
 - Report each rejected candidate with the evidence that rejected it.
 - Confirm the split, the base branch, and the pull request count before you push.
