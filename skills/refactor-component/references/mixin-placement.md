@@ -17,6 +17,9 @@ A host that applies fewer mixins fails at run time when the method is missing. T
 type error on every render of an item. No type check and no lint rule reports it first, because
 the call goes through a plain object reference.
 
+A host that fails this rule carries a bug today. Probe the value on each host before you plan
+anything. Report the bug and exclude it from the refactor.
+
 ## Rule 2 — Split a neutral default from an override
 
 A method often reads a property that a richer mixin declares. The base mixin must not read a
@@ -67,3 +70,9 @@ from every host and from the type definition of the child.
 
 Keep a guard that encodes a real semantic difference. A check that selects between identity and
 an identifier is a decision, not duplication. Move the comparison and keep the guard.
+
+## Check a mixin before you adopt it
+
+A missing dependency has an obvious fix: apply the mixin that declares the property. Read that
+mixin first. A deprecated mixin adds one more caller to work that a later version removes.
+State the deprecation and let the maintainer choose.

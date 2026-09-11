@@ -23,22 +23,40 @@ step, even when the previous run was green.
 
 ## Mutation checks
 
-These checks revert one refactor decision. The `mutation-coverage` skill removes lines instead,
+These checks break one decision at a time. The `mutation-coverage` skill removes lines instead,
 so it answers a different question. Use both when you need a full coverage picture.
 
-Commit the refactor before you mutate. A checkout of `HEAD` then restores each mutated file in
-one step.
+A pure move keeps the behavior. A revert of a moved piece therefore also passes, and proves
+nothing. Break the piece instead, then confirm that a test fails.
 
-For each piece that you moved, revert that piece alone and run the suites again.
+Commit the refactor before you mutate. Confirm that `git status` reports a clean tree.
 
-1. Apply one mutation by hand. Revert one moved decision, such as a helper call that returns to
-   the former inline form.
+For each piece that you moved:
+
+1. Break that piece by hand. Make the new code return a wrong value, match a wrong key, or skip
+   a call.
 2. Run the suites of the affected packages. Record the count of failures.
 3. Restore the file with `git checkout HEAD -- <path>`. Confirm that the working tree is clean.
 4. Repeat for the next piece.
 
-Do not use `git stash` for the isolation. A stash does not isolate work that is already
-committed, so the run silently measures the new code.
+Record one line per piece. The table belongs in the pull request body.
+
+## Two ways the isolation fails silently
+
+A stash of a path that holds no uncommitted change creates no stash entry. The run then
+measures the committed code and reports a false pass. A later `git stash pop` restores an
+unrelated stash from an earlier session.
+
+A `git checkout HEAD -- <path>` discards uncommitted work in that path. Commit first, or the
+restore step deletes the change that you want to verify.
+
+Both failures look like a passing run. Check `git status` before each toggle and after it. Use
+a committed state as the toggle target.
+
+```bash
+git checkout <base> -- <paths>   # measure the old code
+git checkout HEAD -- <paths>     # restore the new code
+```
 
 ## How to read an uncaught mutation
 
@@ -50,6 +68,18 @@ Use the `mutation-coverage` skill to find the full gap and to close it.
 An unreachable change. No public path can produce a difference. A change that only aligns one
 call site with the rest of a file is often in this class. Keep the change and state in the pull
 request that no test can catch it. Do not build a test that constructs an unreachable state.
+
+## A fix that changes a decision input
+
+A fix sometimes changes the value that a branch reads, such as a direction, a locale, or a
+feature flag. List every source that can set that value. Measure the observable outcome for
+each source, before the change and after it.
+
+A probe of the value alone is not proof. A correct value on one element and a stale value on
+another still produce a wrong outcome. Only the behavior shows the difference.
+
+Record a table of source, input, before, after. Put it in the pull request body. State every
+source that the new tests leave uncovered.
 
 ## Consumers outside the repository
 

@@ -8,8 +8,24 @@ which hunk is safe. Split the work.
 The first pull request holds the pure move. No observer list changes. No lifecycle hook
 changes. A reviewer verifies each hunk by a comparison of the old body against the new body.
 
-The second pull request holds the behavior change. It depends on the first one. Its body states
-the root cause and names the test that found it.
+The second pull request holds the behavior change. Its body states the root cause and names the
+test that found it.
+
+## A fix and a refactor on the same lines
+
+Exclude every refactor from the fix branch. Write the fix against the code as it stands, even
+when a rename would read better.
+
+Land the fix first. The refactor then rebases over it and absorbs those lines. The reverse
+order makes the fix wait for a review that carries no urgency.
+
+Do not move a refactor hunk into the fix branch to avoid a conflict. A conflict on a few lines
+costs less than a pull request that mixes two categories.
+
+## Confirm the shape before you push
+
+State the branch, the base branch, and the number of pull requests. Get an answer before you
+push. A rebuild of a stacked branch costs more than one question.
 
 ## Prove that the move is pure
 
