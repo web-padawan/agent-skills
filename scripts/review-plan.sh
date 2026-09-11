@@ -833,6 +833,12 @@ if [ -n "$CONTEXT_PATH" ]; then
     else
       echo "(no conventions doc found in this repo)"
     fi
+    if [ -n "$COMMENT_FILES" ]; then
+      echo
+      echo "## Comment policy"
+      echo
+      block "$PLUGIN_ROOT/references/comments.md" comment-policy
+    fi
     echo
     echo "## Settled facts"
     echo
