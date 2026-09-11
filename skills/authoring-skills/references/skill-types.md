@@ -32,7 +32,8 @@ measurable impact on output quality — worth the effort to make excellent.*
 Changes production source and keeps the behavior. Writes code, not a report. This
 is the only bucket that edits the files that the other buckets read.
 - In this repo: **`refactor-component`** (structural refactor of component
-  sources, from the mixin chain outward).
+  sources, from the mixin chain outward), **`comment-cleanup`** (deletes and
+  shortens the comments that a diff added).
 - Boundary against bucket 2: a transformation skill rewrites production code. A
   verification skill adds tests. `mutation-coverage` writes tests, so it belongs
   to bucket 2.
