@@ -4,16 +4,11 @@ This rule applies to every markdown file that you write or edit in this reposito
 That includes `SKILL.md` files, agent definitions, references, templates, `README.md` and
 `CLAUDE.md`. It does not apply to chat replies.
 
-The rules come from criteria 17 to 58 of
-[spec-quality-principles.md](https://github.com/kant13/spec-review/blob/3a2a1d296b92bb0255f67400cd513fb31411abb9/.agents/skills/spec-review/references/spec-quality-principles.md),
-an adaptation of ASD-STE100 Issue 9. Criterion 17 replaces the STE dictionary: use familiar
-words, and explain an unfamiliar word where you first use it. No word list is enforced.
-
-Rules about emphasis words, analogies, quotes and headings come from the
-[plain-writing skill](https://github.com/docwriter-org/plain-writing-skill).
+The rules adapt ASD-STE100 Issue 9. No word list is enforced.
 
 ## Words
 
+- Use familiar words. Explain an unfamiliar word where you first use it.
 - Use one name for each concept in all files. Do not use a synonym for variety.
 - Select the shortest name that identifies the object without ambiguity.
 - Do not use slang, regional terms, or jargon as technical names.
