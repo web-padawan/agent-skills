@@ -38,8 +38,8 @@ The plan leaves two decisions to you:
   `enhancement` means feature). Re-run the script with `--type` so that the skeleton carries
   the resolved type.
 - `type_conflict: <signal> → <type>`. A lower signal is more demanding than the declared
-  type. **Never auto-upgrade.** Keep the declared type. Hand the disagreement to the change
-  pass as an explicit question.
+  type. Keep the declared type, and hand the disagreement to the change pass as an explicit
+  question.
 
 A `guard:` value that starts with `refuse:` ends the run. Say the one-line reason and stop.
 
@@ -67,16 +67,14 @@ The script wrote the skeleton. The skeleton already holds these parts:
 - the read discipline
 - the scope rule
 
-**Do not re-quote, rewrite or re-derive any part of the skeleton.** Do not read the
-conventions doc or the diff yourself to check the skeleton. That spend is what the skeleton
-exists to remove.
+Take every part of the skeleton as given. Re-quoting it, or opening the conventions doc or
+the diff to check it, spends what the skeleton exists to save.
 
-You write **one file**, at the `notes:` path of the plan, with the Write tool. Never Edit the
-skeleton. Edit needs a Read first, and that Read pulls the inline diff through your context.
-That pull is the one cost that the skeleton exists to remove.
+You write one file, at the `notes:` path of the plan. Use the Write tool, because Edit needs
+a Read first, and that Read pulls the inline diff through your context.
 
-The last section of the skeleton points every pass at the notes file. When you have nothing
-to add, do not write the notes file. The notes file has three sections, in this order:
+The last section of the skeleton points every pass at the notes file. Write it only when you
+have something to add. The notes file has three sections, in this order:
 
 - **Settled facts**: facts that you verified and that a pass would otherwise derive. For
   example, what a shared helper does, pre-change behavior, a consumer in another repo, the
@@ -149,14 +147,13 @@ lines are what triage works on.
 
 ## 4 — Roll call
 
-Run the roll call of [`delivery.md`](delivery.md) **before** triage. List every pass by name
-with its finding count, each marked `agent`, `self-run` or `missing`. A pass with a lost
-report looks exactly like a pass with nothing to say.
+Run the roll call of [`delivery.md`](delivery.md) before triage. It holds the format, the
+markers and the escalation ladder.
 
 ## 5 — Triage
 
 1. **Verify** every finding against the code. Mark what you cannot confirm as `accepted`,
-   with a one-line reason. Keep such a finding in the report. Never drop it silently.
+   with a one-line reason. Keep such a finding in the report.
 2. **Dedup**: the same file, line and claim from several agents is one finding. Keep the
    clearest wording. When agents filed the finding under different categories, it lives
    under the category of the owner pass, with a one-line pointer from the other. Two passes
@@ -175,8 +172,7 @@ report looks exactly like a pass with nothing to say.
 3. **Your own findings count.** A finding from your pre-verification that no pass reported
    goes on the list, tagged `[orchestrator]`. An Open lead whose owner pass returned neither
    a finding nor a `lead cleared:` line also goes on the list. Nobody worked that lead, so it
-   is yours now. Never drop it. Hold every `[orchestrator]` finding to the same verification
-   bar.
+   is yours now. Hold every `[orchestrator]` finding to the same verification bar.
 4. **Judge, then tier.** Write one sentence of judgment per finding: does the evidence hold,
    and what does it cost if merged as-is. Then set the final tier per
    [`severity.md`](severity.md), and override the proposal of the agent. Where an agent
