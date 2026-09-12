@@ -32,7 +32,7 @@ Every finding goes in the report as `confirmed` or `accepted`. Never drop a find
 | [`references/mutation.md`](references/mutation.md) | Step 7: mutant selection, restore safety, survivors as findings |
 | [`references/finalize.md`](references/finalize.md) | Steps 6 and 8: the gate, the FINDINGS.md template, the verdict rubric |
 
-Read each reference the **first time** that a step needs it. Do not read a reference twice in
+Read each reference the first time that a step needs it. Do not read a reference twice in
 a session. Relative paths resolve from this file. If a read fails, use
 `${CLAUDE_PLUGIN_ROOT}/references/<name>.md` or
 `${CLAUDE_PLUGIN_ROOT}/skills/self-review/references/<name>.md`.
@@ -72,7 +72,7 @@ a session. Relative paths resolve from this file. If a read fails, use
    never the pass.
 4. **Assert nothing changed.** `git status --porcelain --untracked-files=no` must still be
    empty. If a pass edited anyway, revert those tracked files with `git checkout -- <path>`.
-   Delete the files that the pass created, **by path**. Keep only the output of the pass as
+   Delete the files that the pass created, by path. Keep only the output of the pass as
    findings.
 
    The context, notes and patch files live in the git-ignored report directory, so they
@@ -80,13 +80,13 @@ a session. Relative paths resolve from this file. If a read fails, use
 5. **Roll call, then triage.** Do both per pipeline.md. Do the roll call first, by pass name.
 6. **Gate.** Per finalize.md, print the classified list in chat. Then ask one
    `AskUserQuestion` with two questions: write the report, and run the coverage check. The
-   skill applies nothing either way. The gate decides what you **produce**, not what you
-   **change**.
+   skill applies nothing either way. The gate decides what you produce, not what you
+   change.
 7. **Coverage check.** Run it per mutation.md, with the `mutants` budget from the plan. Skip
    it when the gate skipped it or the budget is 0.
 8. **Report and verdict.** Per finalize.md, assert that `HEAD` equals `head0` from the plan,
    with nothing unstaged and nothing staged. Write the report when the gate approved it. Reply
-   in chat with the type, scale tier, tier counts, the reminder that **nothing was changed**,
+   in chat with the type, scale tier, tier counts, the reminder that nothing was changed,
    and the verdict. The verdict is **ready for PR** / **needs more work**.
 
 The profile lives in [`../../references/profiles.md`](../../references/profiles.md) and
