@@ -80,8 +80,7 @@ Drop what you cannot confirm. Drop anything that a green CI check already answer
 **Never post a finding that is already on the PR** (`already raised`, pipeline.md §5.2). Only
 one thing is worth a post on such a thread: a contradiction. A contradiction means that the
 claim on the thread is wrong, or that its fix would regress something that the review can name.
-Post it as a `question` reply into the thread (`--reply <id>`), never as a new comment on the
-line.
+Post it as a `question` reply into the thread (`--reply <id>`).
 
 Rank first the A findings that are reachable in released behavior or security-relevant.
 
