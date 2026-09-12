@@ -65,7 +65,7 @@ post them.
 ### 3. Triage
 
 Run the roll call. Then triage per pipeline.md §4 and §5, and severity.md. This mode adds one
-filter between verification and tiering. The passes add analysis **depth**. This filter decides
+filter between verification and tiering. The passes add analysis depth. This filter decides
 what reaches the PR:
 
 **Keep** a finding only when it impacts correctness, performance, security or maintainability.
@@ -75,10 +75,10 @@ impact and be clearly not intentional.
 **Drop** style nits, unless they obscure meaning or violate a quoted convention. Drop rigor
 demands inconsistent with the codebase, pre-existing bugs, generic observations, and
 restatements of what the code shows. An inaccurate comment is more harmful than a missed issue.
-Drop what you cannot confirm. **Drop anything that a green CI check already answers.**
+Drop what you cannot confirm. Drop anything that a green CI check already answers.
 
 **Never post a finding that is already on the PR** (`already raised`, pipeline.md §5.2). Only
-one thing is worth a post on such a thread: a **contradiction**. A contradiction means that the
+one thing is worth a post on such a thread: a contradiction. A contradiction means that the
 claim on the thread is wrong, or that its fix would regress something that the review can name.
 Post it as a `question` reply into the thread (`--reply <id>`), never as a new comment on the
 line.
@@ -139,7 +139,7 @@ The **Dropped at triage** line stays a count and a reason class. The per-finding
 the report in Q2 adds over this chat summary. If you list the dropped findings here, that report
 becomes redundant and the offer pointless.
 
-The census line under the verdict counts only findings that are **not** `already raised`. If
+The census line under the verdict counts only findings that are not `already raised`. If
 the plan said `existing_comments: none`, omit the **Already on the PR** block.
 
 Give `Needs attention` whenever any `issue` exists, blocking or not. An `issue` says that wrong
@@ -147,7 +147,7 @@ behavior exists. `Looks good` over an `issue` reads as a clean bill of health th
 did not give. Give `Looks good` only when every finding is `suggestion`, `question`, `nitpick`,
 `thought` or `praise`. In that case, say explicitly that the code looks good.
 
-Say which findings are `summary-only` (pipeline.md §5.6) **before** the gate. They never post
+Say which findings are `summary-only` (pipeline.md §5.6) before the gate. They never post
 inline. `Yes — post all` and `All, plus a summary comment` post them as general comments.
 `Only blocking issues` posts them only when their decoration is `blocking`.
 
@@ -163,7 +163,7 @@ when the only blocking finding is `already raised`.
   their threads. Never post `confirms` lines, because agreement is not a comment.
 - **Q2, header `Report`**: "Write the full review report?" with the options `Yes — write it`
   and `No`. The report goes to `<scratchpad>/pr-<number>-REVIEW.md`. It contains the summary,
-  the verdict, and **every** triaged finding with its tier, label and category. That includes
+  the verdict, and every triaged finding with its tier, label and category. That includes
   the findings that the filter in step 3 kept off the PR, marked `not posted`. The report is a
   record for the reviewer only. Never commit or post it.
 
