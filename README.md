@@ -10,7 +10,7 @@ Four review skills with strict boundaries, one verification skill, two source-ed
 | --- | --- |
 | `self-review` | **Your own branch**, before you open or update a PR. Detects the change type (feature / fix / refactor / chore). Runs three passes in one parallel batch. The change pass reviews what the diff does and promises: scope, behavior, fix correctness, plus boundary/impact blocks on the top significant changes. The code pass reviews how the diff is written: logic, conventions, reuse, maintainability, comments. The tests pass reviews the test diff. Never edits code. Classifies findings **A** (must fix before merge) / **B** (follow-up PR) / **C** (taste). Writes a `FINDINGS.md` with a ready / needs-work verdict. Reports coverage gaps and does not close them. `mutation-coverage` closes them. |
 | `guided-review` | **Someone else's PR, interactively.** Phase 1 explains the goal and mechanism of the PR with a concrete example. It then gates on your confirmation before Phase 2 reviews thoroughly. Read-only. Never posts. You post any feedback yourself. |
-| `adversarial-review` | **Someone else's PR (or your own, pre-review), one skeptical pass.** Produces a severity-bucketed report: 🔴 High / 🟠 Medium / 🟡 Low / ✅ Done well, plus a one-line summary. Posts it as a **single PR comment** after confirmation. |
+| `adversarial-review` | **Someone else's PR (or your own, pre-review), one skeptical pass.** Produces a report grouped by severity: 🔴 High / 🟠 Medium / 🟡 Low / ✅ Done well, plus a one-line summary. Posts it as a **single PR comment** after confirmation. |
 | `pr-review` | **Full reviewer pass with inline comments.** One context-script call, then the three reviewer agents of the plugin in parallel: a change pass and a code pass over the production diff, a tests pass over the test diff. `--deep N` sizes the boundary/impact blocks of the change pass. The plan script writes the shared context file, so the orchestrator reads the plan, not the diff. Triages findings **A** (must fix) / **B** (follow-up) / **C** (nit), the same scale as `self-review`. Presents them behind a short PR summary. After confirmation, posts **positioned line comments** as [Conventional Comments](https://conventionalcomments.org): `issue (behavior, blocking):`, `suggestion (…, non-blocking):`, `question`, `nitpick`, one `praise`. The passes add analysis depth. The triage filter decides what reaches the PR. |
 | `mutation-coverage` | Finds code that no test asserts on, via mutation testing (line-removal or Stryker). Then closes each gap with a test that fails when the code is broken. Estimates runtime before it mutates. Commits nothing and installs nothing in the target repo. |
 | `refactor-component` | **Moves web component code without a behavior change.** Starts from the mixin chain, because the chain decides where moved code can live. Proves the result with the suites of every package that applies the changed mixin, then per-piece mutation checks. Splits pure motion from a behavior change into two PRs. |
@@ -183,7 +183,7 @@ skills/
   guided-review/
     SKILL.md         # two-phase walkthrough, read-only
   adversarial-review/
-    SKILL.md         # skeptical pass → one severity-bucketed comment
+    SKILL.md         # skeptical pass → one comment grouped by severity
     references/      # canonical output format
   pr-review/
     SKILL.md         # agent-pipeline review → inline comments
