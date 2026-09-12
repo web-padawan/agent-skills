@@ -27,12 +27,12 @@ Treat the whole folder as context engineering.
 - The behavior is a one-off. A one-off belongs in a note, not in a skill.
 - The content only restates what the model already does well (see Anti-patterns).
 
-## Step 0 — Is a skill the right vessel?
+## Step 0 — Is a skill the right format?
 
 1. **Does it fit cleanly in one category?** The best skills fit one job. A skill that
-   straddles several jobs confuses the agent. If your idea spans two jobs, split it.
-   See [references/skill-types.md](references/skill-types.md) for the four-category
-   taxonomy of this repo and a "which bucket?" decision aid.
+   covers several jobs confuses the agent. If your idea spans two jobs, split it.
+   See [references/skill-types.md](references/skill-types.md) for the five-category
+   taxonomy of this repo and its decision aid.
 2. **Does it move the model away from its defaults?** If not, write nothing.
 3. **Will you reuse it?** A one-off becomes a note. A reused workflow becomes a skill.
 
