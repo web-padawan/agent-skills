@@ -69,7 +69,12 @@ The rules adapt ASD-STE100 Issue 9. No word list is enforced.
 - Text inside fenced code blocks, including printed prompts and commands.
 - Table cells. Write them as fragments, but obey the word rules.
 - The frontmatter `description` field. It follows the trigger conventions in `skills/authoring-skills/references/descriptions.md`.
-- Quoted examples that show good or bad output, for example in `skills/pr-review/references/comment-guidelines.md`.
+- Quoted examples that show good or bad output. These files are examples in full:
+  - `skills/pr-review/references/comment-guidelines.md`
+  - `skills/adversarial-review/references/output-format.md`
+  - `skills/pr-description/references/STYLE.md`
+  - `skills/pr-description/references/TEMPLATE.md`
+- Text that a skill prints to the user, even outside a fenced block.
 - `references/retrospective.md`. It is a historical record.
 
 ## Existing text
