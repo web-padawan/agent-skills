@@ -210,8 +210,9 @@ Wording rules, because the report and any comment reuse these lines verbatim:
 ## 6 — Deliver
 
 The skill owns this step. Nothing in this pipeline edits code, stages, or commits. The one
-carve-out anywhere in the plugin is the coverage stage of self-review, which restores every
-mutant before the next. A run creates these files:
+carve-out in the pipeline is the coverage stage of self-review, which restores every mutant
+before the next. The `comment-cleanup` and `refactor-component` skills edit files, and they
+run outside this pipeline. A run creates these files:
 
 - the context skeleton
 - the patch files, when the diff is too large to inline
