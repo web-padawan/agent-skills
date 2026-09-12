@@ -1,4 +1,4 @@
-# Output Template
+# Output template
 
 The skeleton below is the whole output. Put nothing above `## Description` and nothing
 below the last section. That means no checklist, no footer, no attribution.
