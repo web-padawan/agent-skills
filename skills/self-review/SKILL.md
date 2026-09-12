@@ -11,18 +11,18 @@ input `$0` is the parent PR or issue that is the source of this branch.
 
 Three rules outrank everything else:
 
-- **Never edit code.** Every step is read-only. The single carve-out is the coverage mutants
-  in step 7, the only reason that `Edit` is in `allowed-tools`. Mutate one line at a time.
+- **Every step is read-only.** The single carve-out is the coverage mutants in step 7, the
+  only reason that `Edit` is in `allowed-tools`. Mutate one line at a time.
   Restore each line with `git checkout -- <path>` before the next mutant. The step ends only
   when `git status --porcelain --untracked-files=no` is empty again.
-- **Never commit or stage.** Never run commit, amend, push, `git add`, `stash`,
-  `reset --hard`, or `git clean`. `HEAD` and the index end exactly as you found them.
+- **Leave `HEAD` and the index exactly as you found them.** Never run commit, amend, push,
+  `git add`, `stash`, `reset --hard`, or `git clean`.
 - **This skill creates only the context file, its notes file, the patch files for a diff too
   large to inline, and the report.** The plan script writes the skeleton and the patches in
   the git-ignored report directory that the plan names. You write the notes file before
   fan-out. You write the report only after the gate in step 6 approves it.
 
-Every finding goes in the report as `confirmed` or `accepted`. Never drop a finding silently.
+Every finding goes in the report as `confirmed` or `accepted`.
 
 | Reference | Covers |
 | --- | --- |
@@ -32,8 +32,8 @@ Every finding goes in the report as `confirmed` or `accepted`. Never drop a find
 | [`references/mutation.md`](references/mutation.md) | Step 7: mutant selection, restore safety, survivors as findings |
 | [`references/finalize.md`](references/finalize.md) | Steps 6 and 8: the gate, the FINDINGS.md template, the verdict rubric |
 
-Read each reference the first time that a step needs it. Do not read a reference twice in
-a session. Relative paths resolve from this file. If a read fails, use
+Read each reference the first time that a step needs it, and once only. Relative paths
+resolve from this file. If a read fails, use
 `${CLAUDE_PLUGIN_ROOT}/references/<name>.md` or
 `${CLAUDE_PLUGIN_ROOT}/skills/self-review/references/<name>.md`.
 
@@ -63,7 +63,6 @@ a session. Relative paths resolve from this file. If a read fails, use
    - Open leads, with one owner pass each.
    - A one-line summary of `$0` when the user gave one.
 
-   Never Edit the skeleton. The Read that Edit forces pulls the diff through your context.
    Skip the file when you have nothing to add.
 3. **Fan out.** Send one message with one Agent call per pass. Use the `subagent_type`,
    `model` and prompt from the `=== PROMPTS ===` block of the plan, verbatim. Pass no `name`
@@ -76,8 +75,8 @@ a session. Relative paths resolve from this file. If a read fails, use
    findings.
 
    The context, notes and patch files live in the git-ignored report directory, so they
-   never appear here. Never run `git clean`. Never touch pre-existing untracked files.
-5. **Roll call, then triage.** Do both per pipeline.md. Do the roll call first, by pass name.
+   never appear here. Leave every pre-existing untracked file alone.
+5. **Roll call, then triage.** Do both per pipeline.md, in that order.
 6. **Gate.** Per finalize.md, print the classified list in chat. Then ask one
    `AskUserQuestion` with two questions: write the report, and run the coverage check. The
    skill applies nothing either way. The gate decides what you produce, not what you
