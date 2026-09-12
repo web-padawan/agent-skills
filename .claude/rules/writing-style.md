@@ -9,6 +9,9 @@ The rules come from criteria 17 to 58 of
 an adaptation of ASD-STE100 Issue 9. Criterion 17 replaces the STE dictionary: use familiar
 words, and explain an unfamiliar word where you first use it. No word list is enforced.
 
+Rules about emphasis words, analogies, quotes and headings come from the
+[plain-writing skill](https://github.com/docwriter-org/plain-writing-skill).
+
 ## Words
 
 - Use one name for each concept in all files. Do not use a synonym for variety.
@@ -19,6 +22,10 @@ words, and explain an unfamiliar word where you first use it. No word list is en
 - Use no more than three words in a noun group. Write a longer official name in full first, then use a short form.
 - Use English words instead of Latin abbreviations. Write `for example`, not `e.g.`
 - Use gender-neutral names for roles.
+- Do not use a word that adds emphasis but no fact. Examples: `robust`, `powerful`, `crucial`, `seamless`, `truly`.
+- Do not use an analogy or a metaphor. Describe the object in literal terms.
+- Do not write `not just X, but Y`. State what the object is.
+- Do not invent a hyphenated adjective. Use a compound that a dictionary lists.
 
 ## Sentences
 
@@ -36,13 +43,23 @@ words, and explain an unfamiliar word where you first use it. No word list is en
 - Use `that` to mark the start of a dependent clause.
 - Check that each pronoun refers to one clear object. If it does not, write the name again.
 - Use `with` in one meaning only in a sentence.
+- Delete a clause that gives no fact. Example: `before we call the work done`.
+- Do not use a colon to join two clauses. Use a colon before a list or a label.
 
 ## Punctuation
 
 - Do not use semicolons in prose.
-- Do not use em-dashes or en-dashes in prose. Write two sentences, or use a comma.
+- Do not use em-dashes or en-dashes in prose. Write two sentences, or use a comma. A heading may use a dash.
 - Use parentheses only for a reference, an identifier, an abbreviation, an explanation of a word, or an alternative.
 - Use hyphens to show which words form one unit, for example `read-only`.
+- Use straight quotes. Do not use curly quotes.
+- Do not use a middle dot (`·`) as a separator in prose. Use a comma.
+
+## Headings and emphasis
+
+- Use sentence case in a heading. The H1 of a `SKILL.md` keeps the skill name in title case.
+- Write a heading that describes the content. Do not write a clever label.
+- Use bold for a label or for a defined term. Do not use bold for decoration.
 
 ## Paragraphs and structure
 
