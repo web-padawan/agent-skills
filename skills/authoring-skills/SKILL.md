@@ -10,7 +10,7 @@ must trigger reliably, stay maintainable, and earn its place in context. The wor
 follows the Anthropic article "Lessons from building Claude Code: how we use skills"
 (Jun 2026) and the conventions of the skills in this repository.
 
-A skill is a **folder, not just a markdown file**. It holds a `SKILL.md` plus optional
+A skill is a **folder**. It holds a `SKILL.md` plus optional
 `references/` (load-on-demand markdown), `scripts/` (helpers), and `assets/` (templates).
 Treat the whole folder as context engineering.
 
