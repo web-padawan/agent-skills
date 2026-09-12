@@ -2,9 +2,10 @@
 
 When a session starts, the agent builds a listing of the `description` of every skill.
 The agent scans that listing to decide if a skill exists for the request. So the
-`description` is **not a summary but a description of when to trigger the skill.** Write
-it for the model, not for humans. This is the field with the highest leverage in a skill.
-A great body behind a summary-style description never fires.
+`description` must **describe when to trigger the skill.** A summary of the skill does
+not work. Write it for the model, not for humans. The `description` does more for
+discovery than any other field. A great body behind a summary-style description never
+fires.
 
 Skills with `disable-model-invocation: true` never fire automatically. Their descriptions
 still have two jobs. The human who scans the skill list picks a skill by its description.
