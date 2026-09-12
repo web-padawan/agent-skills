@@ -2,7 +2,7 @@
 
 Purpose: verify that the tests of the branch pin its invariants. A mutant survives when the
 tests stay green while the change is broken. A survivor is a coverage gap, and here it
-becomes a **finding**. This skill never writes the missing test. Skip the step entirely when
+becomes a finding. This skill never writes the missing test. Skip the step entirely when
 the gate chose `Skip it` or the `mutants:` budget from the plan is 0.
 
 This is the one step that writes to a tracked file, and the only carve-out of the skill from
@@ -18,7 +18,7 @@ a mutant.
 > this skill never stages anything, the index equals `HEAD`, so the restore is exact and
 > total. That is the whole safety argument, and it holds only while the tree is clean.
 
-If the tree is dirty at the start of the step or at any mutant boundary, **stop the step**.
+If the tree is dirty at the start of the step or at any mutant boundary, stop the step.
 Report the dirty tree as a finding. Do not reconcile. Do not guess which change was yours.
 Never use `git clean` or `git stash`.
 
@@ -53,12 +53,12 @@ a survivor as *unpinned within tolerance*, not as a plain coverage gap.
 ### Targeting per type
 
 The plan prints the effective budget (`mutants:`), already capped by the scale tier. The type
-changes only **where** the budget goes:
+changes only where the budget goes:
 
 - **fix: the whole-fix revert first, at every scale.** Before any single-line mutant, revert
   the entire fix as one unit. Then run the affected tests. `git stash` is forbidden. Disable
   the changed hunks with comments, or use `git checkout <base> -- <source file>` when the
-  only change in the file is the fix. **A new test must fail.**
+  only change in the file is the fix. A new test must fail.
 
   If every test still passes, the branch has no regression test for the bug that it claims to
   fix. That is an A finding, and the most important output of this step. Restore the fix.
@@ -88,9 +88,9 @@ changes only **where** the budget goes:
 
 ## Surviving mutants
 
-A survivor means that no test pins the line. Every survivor is a finding. Tier the gap **A**
-when the unpinned line is the core new behavior of the branch. On a **fix**, also tier any
-line of the fix itself **A**. Otherwise tier the gap **B**.
+A survivor means that no test pins the line. Every survivor is a finding. Tier the gap A
+when the unpinned line is the core new behavior of the branch. On a `fix`, also tier any
+line of the fix itself A. Otherwise tier the gap B.
 
 - Record the survivor as `confirmed` at its tier. Give the `file:line` and a one-line
   description of the test that would pin it. Then a follow-up can write exactly that test.
