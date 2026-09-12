@@ -1,6 +1,6 @@
 ---
 name: adversarial-review
-description: Use when running a critical, skeptical pass over a GitHub pull request — either as the author before requesting human review, or as a reviewer wanting a structured first cut — produces a severity-bucketed findings report (High / Medium / Low / Done well) and, after confirmation, posts it as a single comment on the PR. Not for inline line-by-line comments (pr-review), an interactive walkthrough (guided-review), or your own branch before it has a PR (self-review).
+description: Use when running a critical, skeptical pass over a GitHub pull request — either as the author before requesting human review, or as a reviewer wanting a structured first cut — produces a findings report grouped by severity (High / Medium / Low / Done well) and, after confirmation, posts it as a single comment on the PR. Not for inline line-by-line comments (pr-review), an interactive walkthrough (guided-review), or your own branch before it has a PR (self-review).
 argument-hint: "[PR number or URL, or blank to auto-detect from current branch]"
 disable-model-invocation: true
 ---
@@ -8,7 +8,7 @@ disable-model-invocation: true
 # Adversarial Review
 
 Skeptical, reviewer-mode pass over a GitHub pull request. The skill posts a single comment
-with the findings in severity buckets. The format is standard, so that authors, reviewers, and
+with the findings in severity groups. The format is standard, so that authors, reviewers, and
 downstream tooling can scan reviews consistently.
 
 ## Inputs
@@ -50,7 +50,7 @@ Do not fix, approve, request changes, or resolve threads. One pass per invocatio
 ## Coverage
 
 Check each area below explicitly. If an area has no real finding, say nothing. Do not invent
-a finding to fill a bucket.
+a finding to fill a group.
 
 - **Correctness**: off-by-one, null/empty cases, races, wrong defaults.
 - **Security**: input validation, auth/authz, injection, secrets, sensitive data in responses.
@@ -106,16 +106,16 @@ See [references/output-format.md](references/output-format.md) for the canonical
 
 ### Rules
 
-- The severity buckets are fixed: 🔴 High → 🟠 Medium → 🟡 Low / Nitpicks → ✅ What is done
+- The severity groups are fixed: 🔴 High → 🟠 Medium → 🟡 Low / Nitpicks → ✅ What is done
   well. Always use this order, these labels, and these emoji.
-- **Omit empty buckets.** Absence is the signal. Never write
+- **Omit empty groups.** Absence is the signal. Never write
   "No high-severity issues found."
 - Always include `✅ What is done well` unless the PR is a real wreck. Use 3 to 5 bullets.
 - Always end with `**Summary:**`. Use one sentence of plain prose.
 - Each finding has a bold heading and a body paragraph. Headings are short noun phrases, not
   questions or imperatives.
-- Put `---` separators between buckets and before the Summary. Do not put a separator between
-  findings within a bucket.
+- Put `---` separators between groups and before the Summary. Do not put a separator between
+  findings within a group.
 
 ### Severity
 
@@ -128,12 +128,12 @@ See [references/output-format.md](references/output-format.md) for the canonical
 When in doubt between two levels, pick the lower one. Inflated severity makes this skill
 useless.
 
-The buckets are the A / B / C scale of the plugin under other names. Each finding heading
+The groups are the A / B / C scale of the plugin under other names. Each finding heading
 carries the matching Conventional Comments label from
 [`../../references/severity.md`](../../references/severity.md) (*Rendering*). 🔴 High
 headings read `**issue (blocking):** <noun phrase>`. 🟠 Medium headings read
 `**issue (non-blocking):**` or `**suggestion (non-blocking):**`. 🟡 Low headings read
 `**nitpick:**`. The ✅ bullets are the `praise` of the review.
 
-A concern that you could not confirm is a `**question:**` heading. Put it in the bucket that
+A concern that you could not confirm is a `**question:**` heading. Put it in the group that
 its impact would earn if the concern is true. Word the heading as a question.
