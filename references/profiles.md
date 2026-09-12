@@ -42,8 +42,8 @@ A pass never reads a patch outside its lane. A pass never regenerates a patch wi
 | pr | chore | any | change code tests | 0 | 0 |
 | pr | undetermined | any | change code tests | 0 | 3 |
 
-The scale tier caps both budgets on top of the row. Mutants: **trivial 3 · lite 8 · full
-uncapped**. Deep blocks: **trivial 1 · lite 2 · full uncapped**.
+The scale tier caps both budgets on top of the row. Mutants: **trivial 3, lite 8, full
+uncapped**. Deep blocks: **trivial 1, lite 2, full uncapped**.
 
 The plan script then caps the deep budget a second time by what the diff offers. It counts
 **deep candidates**: `.d.ts` hunks, new exports, and added public (non-underscore) members.
