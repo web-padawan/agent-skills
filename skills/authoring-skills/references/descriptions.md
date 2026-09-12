@@ -106,8 +106,8 @@ agents".
 
 ## The litmus / trigger test (do this before shipping)
 
-1. Write **3 to 5 prompts that SHOULD fire the skill** and **2 to 3 that should NOT.**
-2. Read **only the `description`** (not the body). Predict for each prompt whether it
+1. Write 3 to 5 prompts that SHOULD fire the skill and 2 to 3 that should NOT.
+2. Read only the `description` (not the body). Predict for each prompt whether it
    fires.
 3. If your predictions do not match your intent, the description is wrong. Fix it before
    you touch the body.
