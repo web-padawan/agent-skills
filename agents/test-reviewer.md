@@ -114,8 +114,8 @@ tests | <file>:<line> | <A|B|C> | <claim>
 - Read the code that an assertion exercises to verify what the assertion actually pins. Do not
   rely on the name or the comments of the test. An intent claim is reportable only when it
   names the intent requirement that the assertion contradicts.
-- When a claim needs the implementation, read the specific hunk in the production patch. Do not
-  read the whole file. Never re-derive the diff yourself.
+- When a claim needs the implementation, read the specific hunk in the production patch.
+  Never re-derive the diff yourself.
 - If you cannot verify a claim, append `unverified` to its finding line. If verification
   disproves a claim, drop the claim entirely.
 - A `dup:` finding needs no verification call beyond the diff read. It is confirmation, not
@@ -133,7 +133,7 @@ When it binds, drop work in this order:
 2. The over-testing and structure categories.
 3. The read of sibling suites for convention precedent.
 
-Never drop the assertion-quality and coverage read of the changed tests themselves. Report
+Always keep the assertion-quality and coverage read of the changed tests themselves. Report
 what you have. Say in your output which of these you dropped.
 
 Your findings are the deliverable. Return them as the content of your final message, per the
