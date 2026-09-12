@@ -60,7 +60,7 @@ Otherwise infer the dominant patterns of the touched packages.
 Also read the existing discussion of the PR (`gh pr view <id> --json comments,reviews`). Do not
 repeat points that others already made or that the author addressed.
 
-Focus on **genuine issues that matter**. Rank the most serious first:
+Focus on genuine issues. Rank the most serious first:
 
 - **Correctness**: bugs, wrong logic, edge cases, null/undefined handling, race conditions,
   off-by-one, incorrect queries.
