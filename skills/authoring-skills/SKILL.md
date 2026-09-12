@@ -88,7 +88,7 @@ Keep `SKILL.md` to the trigger plus the always-needed essentials. The hard ceili
 
 - **`references/<topic>.md`** when a section serves only a sub-case, or when the body
   grows past the length budget. Link it inline, so that the agent knows that it exists.
-- **`scripts/`** for any deterministic step. **`assets/`** for output templates.
+- **`scripts/`** for any deterministic step. `assets/` for output templates.
 
 Rule of thumb: a heading that matters to only a fraction of invocations belongs in
 `references/`. A heading that matters every time stays inline.
