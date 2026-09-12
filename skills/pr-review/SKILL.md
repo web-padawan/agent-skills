@@ -191,7 +191,7 @@ post-comment.sh --pr <number> --file path/to/file.ext --old-line 10 --message "*
 post-comment.sh --pr <number> --no-label --message "<praise line> <census> <what clearing them earns>"
 post-comment.sh --pr <number> --reply <comment-id> --no-label --message "Fixed, thanks."
 
-# A contradiction of an existing thread — a labelled reply, never a new comment on that line
+# A contradiction of an existing thread — a labeled reply, never a new comment on that line
 post-comment.sh --pr <number> --reply <comment-id> --message "**question (logic):** <what the review found instead>?
 
 <what was checked>"
