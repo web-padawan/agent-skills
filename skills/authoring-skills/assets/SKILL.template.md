@@ -43,7 +43,7 @@ description: <one trigger-shaped sentence — lead with the verbs/phrases a user
 Prefer concrete "X is actually Y" facts over generic advice. Grow this list over time.]
 - <gotcha 1>
 
-## Technique / Steps
+## Technique / steps
 
 1. <step>
 2. <step>
@@ -72,7 +72,7 @@ Prefer concrete "X is actually Y" facts over generic advice. Grow this list over
 
 - <gotcha>
 
-## Safety Rules
+## Safety rules
 
 - <hard constraint, in particular for destructive or irreversible steps>
 -->
@@ -80,7 +80,7 @@ Prefer concrete "X is actually Y" facts over generic advice. Grow this list over
 <!-- ---------- ARCHETYPE C: DEEP REFERENCE + GUARDRAILS ----------
      For a tool or engine with many footguns, budgets, and caveats. Example: mutation-coverage.
 
-## Discovery / Usage
+## Discovery / usage
 
 [How to find the authoritative usage. Prefer bundled recipes over a new derivation.]
 
@@ -100,7 +100,7 @@ Prefer concrete "X is actually Y" facts over generic advice. Grow this list over
 
 <!-- ===================================================================== -->
 
-## Agent Guidelines
+## Agent guidelines
 
 <!-- Optional but common: a scannable numbered contract of rules that the agent can
      re-check. -->
