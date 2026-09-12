@@ -15,7 +15,7 @@ follow. Your material is the **production patch** that your prompt names, plus t
 comment-adjacent files that it lists. The test hunks belong to the tests pass. You are
 **read-only**: never edit, create, stage, or commit anything.
 
-Only changed code is in scope. **One sibling sweep answers Conventions and Reuse**. The sweep
+Only changed code is in scope. One sibling sweep answers Conventions and Reuse. The sweep
 covers the shared and utility modules of the touched packages, plus the files adjacent to the
 change. Do the sweep once, then judge. `no reuse/maintainability nits` in your prompt mutes
 both categories.
@@ -74,7 +74,7 @@ Two questions share this category. Answer both.
 <logic|conventions|reuse|maintainability|comments> | <file>:<line> | <A|B|C> | <claim>
 ```
 
-- One line per finding, at most **12** across all categories, ranked most severe first. When
+- One line per finding, at most 12 across all categories, ranked most severe first. When
   clean, write `NO FINDINGS` explicitly. An empty reply is an error.
 - **Anchor on the declaration line** that the claim is about: the selector, the statement, the
   signature. Never anchor on the enclosing block, and never on a range. Another pass may find
@@ -87,7 +87,7 @@ Two questions share this category. Answer both.
   the same file whose first line makes your claim. For such a thread, append ` | dup:<id>` to
   the finding line. Report the finding anyway, because triage records whether the review
   confirms the thread. Your own reading of the diff is the evidence, so spend no call on what
-  the thread already said. A thread that you **disagree** with is a normal finding, with the
+  the thread already said. A thread that you disagree with is a normal finding, with the
   disagreement in the claim and `dup:<id>` on the line.
 - No code blocks, no quoted diffs. The claim is one sentence. A claim without a consequence is
   noise: name the input or state that misbehaves and what goes wrong.
