@@ -19,7 +19,7 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
 
 ### `name` (required)
 - **What:** the identifier of the skill. `/agent-skills:<name>` invokes it.
-- **Convention:** **kebab-case**, and it **matches the folder name of the skill**
+- **Convention:** kebab-case, and it matches the folder name of the skill
   (`pr-review/` → `name: pr-review`).
 - No spaces, no uppercase, no underscores.
 
@@ -31,7 +31,7 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
   Enumerate situations. Add a boundary clause that names the sibling skills that
   the model must not confuse with this skill. Longer is fine when the skill
   legitimately covers many phrasings.
-- See **`descriptions.md` (next to this file)** for patterns, worked before/after
+- See `descriptions.md` (next to this file) for patterns, worked before/after
   examples, and the litmus test.
 
 ## Optional fields
@@ -46,8 +46,8 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
 ### `disable-model-invocation`
 - **What:** `true` removes the skill from the auto-trigger pool of the model.
   The skill then runs only when the user types the slash command.
-- **Convention in this repo:** set `true` on any skill that is **expensive** or
-  that can **post outside the machine**. Expensive skills include multi-agent
+- **Convention in this repo:** set `true` on any skill that is expensive or
+  that can post outside the machine. Expensive skills include multi-agent
   orchestration (`self-review`) and long test runs (`mutation-coverage`). PR
   comments (`pr-review`, `adversarial-review`) post outside the machine.
   Read-only, bounded skills (`guided-review`, `authoring-skills`) stay
@@ -74,7 +74,7 @@ is pinned per commit, so these fields are noise. Do not add them.
 ## Linting checklist
 
 - [ ] `name` is kebab-case and equals the folder name.
-- [ ] `description` is present and **trigger-shaped** (passes the litmus test
+- [ ] `description` is present and shaped as a trigger (passes the litmus test
       in `descriptions.md`), third-person present, and names its sibling
       boundaries.
 - [ ] YAML is valid (`---` on its own line opens and closes the block, no tabs).
