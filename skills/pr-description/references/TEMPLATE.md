@@ -42,9 +42,13 @@ issue. Otherwise use `Part of`, `Extracted from #NNNN`, `Depends on <url>`, or
 [STYLE.md](STYLE.md) for voice.
 
 **Prose between the links and the bullets is optional**. Cap it at one short paragraph.
-Add it only when the bullets cannot carry the *why*: a non-obvious root cause, a rejected
-alternative that a reviewer would otherwise propose, or a constraint that shaped the
-approach. A bug fix with a subtle cause usually earns one paragraph. A feature almost
+Add it only when the bullets cannot carry the reason. These are the three reasons:
+
+- a root cause that is not obvious
+- a rejected alternative that a reviewer would otherwise propose
+- a constraint that shaped the approach
+
+A bug fix with a subtle cause usually earns one paragraph. A feature almost
 never does.
 
 ### `## Type of change`
