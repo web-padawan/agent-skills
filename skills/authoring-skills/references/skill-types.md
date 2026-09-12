@@ -14,10 +14,10 @@ you can open that skill and copy the shape.
 ### 1. Code quality and review
 Reviews code against a rubric, a checklist, or a skeptical stance. May post
 findings. Produces a report. Mostly read-only.
-- In this repo: **`self-review`** (own branch, pre-PR, three checklist passes),
-  **`guided-review`** (interactive PR walkthrough, never posts),
-  **`adversarial-review`** (skeptical pass, one summary comment),
-  **`pr-review`** (rubric pass, inline comments).
+- In this repo: `self-review` (own branch, pre-PR, three checklist passes),
+  `guided-review` (interactive PR walkthrough, never posts),
+  `adversarial-review` (skeptical pass, one summary comment),
+  `pr-review` (rubric pass, inline comments).
 - This is the crowded category. Every new skill here must carry a boundary
   clause against the existing four.
 
@@ -25,14 +25,14 @@ findings. Produces a report. Mostly read-only.
 Describes how to prove that code works: coverage checks, test-writing
 procedures, external drivers. Anthropic reports that verification skills had the
 most measurable impact on output quality. Invest the effort in them.
-- In this repo: **`mutation-coverage`** (mutation testing and closing the gaps
+- In this repo: `mutation-coverage` (mutation testing and closing the gaps
   with tests).
 
 ### 3. Code transformation
 Changes production source and keeps the behavior. Writes code, not a report. This
 is the only category that edits the files that the other categories read.
-- In this repo: **`refactor-component`** (structural refactor of component
-  sources, from the mixin chain outward), **`comment-cleanup`** (deletes and
+- In this repo: `refactor-component` (structural refactor of component
+  sources, from the mixin chain outward), `comment-cleanup` (deletes and
   shortens the comments that a diff added).
 - Boundary against category 2: a transformation skill rewrites production code. A
   verification skill adds tests. `mutation-coverage` writes tests, so it belongs
@@ -45,7 +45,7 @@ is the only category that edits the files that the other categories read.
 
 ### 4. Meta and authoring
 Skills about the skill system itself.
-- In this repo: **`authoring-skills`** (this skill).
+- In this repo: `authoring-skills` (this skill).
 
 ### 5. Development workflow
 Automates a repetitive git/GitHub workflow end to end. Examples: watch CI,
