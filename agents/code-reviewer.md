@@ -26,7 +26,7 @@ both categories.
 
 - Correct handling of edge cases: empty, null, undefined, zero, out-of-range indices
 - No conditions that are always true or always false, and no inverted checks
-- Robust under re-entry, detach / re-attach, and rapid repeated calls
+- Correct under re-entry, detach / re-attach, and rapid repeated calls
 
 ### Conventions — category `conventions`
 
