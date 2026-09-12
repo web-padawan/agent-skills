@@ -29,7 +29,7 @@ Two engines exist. The scope usually selects the engine.
   test asserts on. It needs zero setup and works in any repo with a test command
   that exits non-zero on failure. It creates one mutant per line, so the cost is
   predictable.
-- Use **Stryker** for `--diff` and `--package` scopes, or when the user requests
+- Use Stryker for `--diff` and `--package` scopes, or when the user requests
   it (`--stryker`). Its real mutation operators (`>`→`>=`, `&&`→`||`, literal
   swaps) catch wrong-operator gaps that line-removal cannot express. The
   incremental cache makes reruns near-free.
