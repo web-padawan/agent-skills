@@ -42,8 +42,8 @@ also not a comment under this policy. The extraction script omits all of them.
 renders. Treat a comment in a template literal as code until a test proves otherwise.
 
 **A diff mode reaches only the comments that the change ADDED.** A comment that the diff left
-stale beside a changed line belongs to the review skills. Never widen a diff run to a whole
-file. Pass `--all` or `--package` when you mean the whole source.
+stale beside a changed line belongs to the review skills. Pass `--all` or `--package` when
+you mean the whole source.
 
 **A whole-source mode is the dangerous one.** It reaches comments that nobody on this branch
 wrote, so `uncertain` costs more there. It also returns far more blocks than a diff. Both
@@ -76,8 +76,8 @@ block, and the blank line that the block owned.
    ```
 
    It prints one line per comment block, as `<file>:<line> | <text>`. It prints nothing when
-   nothing matches. Stop there in that case. Never read the diff or walk the tree yourself.
-   A `refuse:` line ends the run. Say the reason in one line and stop.
+   nothing matches. Stop there in that case. Work only from what the script prints. A
+   `refuse:` line ends the run. Say the reason in one line and stop.
 
    A whole-source run over a package returns many blocks. Above about 40, print the count per
    file and ask which files to run. Each verdict needs a read of the code around the block,
@@ -86,8 +86,8 @@ block, and the blank line that the block owned.
    carve-out that decided it. Read the surrounding code first. The table asks what the code
    already shows, and only the code answers that. A block that you cannot place is a DROP.
 4. **Gate.** Print one table with `file:line`, the verdict, the row, and the new wording of
-   each RETAIN. List every verdict. Never fold a group of DROP verdicts into a count. Then
-   ask one `AskUserQuestion` before any edit. Offer to apply all, to apply the DROP verdicts
+   each RETAIN. List every verdict on its own row. Then ask one `AskUserQuestion` before any
+   edit. Offer to apply all, to apply the DROP verdicts
    only, or to stop.
 5. **Apply.** Edit the approved lines, one file at a time. Delete a whole block together with
    the blank line that it owned. Rewrite each RETAIN comment per the policy.
@@ -101,10 +101,9 @@ block, and the blank line that the block owned.
 
 ## Rules
 
-- Never change a line of code. The run diff holds comment lines only.
-- Never stage, commit, amend or push. `HEAD` and the index end as you found them.
-- Never touch a comment that the script did not list.
-- Never delete a directive, a license header or a docblock tag.
-- Never delete a docblock on a public member.
+- Edit only the blocks that the script listed, and only their comment lines.
+- Leave `HEAD` and the index as you found them. The skill stages nothing and commits nothing.
+- Keep every directive, license header, docblock tag, and docblock on a public member. The
+  gotchas above say why.
 - Restore the file with `git checkout -- <path>` when a check in step 6 fails.
 - Say which blocks you left alone, and why. Silence reads as approval.
