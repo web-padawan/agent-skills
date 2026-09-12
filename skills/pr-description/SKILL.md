@@ -8,7 +8,7 @@ argument-hint: "[PR number or URL, or blank to use the current branch]"
 
 This skill writes a PR description from a branch diff in the style of the
 `vaadin/web-components` and `vaadin/flow-components` repos. That style has four parts: a few
-issue links, a **bullet list of what changed**, a type label, and manual steps to verify the
+issue links, a bullet list of what changed, a type label, and manual steps to verify the
 change.
 
 The goal is a description that a reviewer can read in under a minute. Prose is the
