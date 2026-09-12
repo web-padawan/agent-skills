@@ -57,7 +57,7 @@ restate the contract in the prompt. One source, no drift.
 
 ## Fallback clause
 
-Skills reference agents by type. A skill must also survive a copy out of the plugin. The
-convention, used in `references/pipeline.md` §3, is this: "only when the plugin agents are
+Skills reference agents by type. A skill must also survive a copy out of the plugin. Use the
+convention of `references/pipeline.md` §3: "only when the plugin agents are
 unavailable: use `general-purpose` and paste the body of the corresponding `agents/<name>.md`
 into the prompt."
