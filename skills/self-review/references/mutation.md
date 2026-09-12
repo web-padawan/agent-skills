@@ -18,9 +18,8 @@ a mutant.
 > this skill never stages anything, the index equals `HEAD`, so the restore is exact and
 > total. That is the whole safety argument, and it holds only while the tree is clean.
 
-If the tree is dirty at the start of the step or at any mutant boundary, stop the step.
-Report the dirty tree as a finding. Do not reconcile. Do not guess which change was yours.
-Never use `git clean` or `git stash`.
+If the tree is dirty at the start of the step or at any mutant boundary, stop the step and
+report the dirty tree as a finding. Never use `git clean` or `git stash`.
 
 ## Mutant selection
 
@@ -39,11 +38,10 @@ Skip lines that cannot produce a meaningful mutant:
 Prioritize by logic density: conditionals and early returns > event listener add/remove >
 calculations and assignments > everything else. Weight toward lines that the earlier passes
 already flagged. A mutant on a flagged line is worth more than one on an incidental line. List
-skipped hunks in the report. Never truncate the list silently.
+every skipped hunk in the report.
 
 **`mutant_pool: 0` means stop.** The plan counts what the styling skip leaves. When the count
-is zero, the report gets one line: `no mutants: the prod diff is styling only`. Never mutate
-CSS declarations.
+is zero, the report gets one line: `no mutants: the prod diff is styling only`.
 
 **Screenshot-only coverage weakens the signal.** A mutant under a visual test dies only if it
 moves enough pixels to clear the tolerance of the runner (find it in the visual-test config).
@@ -56,9 +54,9 @@ The plan prints the effective budget (`mutants:`), already capped by the scale t
 changes only where the budget goes:
 
 - **fix: the whole-fix revert first, at every scale.** Before any single-line mutant, revert
-  the entire fix as one unit. Then run the affected tests. `git stash` is forbidden. Disable
-  the changed hunks with comments, or use `git checkout <base> -- <source file>` when the
-  only change in the file is the fix. A new test must fail.
+  the entire fix as one unit. Then run the affected tests. Disable the changed hunks with
+  comments, or use `git checkout <base> -- <source file>` when the only change in the file is
+  the fix. A new test must fail.
 
   If every test still passes, the branch has no regression test for the bug that it claims to
   fix. That is an A finding, and the most important output of this step. Restore the fix.
@@ -80,8 +78,7 @@ changes only where the budget goes:
 2. Run the tests (the `commands:` from the plan) for the mutated package **and every other
    package in `affected_packages` from the plan**. A mutant in a shared package
    (`component-base`, `field-base`, `a11y-base`, and so on) often only breaks its consumers.
-   Do not run the whole suite per mutant, because that is too slow. Note the narrower run in
-   the report.
+   That narrow run is what keeps the step affordable. Note it in the report.
 3. **Expected: failure** (non-zero exit in at least one group).
 4. Restore with `git checkout -- <file>`. Then confirm that `git diff --name-only` is empty
    before the next mutant.
@@ -97,9 +94,8 @@ line of the fix itself A. Otherwise tier the gap B.
 - A gap that no reasonable behavioral test could pin, for example a defensive branch
   unreachable from the public API, is `accepted` with the reason.
 
-`/agent-skills:mutation-coverage` closes these gaps. It writes the tests that this skill will
-not write. Name it in the report next to the survivors. Then a report-only run is a handoff
-rather than a dead end.
+`/agent-skills:mutation-coverage` closes these gaps. Name it in the report next to the
+survivors. Then a report-only run is a handoff rather than a dead end.
 
 ## End of step
 
