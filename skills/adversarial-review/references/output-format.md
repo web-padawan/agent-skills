@@ -1,4 +1,4 @@
-# Output Format — Worked Example
+# Output format — worked example
 
 Canonical example of a well-formed adversarial review comment. Match this shape exactly.
 
