@@ -15,7 +15,7 @@ Keep the pass as skill prose when a skill invokes it once. Also keep the pass as
 its content is mostly dynamic.
 
 Two further reasons decided the 2026-08 migration. First, the `tools` frontmatter of an agent
-makes read-only **structural** instead of prompted. Second, agents that ship with the plugin
+makes read-only structural instead of prompted. Second, agents that ship with the plugin
 remove dependencies on agent types that the teammate may not have installed.
 
 ## Frontmatter
@@ -29,10 +29,10 @@ disallowedTools: Write, Edit
 ---
 ```
 
-- The **exclusive-use sentence is mandatory**. The main loop sees agent descriptions as
+- The exclusive-use sentence is mandatory. The main loop sees agent descriptions as
   delegation targets. Without the boundary, a "review my code" request can route into a
   pipeline agent that expects a context file that does not exist.
-- Reviewer agents get both the `tools` allowlist **and** `disallowedTools: Write, Edit`.
+- Reviewer agents get both the `tools` allowlist and `disallowedTools: Write, Edit`.
   The allowlist documents intent. The denylist survives default-inheritance surprises.
 - No `model:`. Agents inherit the session model unless a pass genuinely needs a tier.
 
