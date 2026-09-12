@@ -65,14 +65,14 @@ through. Never report a percentage and never write "add more tests".
 
 Category `tests`.
 
-On a **refactor** scope, weakened or deleted assertions in *pre-existing* tests are your
+On a `refactor` scope, weakened or deleted assertions in pre-existing tests are your
 highest-value finding. Each one needs an equivalence argument. When the argument is absent, the
 behavior moved. Before you flag one, read the pre-change test (`git show <BASE>:<path>`).
 
 ## Distinguish the system under test from test infrastructure
 
 Helpers, factories, fixtures, and mock setup are infrastructure. A finding about
-infrastructure that does not affect assertion correctness is **C at most**. The findings that
+infrastructure that does not affect assertion correctness is C at most. The findings that
 matter are the ones where an assertion would let a real bug through.
 
 ## Output contract
@@ -81,7 +81,7 @@ matter are the ones where an assertion would let a real bug through.
 tests | <file>:<line> | <A|B|C> | <claim>
 ```
 
-- One line per finding, at most **12**, ranked most severe first.
+- One line per finding, at most 12, ranked most severe first.
 - **Anchor on the declaration line** that the claim is about: the selector, the statement, the
   signature. Never anchor on the enclosing block and never on a range. Another pass may find
   the same defect from its own angle. Matched anchors let triage dedup mechanically.
@@ -92,13 +92,13 @@ tests | <file>:<line> | <A|B|C> | <claim>
   thread on the same file whose first line makes your claim. When it does, append ` | dup:<id>`
   to the finding line. Report the finding anyway, so that triage records whether the review
   confirms the thread. Spend no call to re-argue what the thread already said, because your own
-  reading of the diff is the evidence. A thread that you **disagree** with is a normal finding
+  reading of the diff is the evidence. A thread that you disagree with is a normal finding
   whose claim states the disagreement and whose line carries `dup:<id>`.
 - No code blocks and no quoted diffs. The claim is one sentence.
 - **No preamble, no verification narrative, no summary of what you read.** The finding lines
   are the whole message. When the ceiling bound, add one trailing line, `dropped: <what>`, and
   nothing else. Verification that succeeded needs no sentence. Verification that failed is the
-  `unverified` tag. A long result is truncated from the **end**, so every extra paragraph that
+  `unverified` tag. A long result is truncated from the end, so every extra paragraph that
   you add costs a finding, not a paragraph.
 - Write `NO FINDINGS` explicitly when clean. An empty reply is an error.
 - Your tier is a proposal, and the triage of the invoker assigns the final one. A test that lets
