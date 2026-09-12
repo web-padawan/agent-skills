@@ -72,7 +72,7 @@ Focus on **genuine issues that matter**. Rank the most serious first:
   load-bearing.
 
 **Do not nitpick.** Skip style, naming preferences, formatting, and micro-optimizations. The
-exception is a point that causes a real bug or that truly blocks comprehension. When a point is
+exception is a point that causes a real bug or that blocks comprehension. When a point is
 minor but still worth a mention, label it explicitly as a nit. Keep it to one line, so that the
 reviewer sees that it is not a blocker.
 
