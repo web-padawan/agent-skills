@@ -1,4 +1,4 @@
-# Comment policy — DROP or RETAIN
+# Comment policy — DROP, REWRITE or RETAIN
 
 One policy for every skill and agent in this plugin that judges a comment. The code pass of
 the review pipeline reports against it. The `comment-cleanup` skill edits against it. Edit
@@ -8,8 +8,8 @@ the block below. Never edit a copy of it.
 touches a comment. The skill reads this file directly.
 
 <!-- block:comment-policy -->
-Judge each comment that the diff ADDS. A comment that the table drops is noise. The code
-already says it, or the code is the wrong place to say it.
+Judge each comment that the diff ADDS. Give it one of three verdicts. DROP deletes the
+block. REWRITE keeps the block and changes its text. RETAIN keeps the text as it is.
 
 | The comment describes | Verdict |
 | --- | --- |
@@ -18,26 +18,34 @@ already says it, or the code is the wrong place to say it.
 | a border condition that the code already expresses | DROP |
 | an invariant, a precondition or a postcondition that the type declaration states | DROP |
 | a repetition of a pattern, for example `same as above` | DROP |
-| the prose of a docblock on a private or a protected member | DROP |
-| anything that no row above covers | DROP |
+| a prose line that repeats a tag in the same docblock | DROP |
+| anything that no row covers | DROP |
+| the shape of a parameter or of a return value, in prose | REWRITE to `@param` and `@return` tags |
+| what an override does differently, in an inline comment inside the override | REWRITE into the leading line of the docblock |
+| a reason wrapped in history, a `#NNNN` shorthand, a typo, or spare words | REWRITE to the shortest form |
+| the contract of a private or a protected member | RETAIN |
 | why the code cannot do the thing another way | RETAIN |
 | an invariant, a precondition or a postcondition that no type declaration states | RETAIN |
 
-Four carve-outs outrank the table:
+Five carve-outs outrank the table:
 
-- A full link to an **open** issue that explains a current workaround is a RETAIN. It gives
-  the reason that the code cannot do the thing another way. A closed issue and a decision
-  record are DROP. Never use the `#` shorthand for an issue.
+- A rule in the conventions document of the repository outranks every row. Read its JSDoc
+  chapter before the first verdict. A leading line that the chapter mandates is a RETAIN.
+- A docblock on a private or a protected member is never a DROP. The visibility tag stays.
+  The prose becomes tags, or it stays as the contract.
+- A full link to an **open** issue that explains a current workaround is a RETAIN. A closed
+  issue is a REWRITE. Keep the reason and delete the link. Never use the `#` shorthand.
 - A docblock on a **public** member is a RETAIN. Its text ships in the type declarations, in
-  the web types and on the documentation site.
+  the web types and on the documentation site. A REWRITE of it edits the sibling `.d.ts` too.
 - Every docblock tag is a RETAIN, for example `@param`, `@return`, `@type`, `@attr` and
-  `@fires`. A tag is API data, not prose.
-- A directive is not a comment. Keep `eslint-disable`, `prettier-ignore`, `@ts-expect-error`,
-  `c8 ignore`, `istanbul ignore` and a license header.
+  `@fires`. A directive is not a comment. Keep `eslint-disable`, `prettier-ignore`,
+  `@ts-expect-error`, `c8 ignore`, `istanbul ignore` and a license header.
 
-Rewrite each RETAIN comment:
+Rewrite each REWRITE comment and each RETAIN comment:
 
 - Remove the historical reason.
 - Use as few words as possible.
 - Use the name that the code uses for each concept.
+- Match the wording form that the file already uses. Count both forms in the repository
+  before you call one of them wrong.
 <!-- /block -->
