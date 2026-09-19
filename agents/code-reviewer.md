@@ -58,9 +58,8 @@ both categories.
 Two questions share this category. Answer both.
 
 - **The comments that the diff adds.** Judge each one against the `## Comment policy` section
-  of the context file. A comment that the policy drops is a finding. Name the row that drops
-  it. A RETAIN comment that keeps a historical reason, or that runs long, is also a finding.
-  Give the shorter wording as the fix
+  of the context file. A DROP is a finding. Name the row that drops it. A REWRITE is a
+  finding. Give the new wording as the fix
 - **The comments that the diff left behind.** A comment beside changed code that no longer
   matches that code is a finding. The comment-adjacent files in your prompt are that input.
   A diff that adds no comment carries no `## Comment policy` section. Answer this question
