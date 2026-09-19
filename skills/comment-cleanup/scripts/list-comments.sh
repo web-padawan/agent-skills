@@ -20,10 +20,11 @@
 #   node_modules, dist, build, test directories and `.d.ts` files.
 #
 # Output, one line per contiguous comment block:
-#   <file>:<line> | <text>
-# `<line>` is the line number of the first line of the block. `<text>` is the block joined
+#   <file>:<line> | <kind> | <text>
+# `<line>` is the line number of the first line of the block. `<kind>` is `docblock` for a
+# `/** */` block, `html` for a `<!-- -->` block, else `inline`. `<text>` is the block joined
 # with ` / `. A block that holds a lint or a type directive is omitted, and so is a license
-# header at the top of a file.
+# header at the top of a file, and so is a docblock that holds only tags.
 #
 # Exit codes: 0 with output, 0 with no output when nothing matches, 1 on a guard.
 
@@ -42,7 +43,7 @@ while [ $# -gt 0 ]; do
     --all) MODE=all ;;
     --commit) MODE=commit; COMMIT="${2:-}"; shift ;;
     --package) MODE=package; PACKAGE="${2:-}"; shift ;;
-    --help|-h) sed -n '2,29p' "$0"; exit 0 ;;
+    --help|-h) sed -n '2,30p' "$0"; exit 0 ;;
     --*) echo "unknown flag: $1" >&2; exit 1 ;;
     *) PATHS+=("$1") ;;
   esac
@@ -57,8 +58,9 @@ parse() {
   awk '
     function flush() {
       if (n == 0) return
-      if (!skip && !(start <= 3 && license)) printf "%s:%d | %s\n", file, start, text
-      n = 0; skip = 0; license = 0; text = ""; in_block = 0
+      if (!skip && !(start <= 3 && license) && !(kind == "docblock" && !prose))
+        printf "%s:%d | %s | %s\n", file, start, kind, text
+      n = 0; skip = 0; license = 0; text = ""; in_block = 0; prose = 0; kind = ""
     }
     /^\+\+\+ / { flush(); file = ($0 ~ /^\+\+\+ b\//) ? substr($0, 7) : ""; next }
     /^--- / || /^diff --git / || /^index / || /^(new|deleted) file/ || /^similarity / || /^rename / { next }
@@ -84,7 +86,14 @@ parse() {
           flush()
           start = lineno
           text = bare
+          # A diff hunk can start inside a docblock, on a ` * ` line. Only a block comment has one.
+          kind = (bare ~ /^\/\*\*/ || bare ~ /^\*/) ? "docblock" : (bare ~ /^<!--/) ? "html" : "inline"
         }
+        # A docblock line is prose unless it is empty or starts with a tag.
+        content = bare
+        sub(/^(\/\*\*|\/\*|\*\/|\*|\/\/)[ \t]*/, "", content)
+        sub(/[ \t]*\*\/[ \t]*$/, "", content)
+        if (content != "" && content !~ /^@/) prose = 1
         if (was_open) { in_block = (bare ~ /\*\// || bare ~ /-->/) ? 0 : 1 }
         else { in_block = ((bare ~ /^\/\*/ || bare ~ /^<!--/) && !(bare ~ /\*\// || bare ~ /-->/)) ? 1 : 0 }
         n++

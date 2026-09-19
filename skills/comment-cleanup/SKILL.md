@@ -1,38 +1,53 @@
 ---
 name: comment-cleanup
-description: Delete and shorten comments against a DROP / RETAIN policy - restated behavior, history, closed tickets and decision records, border conditions the code already shows, invariants the types already state, and docblock prose on private members. Rewrites each kept comment to its shortest form. Scopes to a branch diff, one commit, the index, the working tree, one file, or one package. Use when asked to clean up comments, remove comment noise, strip AI-written comments, drop redundant or obsolete comments, delete useless comments from a file or a package, or trim the comments a branch added. Edits comment lines only and never changes code. Not for a review that reports and does not edit, which is self-review or pr-review. Not for a structural refactor, which is refactor-component. Not for a general cleanup of an uncommitted diff, which is simplify.
+description: Delete, rewrite and shorten comments against a DROP / REWRITE / RETAIN policy - drops restated behavior, history, closed tickets and decision records, border conditions the code already shows, and invariants the types already state. Converts prose docblocks on private and protected members to `@param` and `@return` tags, moves an inline override note into the docblock leading line, expands a `#NNNN` shorthand to a full link, and rewrites each kept comment to its shortest form. Scopes to a branch diff, one commit, the index, the working tree, one file, or one package. Use when asked to clean up comments, de-slop comments, strip AI slop or AI-written comments, remove comment noise, drop redundant or obsolete comments, convert JSDoc prose to tags, or trim the comments a branch added. Edits comment lines only and never changes code. Not for code slop such as duplication, dead code or wrappers, which is ai-slop-cleaner. Not for a review that reports and does not edit, which is self-review or pr-review. Not for a structural refactor, which is refactor-component. Not for a general cleanup of an uncommitted diff, which is simplify.
 argument-hint: "[--diff|--commit <sha>|--staged|--working|--all <path>|--package <name>] [path]"
-allowed-tools: Read, Edit, Glob, Grep, AskUserQuestion, Bash(git:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(*/scripts/list-comments.sh:*)
+allowed-tools: Read, Edit, Glob, Grep, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(cp:*), Bash(diff:*), Bash(*/scripts/list-comments.sh:*)
 ---
 
 # Comment Cleanup
 
-This skill deletes the comments that say nothing, and it shortens the comments that stay. It
-runs over what a change added, or over a whole file or package. It edits comment lines. It
-never edits code, and it never commits.
+This skill deletes the comments that say nothing, rewrites the comments that say it badly,
+and shortens the comments that stay. It runs over what a change added, or over a whole file
+or package. It edits comment lines. It never edits code, and it never commits.
 
 The policy is [`../../references/comments.md`](../../references/comments.md). Read it once at
 the start. If that read fails, use `${CLAUDE_PLUGIN_ROOT}/references/comments.md`. The code
 pass of the review skills judges against the same policy, so a cleanup run and a later review
-agree.
+agree. The smell table, the rewrite recipes and the manifest check are in
+[`references/comment-slop.md`](references/comment-slop.md).
 
 ## When to use
 
 - A branch added comments that restate what the code already shows.
 - A diff carries history: a closed ticket, a decision record, a changelog note.
 - A generated or an assisted change left a comment on every second line.
+- A private docblock spells a parameter shape in prose instead of tags.
 - One file or one package collected comment noise over the years.
 
 ## When NOT to use
 
 - You want a report and no edit. Use `self-review`.
+- You want to remove code slop: duplication, dead code, wrappers. Use `ai-slop-cleaner`.
 - You want to move code. Use `refactor-component`.
 - You want a general cleanup of code that you just wrote. Use `simplify`.
 
 ## Gotchas
 
+**The conventions document of the repository outranks the policy.** Read its JSDoc chapter
+before the first verdict. In web-components it mandates the leading line "Override method
+from `<BaseMixin>` to ...", which the policy table alone would drop.
+
 **A docblock on a public member ships.** Its text reaches the type declarations, the web types
-and the documentation site. A delete there changes generated output. The policy keeps it.
+and the documentation site. A delete there changes generated output. The policy keeps it. A
+REWRITE there edits the sibling `.d.ts` in the same pass.
+
+**A docblock type in a `.js` file is not compiler-checked.** `tsc` reads only `.ts` files.
+Verify a rewritten type from the callers, from `?.` in the body, and from the sibling `.d.ts`.
+Write `{X | undefined}`, not `!X`, when `undefined` flows in.
+
+**Style precedent is a count, not a memory.** Before you call a wording wrong, grep both forms
+across `packages/*/src`. The form that one file uses six times can be the minority in the repo.
 
 **A directive looks like a comment and is not one.** `eslint-disable`, `prettier-ignore`,
 `@ts-expect-error`, `c8 ignore` and `istanbul ignore` change the build. A license header is
@@ -52,6 +67,9 @@ whole-source modes refuse on a dirty tree, so that one `git checkout` reverts a 
 **A delete of one line can leave a stray blank line or an empty docblock.** Remove the whole
 block, and the blank line that the block owned.
 
+**Docblock edits and inline edits are different commits.** One is `docs:`, the other is
+`refactor:`. The gate offers them apart.
+
 ## Steps
 
 1. **Scope.** Resolve the mode from the argument. Four modes read a diff and reach only the
@@ -68,15 +86,17 @@ block, and the blank line that the block owned.
 
    A path narrows any diff mode. A whole-source mode skips `node_modules`, `dist`, `build`,
    a test directory and a `.d.ts` file. Ask the user which mode is meant when the request
-   names neither a diff nor a path.
+   names neither a diff nor a path. Then read the JSDoc chapter of the conventions document.
+   Note each rule that names a docblock form.
 2. **Extract.** Run the script in one call:
 
    ```
    ${CLAUDE_PLUGIN_ROOT}/skills/comment-cleanup/scripts/list-comments.sh <flag> [path]
    ```
 
-   It prints one line per comment block, as `<file>:<line> | <text>`. It prints nothing when
-   nothing matches. Stop there in that case. Work only from what the script prints. A
+   It prints one line per comment block, as `<file>:<line> | <kind> | <text>`. The kind is
+   `docblock`, `inline` or `html`. It omits a docblock that holds only tags. It prints nothing
+   when nothing matches. Stop there in that case. Work only from what the script prints. A
    `refuse:` line ends the run. Say the reason in one line and stop.
 
    A whole-source run over a package returns many blocks. Above about 40, print the count per
@@ -84,20 +104,25 @@ block, and the blank line that the block owned.
    and an unbounded list buys a shallow verdict for every entry.
 3. **Classify.** Give each block one verdict from the policy, and name the row or the
    carve-out that decided it. Read the surrounding code first. The table asks what the code
-   already shows, and only the code answers that. A block that you cannot place is a DROP.
-4. **Gate.** Print one table with `file:line`, the verdict, the row, and the new wording of
-   each RETAIN. List every verdict on its own row. Then ask one `AskUserQuestion` before any
-   edit. Offer to apply all, to apply the DROP verdicts
-   only, or to stop.
-5. **Apply.** Edit the approved lines, one file at a time. Delete a whole block together with
-   the blank line that it owned. Rewrite each RETAIN comment per the policy.
+   already shows, and only the code answers that. For a REWRITE, name the smell from the
+   smell table and write the new text. A block that you cannot place is a DROP.
+4. **Gate.** Print one table with `file:line`, the kind, the verdict, the row or the smell,
+   and the new wording of each REWRITE. List every verdict on its own row. Then ask one
+   `AskUserQuestion` before any edit. Offer to apply all, the DROP verdicts only, the
+   docblock edits only, the inline edits only, or to stop.
+5. **Apply.** Run one pass per verdict and kind: the DROP pass, the docblock REWRITE pass,
+   then the inline REWRITE pass. Edit one file at a time. Delete a whole block together with
+   the blank line that it owned. Run the diff check of step 6 after each pass.
 6. **Prove.** Run these checks in order, and stop at the first failure:
    - `git diff -U0` over the run. Every added and removed line must be a comment line. Revert
      the file when a code line appears.
-   - The type check of the repo, and the build that generates the type declarations.
+   - For a REWRITE of a public docblock, `git diff --stat` must list the sibling `.d.ts`.
+   - The type check of the repo.
+   - The manifest check from the reference, when the repo generates a manifest from JSDoc.
    - The test suite of each touched package.
-7. **Report.** List each DROP with its row. List each RETAIN with the old wording and the new
-   wording. Say which checks ran. State that the skill committed nothing.
+7. **Report.** List each DROP with its row. List each REWRITE with its smell, the old wording
+   and the new wording. Give the count of RETAIN blocks. Say which checks ran. State that the
+   skill committed nothing.
 
 ## Rules
 
@@ -105,5 +130,7 @@ block, and the blank line that the block owned.
 - Leave `HEAD` and the index as you found them. The skill stages nothing and commits nothing.
 - Keep every directive, license header, docblock tag, and docblock on a public member. The
   gotchas above say why.
+- Never reduce a docblock on a private or a protected member to its visibility tag alone.
+- Check the state of a linked issue with `gh issue view` before you keep or expand the link.
 - Restore the file with `git checkout -- <path>` when a check in step 6 fails.
 - Say which blocks you left alone, and why. Silence reads as approval.
