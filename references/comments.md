@@ -1,11 +1,11 @@
 # Comment policy — DROP, REWRITE or RETAIN
 
-One policy for every skill and agent in this plugin that judges a comment. The code pass of
-the review pipeline reports against it. The `comment-cleanup` skill edits against it. Edit
-the block below. Never edit a copy of it.
+This file holds the one policy for every skill and agent in this plugin that judges a
+comment. The code pass of the review pipeline reports against it. The `comment-cleanup` skill
+edits against it. Edit the block below. Never edit a copy of it.
 
 `scripts/review-plan.sh` copies the block into the context file of a review whose diff
-touches a comment. The skill reads this file directly.
+touches a comment. The `comment-cleanup` skill reads this file directly.
 
 <!-- block:comment-policy -->
 Judge each comment that the diff ADDS. Give it one of three verdicts. DROP deletes the
@@ -35,17 +35,17 @@ Five carve-outs outrank the table:
   The prose becomes tags, or it stays as the contract.
 - A full link to an **open** issue that explains a current workaround is a RETAIN. A closed
   issue is a REWRITE. Keep the reason and delete the link. Never use the `#` shorthand.
-- A docblock on a **public** member is a RETAIN. Its text ships in the type declarations, in
-  the web types and on the documentation site. A REWRITE of it edits the sibling `.d.ts` too.
+- A docblock on a **public** member is never a DROP. The type declarations, the web types
+  and the documentation site include its text. A REWRITE of it edits the sibling `.d.ts` too.
 - Every docblock tag is a RETAIN, for example `@param`, `@return`, `@type`, `@attr` and
   `@fires`. A directive is not a comment. Keep `eslint-disable`, `prettier-ignore`,
   `@ts-expect-error`, `c8 ignore`, `istanbul ignore` and a license header.
 
-Rewrite each REWRITE comment and each RETAIN comment:
+Rewrite each REWRITE comment:
 
 - Remove the historical reason.
 - Use as few words as possible.
 - Use the name that the code uses for each concept.
-- Match the wording form that the file already uses. Count both forms in the repository
-  before you call one of them wrong.
+- Match the wording form that the file already uses. Before you say that one form is wrong,
+  count both forms in the repository.
 <!-- /block -->
