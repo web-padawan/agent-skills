@@ -32,6 +32,7 @@ through. Never report a percentage and never write "add more tests".
 
 - Every new or changed behavior in the production patch has a test that exercises it
 - Bug fix has a regression test that fails on the pre-fix code. No other pass checks that
+- Claim a failure on the pre-fix code only from a test run. A claim from a code read is `unverified`
 - Error branches, guard clauses, and rejection paths have a failing-path test
 - Edge cases covered: empty, null/undefined, zero, single element, boundary values
 - A test that the diff deletes or skips has replacement coverage unless clearly justified
