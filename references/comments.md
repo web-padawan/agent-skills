@@ -35,6 +35,7 @@ Five carve-outs outrank the table:
   The prose becomes tags, or it stays as the contract.
 - A full link to an **open** issue that explains a current workaround is a RETAIN. A closed
   issue is a REWRITE. Keep the reason and delete the link. Never use the `#` shorthand.
+  An issue that the diff under review fixes counts as closed.
 - A docblock on a **public** member is never a DROP. The type declarations, the web types
   and the documentation site include its text. A REWRITE of it edits the sibling `.d.ts` too.
 - Every docblock tag is a RETAIN, for example `@param`, `@return`, `@type`, `@attr` and
