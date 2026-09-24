@@ -3,7 +3,7 @@ name: pr-review
 description: Review a GitHub pull request with the plugin's reviewer agents and, after confirmation, post the findings as inline Conventional Comments (issue / suggestion / question / nitpick, blocking or non-blocking). Use when asked to review a PR and leave line comments, do a full review of a pull request, or post review findings on a PR. Not for a single summary comment (adversarial-review), a walkthrough that never posts (guided-review), or your own branch before it has a PR (self-review).
 argument-hint: "[PR number or URL, or blank to auto-detect from current branch] [--deep N]"
 disable-model-invocation: true
-allowed-tools: Read, Write, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/post-comment.sh:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/post-comment.sh:*)
 ---
 
 Review a GitHub pull request. Then post the findings as inline comments after the user confirms.
@@ -83,6 +83,11 @@ claim on the thread is wrong, or that its fix would regress something that the r
 Post it as a `question` reply into the thread (`--reply <id>`).
 
 Rank first the A findings that are reachable in released behavior or security-relevant.
+
+**Revert check.** Run it on type `fix` when `HEAD` is the `head` of the plan and the tree is
+clean. Disable one part of the fix at a time. Run the tests of the package after each change.
+Restore the file with `git checkout -- <path>` after each run. A new test that still passes is
+a `question (tests)`. Two parts whose tests pass without each other are a `scope` split.
 
 ### 4. Present findings
 
