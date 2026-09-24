@@ -125,8 +125,9 @@ Rules that accompany the table:
 - **`if-minor`** only on a B `suggestion` whose fix could balloon past its one-line
   description. Otherwise `non-blocking`.
 - **Every `issue` pairs with its fix**: the one-line fix from the frozen list is the discussion.
-- **One `praise`, never false.** The clean deep block of the change pass is the usual source.
-  A boundary that returned `NO FINDINGS` with named consumers is checkable praise.
+- **One `praise`, never false.** Verify it like a finding. The clean deep block of the change
+  pass is the usual source. A boundary that returned `NO FINDINGS` with named consumers is
+  checkable praise.
 - The tier letters stay in chat, the findings report and the review record. A PR reader sees
   the label and decoration. Those say the same thing in words that the reader already knows.
 
