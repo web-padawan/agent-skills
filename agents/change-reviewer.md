@@ -36,6 +36,8 @@ compatibility* strictly. Nothing observable may change.
 - No behavior that the stated intent does not request
 - No requirements implemented differently from how the intent states them
 - No several independent parts in one branch. If there is a split, name it
+- Two parts are independent when each fixes its own symptom and has its own tests
+- A title that names only one of several parts is a `scope` finding
 - With a parent PR/issue: the extraction stands alone and depends on nothing from the parent
 
 ### Behavior and compatibility — category `behavior`
