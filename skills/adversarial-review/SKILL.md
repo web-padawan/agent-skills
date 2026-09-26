@@ -18,11 +18,14 @@ PR URL or number. If the argument is empty, resolve the PR from the current bran
 
 ## Workflow
 
-1. Resolve the PR: `gh pr view <number-or-url>`.
+1. Resolve the PR and its discussion:
+   `${CLAUDE_PLUGIN_ROOT}/scripts/gh-context.sh <number-or-url> --out <scratchpad>/pr-<n>.md`.
+   The file holds the body, the linked issues, the comments, the reviews and the review
+   threads with their diff hunks.
 2. Read the diff: `gh pr diff <number-or-url>`. For a large PR, read the files around the
    diff for the context that the diff lacks.
-3. Read the prior discussion: `gh pr view <number-or-url> --json comments,reviews`. Do not
-   repeat points that others already made or that the author addressed.
+3. Read the prior discussion in the context file. Do not repeat points that others already
+   made or that the author addressed.
 4. Run the review (see [stance](#stance) and [coverage](#coverage)).
 5. Format the output per [Output format](#output-format). The format is not negotiable. The
    format is the product.
