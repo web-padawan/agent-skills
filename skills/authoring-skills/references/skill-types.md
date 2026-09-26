@@ -26,7 +26,8 @@ Describes how to prove that code works: coverage checks, test-writing
 procedures, external drivers. Anthropic reports that verification skills had the
 most measurable impact on output quality. Invest the effort in them.
 - In this repo: `mutation-coverage` (mutation testing and closing the gaps
-  with tests).
+  with tests), `screenshot-diff` (pixel metrics and a class for each visual
+  test screenshot diff).
 
 ### 3. Code transformation
 Changes production source and keeps the behavior. Writes code, not a report. This
