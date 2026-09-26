@@ -9,7 +9,8 @@ and how to install and use the plugin. Do not repeat that content here.
 - `skills/<name>/SKILL.md`: one skill per folder, with optional `references/`, `scripts/` and `assets/`.
 - `agents/`: the reviewer subagents that the review skills launch. Their contract is static.
 - `references/`: the pipeline documents that the review skills share. They are tuned prompts.
-- `scripts/`: shell helpers that the skills call through `${CLAUDE_PLUGIN_ROOT}`.
+- `scripts/`: shell helpers that the skills call through `${CLAUDE_PLUGIN_ROOT}`, plus a few
+  manual git helpers. `scripts/smoke.sh` checks the ones that rewrite a tree.
 - `.claude-plugin/`: the plugin and marketplace manifests.
 
 ## Conventions
