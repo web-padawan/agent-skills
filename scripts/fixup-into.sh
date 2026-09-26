@@ -16,7 +16,7 @@
 # nothing is lost. Resolve by hand from there.
 #
 # Prints the new log of the branch and asserts that no `fixup!` commit remains.
-# Exit codes: 0 ok · 1 usage or guard · 2 the rebase conflicted and was aborted.
+# Exit codes: 0 ok · 1 the rebase conflicted and was aborted, or a fixup remains · 2 usage or guard.
 set -euo pipefail
 
 TARGET=""
@@ -33,21 +33,21 @@ while [ $# -gt 0 ]; do
     --no-hooks) HOOKS=(-c core.hooksPath=/dev/null) ;;
     --autostash) AUTOSTASH=(--autostash) ;;
     --help|-h) sed -n '2,19p' "$0"; exit 0 ;;
-    --*) echo "unknown flag: $1" >&2; exit 1 ;;
+    --*) echo "unknown flag: $1" >&2; exit 2 ;;
     *) if [ -z "$TARGET" ] && [ -z "$GREP" ]; then TARGET="$1"; else PATHS+=("$1"); fi ;;
   esac
   shift
 done
-[ -n "$TARGET" ] || [ -n "$GREP" ] || { sed -n '2,19p' "$0"; exit 1; }
+[ -n "$TARGET" ] || [ -n "$GREP" ] || { sed -n '2,19p' "$0"; exit 2; }
 
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "refuse: not a git repository" >&2; exit 1; }
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "refuse: not a git repository" >&2; exit 2; }
 cd "$ROOT"
 
 MAIN=""
 for m in origin/main origin/master main master; do
   if git rev-parse --verify --quiet "$m^{commit}" >/dev/null; then MAIN="$m"; break; fi
 done
-[ -n "$MAIN" ] || { echo "refuse: no main or master branch found" >&2; exit 1; }
+[ -n "$MAIN" ] || { echo "refuse: no main or master branch found" >&2; exit 2; }
 BASE=$(git merge-base "$MAIN" HEAD)
 
 if [ -n "$GREP" ]; then
@@ -56,32 +56,32 @@ if [ -n "$GREP" ]; then
   if [ "$COUNT" != 1 ]; then
     echo "refuse: --grep '$GREP' matched $COUNT commits in $BASE..HEAD:" >&2
     git log --oneline -i --grep="$GREP" "$BASE..HEAD" >&2
-    exit 1
+    exit 2
   fi
   TARGET="$MATCHES"
 fi
-TARGET=$(git rev-parse --verify --quiet "$TARGET^{commit}") || { echo "refuse: unknown commit" >&2; exit 1; }
-git merge-base --is-ancestor "$TARGET" HEAD || { echo "refuse: target is not on this branch" >&2; exit 1; }
+TARGET=$(git rev-parse --verify --quiet "$TARGET^{commit}") || { echo "refuse: unknown commit" >&2; exit 2; }
+git merge-base --is-ancestor "$TARGET" HEAD || { echo "refuse: target is not on this branch" >&2; exit 2; }
 if git merge-base --is-ancestor "$TARGET" "$BASE"; then
   echo "refuse: target is on $MAIN, a fixup would rewrite shared history" >&2
-  exit 1
+  exit 2
 fi
-SUBJECT=$(git log -1 --format=%s "$TARGET")
+INDEX=$(git rev-list --count "$BASE..$TARGET")
 
 if [ ${#PATHS[@]} -gt 0 ]; then
   git add -- "${PATHS[@]}"
 elif [ "$STAGED" != true ]; then
   echo "refuse: name the paths to fold, or pass --staged" >&2
-  exit 1
+  exit 2
 fi
-git diff --cached --quiet && { echo "refuse: nothing is staged" >&2; exit 1; }
+git diff --cached --quiet && { echo "refuse: nothing is staged" >&2; exit 2; }
 
 OTHER=$(git status --porcelain --untracked-files=no | grep -vE '^[MADRC] ' || true)
 if [ -n "$OTHER" ] && [ ${#AUTOSTASH[@]} -eq 0 ]; then
   echo "refuse: unstaged changes would block the rebase, commit them or pass --autostash:" >&2
   printf '%s\n' "$OTHER" >&2
   git reset -q -- ${PATHS[@]+"${PATHS[@]}"} 2>/dev/null || true
-  exit 1
+  exit 2
 fi
 
 TREE_BEFORE=$(git write-tree)
@@ -91,11 +91,12 @@ if ! GIT_SEQUENCE_EDITOR=: GIT_EDITOR=: git ${HOOKS[@]+"${HOOKS[@]}"} rebase -q 
   echo "conflict: rebase aborted, the fixup commit stays on the tip:" >&2
   grep -E "^(CONFLICT|error: could not apply)" "${TMPDIR:-/tmp}/fixup-into.err" >&2 || true
   git log --oneline -1 >&2
-  exit 2
+  exit 1
 fi
 
 LEFT=$(git log --format=%s "$BASE..HEAD" | grep -c '^fixup!' || true)
-NEW_TARGET=$(git log --format=%H --fixed-strings --grep="$SUBJECT" "$BASE..HEAD" | tail -1)
+# The rebase keeps the order, so the target sits at the same distance from the base.
+NEW_TARGET=$(git rev-list --reverse "$BASE..HEAD" | sed -n "${INDEX}p")
 echo "folded into: $(git log -1 --oneline "$NEW_TARGET")"
 echo "tree unchanged: $([ "$(git rev-parse HEAD^{tree})" = "$TREE_BEFORE" ] && echo yes || echo no)"
 echo "fixups left: $LEFT"
