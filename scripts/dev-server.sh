@@ -21,11 +21,11 @@
 # The log is ${TMPDIR:-/tmp}/dev-server-<port>.log. The server binary comes from
 # <repo>/node_modules/.bin/web-dev-server, so run this inside the repository.
 #
-# Exit codes: 0 ok · 1 usage or environment error · 2 the server did not come up.
+# Exit codes: 0 ok · 1 the server did not come up, or status is not 200 · 2 usage or environment error.
 set -euo pipefail
 
 CMD="${1:-}"
-[ -n "$CMD" ] || { sed -n '2,24p' "$0"; exit 1; }
+[ -n "$CMD" ] || { sed -n '2,24p' "$0"; exit 2; }
 shift
 PORT=8765
 PAGE=/dev/
@@ -41,12 +41,12 @@ while [ $# -gt 0 ]; do
     --check) CHECK="${2:?--check requires a value}"; shift ;;
     --timeout) TIMEOUT="${2:?--timeout requires a value}"; shift ;;
     --help|-h) sed -n '2,24p' "$0"; exit 0 ;;
-    *) echo "unknown argument: $1" >&2; exit 1 ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
 done
 
-ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "error: not inside a git repository" >&2; exit 1; }
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "error: not inside a git repository" >&2; exit 2; }
 BIN="$ROOT/node_modules/.bin/web-dev-server"
 LOG="${TMPDIR:-/tmp}/dev-server-$PORT.log"
 LOG="${LOG//\/\//\/}"
@@ -90,7 +90,7 @@ do_stop() {
       killed=1
     else
       echo "refuse: pid $pid on port $PORT is not web-dev-server: $(ps -o command= -p "$pid")" >&2
-      exit 1
+      exit 2
     fi
   done
   if [ "$killed" = 1 ]; then
@@ -105,7 +105,7 @@ do_stop() {
 }
 
 do_start() {
-  [ -x "$BIN" ] || { echo "error: $BIN not found, run yarn install" >&2; exit 1; }
+  [ -x "$BIN" ] || { echo "error: $BIN not found, run yarn install" >&2; exit 2; }
   local args=(--node-resolve --port "$PORT")
   [ -n "$THEME" ] && args+=("--theme=$THEME")
   (cd "$ROOT" && nohup "$BIN" "${args[@]}" < /dev/null > "$LOG" 2>&1 & disown) 2>/dev/null
@@ -117,9 +117,9 @@ do_start() {
       echo "error: no 200 from $BASE_URL$PAGE after ${TIMEOUT}s (last code $code)" >&2
       echo "log: $LOG" >&2
       tail -5 "$LOG" >&2 || true
-      exit 2
+      exit 1
     fi
-    sleep 0.5
+    sleep 1
     waited=$((waited + 1))
   done
   echo "started: pid $(listener_pids | head -1) url $BASE_URL$PAGE theme ${THEME:-default} log $LOG"
@@ -157,5 +157,5 @@ case "$CMD" in
     [ -n "$CHECK" ] && echo "served: $(served_state "$CHECK") $CHECK"
     true
     ;;
-  *) echo "unknown command: $CMD" >&2; sed -n '2,24p' "$0"; exit 1 ;;
+  *) echo "unknown command: $CMD" >&2; sed -n '2,24p' "$0"; exit 2 ;;
 esac
