@@ -57,9 +57,10 @@ changes only where the budget goes:
   the entire fix as one unit. Run
   `${CLAUDE_PLUGIN_ROOT}/scripts/ab.sh --ref <base> --path <source file> -- <test command>`.
   The script swaps the source files to `<base>`, runs the command on both trees, restores the
-  files, and diffs the two outputs. Side A must fail and side B must pass. When a source file
-  also holds a change that is not the fix, disable the fix hunks with comments instead. A new
-  test must fail.
+  files, and diffs the two outputs. Side A must fail and side B must pass. Read the exit code
+  of each side from the `RESULT:` line. The exit code of the script only tells whether the
+  outputs differ. When a source file also holds a change that is not the fix, disable the fix
+  hunks with comments instead. A new test must fail.
 
   If every test still passes, the branch has no regression test for the bug that it claims to
   fix. That is an A finding, and the most important output of this step. Restore the fix.
