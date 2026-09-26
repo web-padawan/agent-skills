@@ -137,7 +137,16 @@ the working tree end exactly as they started.
 
 The scripts in `scripts/` remove the shell work that a session repeats. Each one prints its
 usage with `--help`. Run them from inside the target repository. The skills call them through
-`${CLAUDE_PLUGIN_ROOT}/scripts/<name>`.
+`${CLAUDE_PLUGIN_ROOT}/scripts/<name>`. A script with an empty "Used by" cell is a manual
+tool for a session that edits its own branch. No skill calls it.
+
+Each script exits with 0 on success, 1 when the work failed, and 2 on a usage or guard
+error. `review-plan.sh` is the exception. It exits with 2 when a guard refuses the run.
+
+`gh-context.sh` and `get-pr-context.sh` both read the PR discussion. `gh-context.sh` prints
+one item as markdown for a reader. `get-pr-context.sh` prints the anchor SHAs, the CI state
+and the sections that the review pipeline parses. Run `scripts/smoke.sh` after a change to a
+script that rewrites a tree.
 
 | Script | Does | Used by |
 | --- | --- | --- |
@@ -150,6 +159,7 @@ usage with `--help`. Run them from inside the target repository. The skills call
 | `ab.sh` | Runs one command on the current tree and on a tree with some paths taken from another ref, restores the paths on every exit, and diffs the two outputs. Never uses `git stash`. | `self-review` (fix revert), `refactor-component` |
 | `fixup-into.sh` | Folds staged or named changes into an earlier branch commit and autosquashes without an editor. Aborts on a conflict and keeps the fixup commit on the tip. | |
 | `float-to-tip.sh` | Moves one branch commit to the tip and asserts that the tree is unchanged. | |
+| `smoke.sh` | Runs `ab.sh`, `fixup-into.sh` and `float-to-tip.sh` in a throwaway repository and checks `--help` of every script. | |
 | `get-pr-context.sh` | PR metadata, branch state, anchor SHAs, CI state, existing comment threads, diffs, for the review pipelines. | `review-plan.sh` |
 | `review-plan.sh` | Resolves the review profile into a launch plan and writes the shared context skeleton. | `self-review`, `pr-review` |
 
@@ -205,6 +215,7 @@ scripts/
   ab.sh              # run a command on HEAD and on <ref> for some paths, restore, diff outputs
   fixup-into.sh      # fold changes into an earlier commit, autosquash without an editor
   float-to-tip.sh    # move one commit to the tip, assert the tree is unchanged
+  smoke.sh           # checks of the tree-rewriting scripts in a throwaway repository
 skills/
   self-review/
     SKILL.md         # eight steps; shared machinery in references/
