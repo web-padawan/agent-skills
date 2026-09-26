@@ -77,11 +77,13 @@ form:
 1. Confirm a green baseline. Run the suite of every package that applies the changed mixin, not
    only the one you edited.
 2. Run the DOM snapshot suites and the type check.
-3. Break each moved piece alone and confirm that a test fails. A revert of a pure move still
+3. Probe the observable state across a sweep of inputs on the base tree and on yours. Diff the
+   two outputs. A green suite proves only what the tests assert.
+4. Break each moved piece alone and confirm that a test fails. A revert of a pure move still
    passes and proves nothing.
-4. Report each piece that no test catches. Decide if it is a coverage gap or a change that no
+5. Report each piece that no test catches. Decide if it is a coverage gap or a change that no
    public path can reach.
-5. If the change touches a member that a server side integration reads, run that integration
+6. If the change touches a member that a server side integration reads, run that integration
    suite against the local checkout.
 
 ## Phase 5 — Deliver
