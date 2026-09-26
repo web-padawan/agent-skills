@@ -50,7 +50,7 @@ for f in "$SCRIPTS"/*.sh; do
   case "$(basename "$f")" in smoke.sh) continue ;; esac
   check "$(basename "$f") --help" 0 "$f" --help
 done
-for f in "$SCRIPTS"/probe.cjs "$SCRIPTS"/probe-compare.cjs; do
+for f in "$SCRIPTS"/probe.cjs "$SCRIPTS"/probe-compare.cjs "$SCRIPTS"/visual-diffstat.cjs; do
   check "$(basename "$f") --help" 0 node "$f" --help
 done
 
