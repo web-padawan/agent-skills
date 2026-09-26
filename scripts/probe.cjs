@@ -24,7 +24,7 @@
 // `meta` (page, engine, git head, dirty flag, patch, args, time) and `results[<theme>/<dir>]`.
 // Compare two outputs with probe-compare.cjs.
 //
-// Exit codes: 0 ok · 1 usage or environment error · 2 the probe threw.
+// Exit codes: 0 ok · 1 the probe threw · 2 usage or environment error.
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
@@ -49,23 +49,23 @@ if (args.help) usage();
 if (!args.fn || !args.out) usage('--fn and --out are required');
 
 function usage(message) {
-  const header = fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 26).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
+  const header = fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 27).map((l) => l.replace(/^\/\/ ?/, '')).join('\n');
   if (message) console.error(`error: ${message}\n`);
   console.error(header);
-  process.exit(message ? 1 : 0);
+  process.exit(message ? 2 : 0);
 }
 
 const root = execSync('git rev-parse --show-toplevel', { encoding: 'utf8' }).trim();
 const outFile = path.resolve(args.out);
 if (fs.existsSync(outFile) && !args.force) {
   console.error(`error: ${outFile} exists, pass --force to overwrite`);
-  process.exit(1);
+  process.exit(2);
 }
 const probe = require(path.resolve(args.fn));
 const run = typeof probe === 'function' ? probe : probe.run;
 if (typeof run !== 'function') {
   console.error(`error: ${args.fn} must export run(page, ctx)`);
-  process.exit(1);
+  process.exit(2);
 }
 const summary = typeof probe.summary === 'function' ? probe.summary : defaultSummary;
 
@@ -77,7 +77,7 @@ try {
     pw = require(require.resolve('playwright', { paths: [root] }));
   } catch {
     console.error('error: neither playwright-core nor playwright is installed in the repo');
-    process.exit(1);
+    process.exit(2);
   }
 }
 
@@ -89,7 +89,7 @@ if (!args['no-server']) {
   process.stderr.write(server.stdout);
   if (server.status !== 0) {
     process.stderr.write(server.stderr);
-    process.exit(1);
+    process.exit(2);
   }
 }
 
@@ -183,8 +183,8 @@ function defaultSummary(value) {
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, `${JSON.stringify({ meta, errors, results }, null, 1)}\n`);
   console.log(`wrote ${outFile} (head ${meta.head}${meta.dirty ? ', dirty tree' : ''})`);
-  process.exit(failed ? 2 : 0);
+  process.exit(failed ? 1 : 0);
 })().catch((e) => {
   console.error(e);
-  process.exit(2);
+  process.exit(1);
 });
