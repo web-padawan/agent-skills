@@ -8,8 +8,9 @@
 #
 # B is the current tree. A is the tree with <paths> taken from <ref> (`git checkout <ref> -- <paths>`).
 # The command runs through `bash -c`, so quote it as one argument or pass it after `--`.
-# --port restarts the dev server on that port after each swap, because a long-running
-#   web-dev-server can keep serving the old module (see dev-server.sh --check).
+# --port checks the dev server on that port before the first run and restarts it after each
+#   swap, because a long-running web-dev-server can keep serving the old module (see
+#   dev-server.sh --check).
 # --ignore drops lines that match the regex from both outputs before the diff. Progress bars
 #   and durations are the usual noise. Blank lines are always dropped.
 # --out-dir keeps A.log and B.log. Default ${TMPDIR:-/tmp}/ab-<time>.
@@ -66,11 +67,12 @@ HEAD_SHORT=$(git rev-parse --short HEAD)
 REF_SHORT=$(git rev-parse --short "$REF")
 CMD_STR="${CMD[*]}"
 
-restart_server() {
+server() {
+  # $1 is a dev-server.sh command: ensure or restart.
   [ -n "$PORT" ] || return 0
   local check=()
   for p in "${PATHS[@]}"; do [ -f "$p" ] && check=(--check "$p") && break; done
-  "$DEV" restart --port "$PORT" ${check[@]+"${check[@]}"} | sed 's/^/  server: /'
+  "$DEV" "$1" --port "$PORT" ${check[@]+"${check[@]}"} | sed 's/^/  server: /'
 }
 
 restore() {
@@ -87,7 +89,7 @@ cleanup() {
   if [ "$SWAPPED" = true ]; then
     restore
     SWAPPED=false
-    restart_server >/dev/null
+    server restart >/dev/null
     echo "interrupted: paths restored" >&2
   fi
 }
@@ -109,16 +111,17 @@ run_side() {
 
 echo "command: $CMD_STR"
 echo "paths: ${PATHS[*]}"
+server ensure
 run_side B "current tree (HEAD $HEAD_SHORT)"
 
 git checkout "$REF" -- "${PATHS[@]}" || { echo "refuse: checkout from $REF failed" >&2; exit 2; }
 SWAPPED=true
-restart_server
+server restart
 run_side A "$REF ($REF_SHORT) for the paths"
 
 restore
 SWAPPED=false
-restart_server
+server restart
 trap - EXIT INT TERM
 
 filter() {
