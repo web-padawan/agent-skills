@@ -54,9 +54,12 @@ The plan prints the effective budget (`mutants:`), already capped by the scale t
 changes only where the budget goes:
 
 - **fix: the whole-fix revert first, at every scale.** Before any single-line mutant, revert
-  the entire fix as one unit. Then run the affected tests. Disable the changed hunks with
-  comments, or use `git checkout <base> -- <source file>` when the only change in the file is
-  the fix. A new test must fail.
+  the entire fix as one unit. Run
+  `${CLAUDE_PLUGIN_ROOT}/scripts/ab.sh --ref <base> --path <source file> -- <test command>`.
+  The script swaps the source files to `<base>`, runs the command on both trees, restores the
+  files, and diffs the two outputs. Side A must fail and side B must pass. When a source file
+  also holds a change that is not the fix, disable the fix hunks with comments instead. A new
+  test must fail.
 
   If every test still passes, the branch has no regression test for the bug that it claims to
   fix. That is an A finding, and the most important output of this step. Restore the fix.
@@ -78,7 +81,10 @@ changes only where the budget goes:
 2. Run the tests (the `commands:` from the plan) for the mutated package **and every other
    package in `affected_packages` from the plan**. A mutant in a shared package
    (`component-base`, `field-base`, `a11y-base`, and so on) often only breaks its consumers.
-   That narrow run is what keeps the step affordable. Note it in the report.
+   That narrow run is what keeps the step affordable. Note it in the report. Run the commands
+   through `${CLAUDE_PLUGIN_ROOT}/scripts/test-summary.sh --cmd '<command>'`, one `--cmd` per
+   package. It prints one line per command plus the failing test names, and keeps the log
+   out of your context.
 3. **Expected: failure** (non-zero exit in at least one group).
 4. Restore with `git checkout -- <file>`. Then confirm that `git diff --name-only` is empty
    before the next mutant.
