@@ -24,6 +24,7 @@ while [[ $# -gt 0 ]]; do
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
     --diff-source) DIFF_SOURCE="${2:?--diff-source requires a value}"; shift 2 ;;
     --no-diff) NO_DIFF=true; shift ;;
+    --help|-h) sed -n '2,15p' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
