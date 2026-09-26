@@ -37,7 +37,8 @@ cat PULL_REQUEST_TEMPLATE.md                          # repo root, not .github/
 
 Collect the issue links in this order: existing PR body, commit trailers (`Fixes #NNNN`),
 branch name, and what the user said. If the diff alone does not explain the _why_, read
-the linked issue (`gh issue view <n>`).
+the linked issue with `${CLAUDE_PLUGIN_ROOT}/scripts/gh-context.sh <n>`. The output holds
+the body and every comment.
 
 If the change is not self-explanatory, read the surrounding source. A description built
 from the diff alone tends to list files instead of behavior.
