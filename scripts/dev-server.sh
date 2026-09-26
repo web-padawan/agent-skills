@@ -25,7 +25,10 @@
 set -euo pipefail
 
 CMD="${1:-}"
-[ -n "$CMD" ] || { sed -n '2,24p' "$0"; exit 2; }
+case "$CMD" in
+  "") sed -n '2,24p' "$0"; exit 2 ;;
+  --help|-h) sed -n '2,24p' "$0"; exit 0 ;;
+esac
 shift
 PORT=8765
 PAGE=/dev/
