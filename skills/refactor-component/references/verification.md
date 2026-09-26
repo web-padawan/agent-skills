@@ -13,6 +13,9 @@ code that you moved. Use both checks below.
 A change to a base mixin often reaches several packages. A change that reaches only one
 package is a sign that the code was not shared and that the move has no value.
 
+Run the suites with `${CLAUDE_PLUGIN_ROOT}/scripts/test-summary.sh --group <pkg> --group <pkg>
+--suites unit,snapshots`. It prints one line per suite and the names of the failing tests.
+
 ## The green baseline rule
 
 Run the full target suite before any measurement. Confirm zero failures.
@@ -20,6 +23,26 @@ Run the full target suite before any measurement. Confirm zero failures.
 A measurement against a red baseline reports noise. The risk is highest after an edit to a test
 file, because a broken test can absorb the signal of an unrelated mutation. Never skip this
 step, even when the previous run was green.
+
+## A/B probe
+
+A green suite proves only what the tests assert. A component with a `sync: true` property
+re-enters its update on assignment, and a setter returns early on an equal value. A difference
+can hide in a path that no test reads. Prove that the behavior is unchanged with a probe.
+
+1. Write a throwaway test `packages/<pkg>/test/zz-probe.test.js`. Print the observable state
+   with `console.log` across a sweep of inputs. Examples are `value`, the input value, and
+   event counts.
+2. Run `${CLAUDE_PLUGIN_ROOT}/scripts/ab.sh --ref <base> --path <src> -- yarn test --group <pkg> --glob zz-probe`.
+   Name every changed source file with a `--path`.
+   The script runs the probe on both trees, restores the files, and diffs the two outputs.
+3. Report the sweep size and the diff result. A green suite alone is not a result.
+4. Delete the probe before you commit. The `no-console` rule fails lint.
+
+For a layout or a paint behavior, use `${CLAUDE_PLUGIN_ROOT}/scripts/probe.cjs` against a dev
+page instead. Record one result file per tree with `--out`. Compare the two files with
+`probe-compare.cjs`. The harness starts the dev server. Pass `--port 8765` to `ab.sh` when
+the command reads from that server, because a running server can keep an old module.
 
 ## Mutation checks
 
@@ -45,7 +68,9 @@ belongs in the pull request body.
 ## How the isolation fails silently
 
 A stash of a path that holds no uncommitted change creates no stash entry. The run then measures
-the committed code and reports a false pass. Do not use `git stash` for the isolation.
+the committed code and reports a false pass. Do not use `git stash` for the isolation. The
+`ab.sh` script swaps with `git checkout <ref> -- <path>` and restores on every exit. It
+refuses when a path holds uncommitted work.
 
 A `git checkout HEAD -- <path>` discards uncommitted work in that path. Commit first.
 
