@@ -4,7 +4,7 @@ Private Claude Code plugin with personal skills. The repository is both the plug
 
 ## Skills
 
-Four review skills with strict boundaries, one verification skill, two source-editing skills, one authoring skill, one meta skill.
+Four review skills with strict boundaries, two verification skills, two source-editing skills, one authoring skill, one meta skill.
 
 | Skill | When to use |
 | --- | --- |
@@ -15,6 +15,7 @@ Four review skills with strict boundaries, one verification skill, two source-ed
 | `mutation-coverage` | Finds code that no test asserts on, via mutation testing (line-removal or Stryker). Then closes each gap with a test that fails when the code is broken. Estimates runtime before it mutates. Commits nothing and installs nothing in the target repo. |
 | `refactor-component` | **Moves web component code without a behavior change.** Starts from the mixin chain, because the chain decides where moved code can live. Proves the result with the suites of every package that applies the changed mixin, then per-piece mutation checks. Splits pure motion from a behavior change into two PRs. |
 | `comment-cleanup` | **Deletes the comments that say nothing and rewrites the ones that say it badly.** Scopes to a branch diff, one commit, the index, the working tree, one file (`--all`) or one package (`--package`). A diff mode reaches only the comments the change added. A whole-source mode reaches every comment in the files it walks, skips `node_modules`, `dist`, `build`, test directories and `.d.ts` files, and refuses on a dirty tree. Runs the shared DROP / REWRITE / RETAIN policy in `references/comments.md`, the policy that the code pass of the review skills reports against. Drops restated behavior, history, closed tickets and decision records, border conditions the code shows and invariants the types state. Rewrites prose docblocks on private and protected members to `@param` and `@return` tags, moves an inline override note into the docblock leading line, and expands a `#NNNN` shorthand to a full link. Keeps public docblocks, every tag, every directive, every "why not another way" comment and every line that the repo conventions mandate, then shortens each kept one. Edits comment lines only, never code. Gates on your confirmation, with docblock and inline edits offered apart. Proves the run with a comment-lines-only diff check, the type check, a manifest comparison and the package suites. Commits nothing. |
+| `screenshot-diff` | **Classifies visual test screenshot diffs.** Ranks every failed screenshot by a pixel table, reads the source for transitions, looks at one contact sheet for the open rows, then names the class of each change: geometry or content change, transition flakiness, rasterization noise, or sub-pixel rendering. Reports and never updates a baseline. |
 | `pr-description` | **Writes** the PR body. Does not review it. Turns the branch diff into the Vaadin PR template as short bullet lists: issue links, one bullet per behavior change, a `Type of change` label, and numbered `How to test` steps that name a real dev page. Scaffolds `Before / After` for visual changes. Drafts in chat. Runs `gh pr edit` only after you confirm. |
 | `authoring-skills` | Meta: create or improve a skill in this plugin. Covers trigger-shaped descriptions, body archetypes, references split, frontmatter conventions. |
 
@@ -57,6 +58,10 @@ claude plugin list
 /agent-skills:comment-cleanup --package upload       # every comment in packages/upload/src
 
 /agent-skills:pr-description                    # current branch → draft body, apply after you confirm
+
+/agent-skills:screenshot-diff                                 # rank every failed screenshot, classify
+/agent-skills:screenshot-diff packages/button                 # one package
+/agent-skills:screenshot-diff <baseline.png>                  # one PNG against its previous git version
 /agent-skills:pr-description 9042               # rewrite an existing PR's description
 ```
 
@@ -160,6 +165,7 @@ script that rewrites a tree.
 | `fixup-into.sh` | Folds staged or named changes into an earlier branch commit and autosquashes without an editor. Aborts on a conflict and keeps the fixup commit on the tip. | |
 | `float-to-tip.sh` | Moves one branch commit to the tip and asserts that the tree is unchanged. | |
 | `smoke.sh` | Runs `ab.sh`, `fixup-into.sh` and `float-to-tip.sh` in a throwaway repository and checks `--help` of every script. | |
+| `visual-diffstat.cjs` | Measures visual test screenshot diffs: a ranked table over every `failed/` directory, a metrics block for one pair or for a PNG against its previous git version, a `before / after / diff` contact sheet. | `screenshot-diff` |
 | `get-pr-context.sh` | PR metadata, branch state, anchor SHAs, CI state, existing comment threads, diffs, for the review pipelines. | `review-plan.sh` |
 | `review-plan.sh` | Resolves the review profile into a launch plan and writes the shared context skeleton. | `self-review`, `pr-review` |
 
@@ -215,6 +221,7 @@ scripts/
   ab.sh              # run a command on HEAD and on <ref> for some paths, restore, diff outputs
   fixup-into.sh      # fold changes into an earlier commit, autosquash without an editor
   float-to-tip.sh    # move one commit to the tip, assert the tree is unchanged
+  visual-diffstat.cjs # pixel metrics per failed screenshot, git pair mode, contact sheet
   smoke.sh           # checks of the tree-rewriting scripts in a throwaway repository
 skills/
   self-review/
@@ -239,6 +246,8 @@ skills/
     references/      # mixin-placement.md, verification.md, delivery.md
   pr-description/
     SKILL.md         # gather → classify → draft → deliver (confirmation-gated)
+  screenshot-diff/
+    SKILL.md         # measure with visual-diffstat.cjs → read the source → classify → report
     references/      # TEMPLATE.md (output skeleton), STYLE.md (bullet voice, anti-patterns)
   authoring-skills/
     SKILL.md         # description-first authoring workflow
