@@ -2,7 +2,7 @@
 name: guided-review
 description: Use when you want to understand and review a GitHub pull request as a reasoning companion rather than an automated reviewer. Phase 1 explains the PR's goal and purpose concisely with a concrete example, then gates on your confirmation before Phase 2 does a thorough code review that surfaces genuine issues, not nitpicks. Read-only — never posts anything to the PR; you post any feedback yourself. This is the default for "review this PR" / "walk me through this PR" requests; when the goal is to post comments, use pr-review or adversarial-review explicitly instead. Not for your own branch before it has a PR (self-review).
 argument-hint: "[PR number, URL, or blank to auto-detect from current branch]"
-allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git merge-base:*), Bash(git fetch:*), Read, Grep, Glob
+allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git merge-base:*), Bash(git fetch:*), Bash(*/scripts/gh-context.sh:*), Read, Grep, Glob
 ---
 
 # Guided Review
@@ -30,10 +30,12 @@ Goal: build a solid mental model of *what this PR is for and why*, fast.
 1. Load the PR (read-only):
    - If the reviewer gave a number or URL, use it. Otherwise detect the PR from the current
      branch: `gh pr view`.
-   - `gh pr view <id>` for title, description, author, target branch, linked issues.
+   - Run `${CLAUDE_PLUGIN_ROOT}/scripts/gh-context.sh <id> --out <scratchpad>/pr-<id>.md`.
+     Then read the file. It holds the title, the body, the linked issues, the files, every
+     comment, every review, and each review thread with its diff hunk.
    - `gh pr diff <id>` and/or `git diff <target>...<source> --stat` for the shape of the change.
-   - Skim the linked issue and the description for the problem that motivates the PR, not only
-     the "what".
+   - Read the linked issue with the same script when the body does not state the problem
+     that motivates the PR. The script accepts an issue number or URL.
 2. Explain it back concisely:
    - **Problem**: the broken or missing behavior (1 to 2 sentences).
    - **Change**: what this PR does about it (1 to 2 sentences).
@@ -57,8 +59,8 @@ Start this phase only after the reviewer confirms.
 repo root if it exists. Otherwise use the conventions section of `CLAUDE.md` / `AGENTS.md`.
 Otherwise infer the dominant patterns of the touched packages.
 
-Also read the existing discussion of the PR (`gh pr view <id> --json comments,reviews`). Do not
-repeat points that others already made or that the author addressed.
+The context file from Phase 1 holds the existing discussion of the PR. Do not repeat points
+that others already made or that the author addressed.
 
 Focus on genuine issues. Rank the most serious first:
 
