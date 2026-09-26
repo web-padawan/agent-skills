@@ -133,6 +133,26 @@ the line before the next. A single gate asks whether to write the report and whe
 check. It never asks what to apply, because nothing is ever applied. `HEAD`, the index and
 the working tree end exactly as they started.
 
+## Shared scripts
+
+The scripts in `scripts/` remove the shell work that a session repeats. Each one prints its
+usage with `--help`. Run them from inside the target repository. The skills call them through
+`${CLAUDE_PLUGIN_ROOT}/scripts/<name>`.
+
+| Script | Does | Used by |
+| --- | --- | --- |
+| `dev-server.sh` | Starts, checks, restarts or stops the `web-dev-server` on one port. `--check <file>` detects a stale served module after a `git checkout <ref> -- <path>`. | `probe.cjs`, `ab.sh --port` |
+| `test-summary.sh` | Runs unit, browser, snapshot, integration or visual suites per `--group` and prints one line per suite plus the failing test names. `--cmd` parses any other command. | `self-review`, `refactor-component` |
+| `probe.cjs` | Runs a probe module against a dev page per theme and direction. Gives the module `settle`, `defined`, `layouts` (CDP layout count) and `themeInjected`. Writes one result file with the git head. | `refactor-component` |
+| `probe-compare.cjs` | Diffs two probe result files leaf by leaf, with a numeric tolerance. | `refactor-component` |
+| `probe-example.cjs` | A probe module to copy. | |
+| `gh-context.sh` | Dumps one issue or pull request as markdown: body, linked items, files, comments, reviews, review threads with hunks. | `guided-review`, `adversarial-review`, `pr-description` |
+| `ab.sh` | Runs one command on the current tree and on a tree with some paths taken from another ref, restores the paths on every exit, and diffs the two outputs. Never uses `git stash`. | `self-review` (fix revert), `refactor-component` |
+| `fixup-into.sh` | Folds staged or named changes into an earlier branch commit and autosquashes without an editor. Aborts on a conflict and keeps the fixup commit on the tip. | |
+| `float-to-tip.sh` | Moves one branch commit to the tip and asserts that the tree is unchanged. | |
+| `get-pr-context.sh` | PR metadata, branch state, anchor SHAs, CI state, existing comment threads, diffs, for the review pipelines. | `review-plan.sh` |
+| `review-plan.sh` | Resolves the review profile into a launch plan and writes the shared context skeleton. | `self-review`, `pr-review` |
+
 ## Updating a skill
 
 The installed plugin is a **snapshot** in `~/.claude/plugins/cache/local/agent-skills/<sha>/`. The snapshot stays at the commit that you installed it from. An edit in this checkout changes nothing until you refresh the snapshot. Uncommitted edits do not reach the snapshot. Commit first, then run:
@@ -176,6 +196,15 @@ references/          # shared by every review skill — the single source for ea
 scripts/
   get-pr-context.sh  # PR metadata, branch state, ANCHORS SHAs, CI, existing comments, diffs
   review-plan.sh     # wraps it and prints === PLAN ===: type, scale, pass list, budgets, paths
+  gh-context.sh      # one issue or PR as markdown: body, comments, reviews, threads with hunks
+  dev-server.sh      # ensure / restart / status / stop of web-dev-server, stale module check
+  test-summary.sh    # one line per suite: counts, status, failing test names, log path
+  probe.cjs          # browser probe harness per theme and direction, writes results JSON
+  probe-compare.cjs  # leaf-by-leaf diff of two probe result files
+  probe-example.cjs  # probe module to copy
+  ab.sh              # run a command on HEAD and on <ref> for some paths, restore, diff outputs
+  fixup-into.sh      # fold changes into an earlier commit, autosquash without an editor
+  float-to-tip.sh    # move one commit to the tip, assert the tree is unchanged
 skills/
   self-review/
     SKILL.md         # eight steps; shared machinery in references/
