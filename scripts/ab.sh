@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ab.sh — run one command against the current tree and against another ref of some paths,
-# then diff the two outputs. Restores the paths on every exit, including a failure.
+# then diff the two outputs. Restores the paths on every exit, including a failure. Only a
+# SIGKILL skips the restore. The `swapped:` line prints the command for that case.
 #
 # Usage:
 #   ab.sh --ref <ref> --path <p> [--path <p>]... [--port N] [--ignore <regex>] [--out-dir <dir>]
@@ -35,13 +36,13 @@ while [ $# -gt 0 ]; do
     --port) PORT="${2:?--port requires a value}"; shift ;;
     --ignore) IGNORE="${2:?--ignore requires a value}"; shift ;;
     --out-dir) OUT_DIR="${2:?--out-dir requires a value}"; shift ;;
-    --help|-h) sed -n '2,21p' "$0"; exit 0 ;;
+    --help|-h) sed -n '2,22p' "$0"; exit 0 ;;
     --) shift; CMD=("$@"); break ;;
     *) echo "unknown argument: $1 (put the command after --)" >&2; exit 2 ;;
   esac
   shift
 done
-[ -n "$REF" ] && [ ${#PATHS[@]} -gt 0 ] && [ ${#CMD[@]} -gt 0 ] || { sed -n '2,21p' "$0"; exit 2; }
+[ -n "$REF" ] && [ ${#PATHS[@]} -gt 0 ] && [ ${#CMD[@]} -gt 0 ] || { sed -n '2,22p' "$0"; exit 2; }
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "refuse: not a git repository" >&2; exit 2; }
 cd "$ROOT"
@@ -68,11 +69,15 @@ REF_SHORT=$(git rev-parse --short "$REF")
 CMD_STR="${CMD[*]}"
 
 server() {
-  # $1 is a dev-server.sh command: ensure or restart.
+  # $1 is a dev-server.sh command: ensure or restart. Runs as a child, like run_side, so that
+  # a signal reaches the trap while the server restarts instead of after it.
   [ -n "$PORT" ] || return 0
   local check=()
   for p in "${PATHS[@]}"; do [ -f "$p" ] && check=(--check "$p") && break; done
-  "$DEV" "$1" --port "$PORT" ${check[@]+"${check[@]}"} | sed 's/^/  server: /'
+  { "$DEV" "$1" --port "$PORT" ${check[@]+"${check[@]}"} | sed 's/^/  server: /'; } &
+  CHILD=$!
+  wait "$CHILD"
+  CHILD=""
 }
 
 restore() {
@@ -116,6 +121,7 @@ run_side B "current tree (HEAD $HEAD_SHORT)"
 
 git checkout "$REF" -- "${PATHS[@]}" || { echo "refuse: checkout from $REF failed" >&2; exit 2; }
 SWAPPED=true
+echo "swapped: after a hard kill, restore with: git checkout HEAD -- ${PATHS[*]}"
 server restart
 run_side A "$REF ($REF_SHORT) for the paths"
 
