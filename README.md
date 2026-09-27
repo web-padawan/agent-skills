@@ -164,7 +164,7 @@ script that rewrites a tree.
 | `ab.sh` | Runs one command on the current tree and on a tree with some paths taken from another ref, restores the paths on every exit, and diffs the two outputs. Never uses `git stash`. | `self-review` (fix revert), `refactor-component` |
 | `fixup-into.sh` | Folds staged or named changes into an earlier branch commit and autosquashes without an editor. Aborts on a conflict and keeps the fixup commit on the tip. | |
 | `float-to-tip.sh` | Moves one branch commit to the tip and asserts that the tree is unchanged. | |
-| `smoke.sh` | Runs `ab.sh`, `fixup-into.sh` and `float-to-tip.sh` in a throwaway repository and checks `--help` of every script. | |
+| `smoke.sh` | Runs `ab.sh`, `fixup-into.sh` and `float-to-tip.sh` in a throwaway repository, runs `dev-server.sh` and `ab.sh --port` against a fake `web-dev-server`, and checks `--help` of every script. | |
 | `visual-diffstat.cjs` | Measures visual test screenshot diffs: a ranked table over every `failed/` directory, a metrics block for one pair or for a PNG against its previous git version, a `before / after / diff` contact sheet. | `screenshot-diff` |
 | `get-pr-context.sh` | PR metadata, branch state, anchor SHAs, CI state, existing comment threads, diffs, for the review pipelines. | `review-plan.sh` |
 | `review-plan.sh` | Resolves the review profile into a launch plan and writes the shared context skeleton. | `self-review`, `pr-review` |
