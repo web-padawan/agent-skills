@@ -111,7 +111,10 @@ do_start() {
   [ -x "$BIN" ] || { echo "error: $BIN not found, run yarn install" >&2; exit 2; }
   local args=(--node-resolve --port "$PORT")
   [ -n "$THEME" ] && args+=("--theme=$THEME")
-  (cd "$ROOT" && nohup "$BIN" "${args[@]}" < /dev/null > "$LOG" 2>&1 & disown) 2>/dev/null
+  # The redirections apply to the subshell, and exec leaves no shell between the server and
+  # init. A shell that keeps the caller's stdout open makes `dev-server.sh ... | sed` wait
+  # until the server exits.
+  (cd "$ROOT" && exec nohup "$BIN" "${args[@]}") < /dev/null > "$LOG" 2>&1 &
   local waited=0 code
   while :; do
     code=$(http_code "$PAGE")
