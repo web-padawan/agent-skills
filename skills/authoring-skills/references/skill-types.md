@@ -51,8 +51,9 @@ Skills about the skill system itself.
 ### 5. Development workflow
 Automates a repetitive git/GitHub workflow end to end. Examples: watch CI,
 shepherd a PR, keep commit hygiene. May be long-running or post externally.
-- In this repo: none yet. Candidates: a `babysit-pr` (watch the checks of a PR,
-  retry flaky jobs, report), a commit-message skill.
+- In this repo: `work-summary` (a summary of merged PRs for a manager).
+  Candidates: a `babysit-pr` (watch the checks of a PR, retry flaky jobs,
+  report), a commit-message skill.
 
 ## Decision aid (Step 0)
 

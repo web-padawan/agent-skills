@@ -74,6 +74,7 @@ The rules adapt ASD-STE100 Issue 9. No word list is enforced.
   - `skills/adversarial-review/references/output-format.md`
   - `skills/pr-description/references/STYLE.md`
   - `skills/pr-description/references/TEMPLATE.md`
+  - `skills/work-summary/assets/TEMPLATE.md`
 - Text that a skill prints to the user, even outside a fenced block.
 - `references/retrospective.md`. It is a historical record.
 
