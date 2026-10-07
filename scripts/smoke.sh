@@ -102,6 +102,24 @@ printf 'dirty\n' >> a.txt
 check "ab.sh refuses a dirty path" 2 \
   "$SCRIPTS/ab.sh" --ref main --path a.txt -- cat a.txt
 git checkout -q -- a.txt
+# Two side branches: d/b.txt exists only in ab-ref, d/c.txt exists only in ab-files.
+git checkout -q -b ab-ref
+mkdir d && printf 'a\n' > d/a.txt && printf 'b\n' > d/b.txt && git add d && git commit -q -m "add d"
+git checkout -q -b ab-files
+git rm -q d/b.txt && printf 'c\n' > d/c.txt && git add d/c.txt && git commit -q -m "replace d/b with d/c"
+check "ab.sh swaps the files that only one side has" 1 \
+  "$SCRIPTS/ab.sh" --ref ab-ref --path d --out-dir "$WORK/ab-files" -- ls d
+expect "ab.sh side A has only the ref files" "a.txt b.txt" "$(tr '\n' ' ' < "$WORK/ab-files/A.log" | sed 's/ $//')"
+expect "ab.sh side B has only the HEAD files" "a.txt c.txt" "$(tr '\n' ' ' < "$WORK/ab-files/B.log" | sed 's/ $//')"
+expect "ab.sh restored the added and deleted files" "" "$(git status --porcelain)"
+printf 'mine\n' > d/b.txt
+check "ab.sh refuses an untracked file that only the ref has" 2 \
+  "$SCRIPTS/ab.sh" --ref ab-ref --path d -- ls d
+grep -q "untracked d/b.txt" "$WORK/last.log"
+expect "ab.sh names the untracked file" 0 "$?"
+expect "ab.sh kept the untracked file" "mine" "$(cat d/b.txt)"
+rm d/b.txt
+git checkout -q feature && git branch -q -D ab-files ab-ref
 
 echo "== dev-server.sh"
 if command -v python3 >/dev/null; then

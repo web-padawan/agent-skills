@@ -7,7 +7,10 @@
 #   ab.sh --ref <ref> --path <p> [--path <p>]... [--port N] [--ignore <regex>] [--out-dir <dir>]
 #         -- <command> [args...]
 #
-# B is the current tree. A is the tree with <paths> taken from <ref> (`git checkout <ref> -- <paths>`).
+# B is the current tree. A is the tree with <paths> exactly as in <ref>
+#   (`git restore --source=<ref> --worktree -- <paths>`): files that only HEAD has are removed and
+#   files that only <ref> has are created. The restore deletes the files that only <ref> has.
+#   Untracked files under <paths> stay in place for both runs.
 # The command runs through `bash -c`, so quote it as one argument or pass it after `--`.
 # --port checks the dev server on that port before the first run and restarts it after each
 #   swap, because a long-running web-dev-server can keep serving the old module (see
@@ -17,6 +20,8 @@
 # --out-dir keeps A.log and B.log. Default ${TMPDIR:-/tmp}/ab-<time>.
 #
 # Guards: refuses when <paths> hold uncommitted changes, because the restore would erase them.
+# Refuses when an untracked file has the path of a file that only <ref> has, because the swap
+# would overwrite it and the restore would delete it.
 # Warns when <ref> and HEAD are identical for <paths>. Never uses `git stash`.
 #
 # Exit codes: 0 outputs identical · 1 outputs differ · 2 guard or usage error.
@@ -36,13 +41,13 @@ while [ $# -gt 0 ]; do
     --port) PORT="${2:?--port requires a value}"; shift ;;
     --ignore) IGNORE="${2:?--ignore requires a value}"; shift ;;
     --out-dir) OUT_DIR="${2:?--out-dir requires a value}"; shift ;;
-    --help|-h) sed -n '2,22p' "$0"; exit 0 ;;
+    --help|-h) sed -n '2,27p' "$0"; exit 0 ;;
     --) shift; CMD=("$@"); break ;;
     *) echo "unknown argument: $1 (put the command after --)" >&2; exit 2 ;;
   esac
   shift
 done
-[ -n "$REF" ] && [ ${#PATHS[@]} -gt 0 ] && [ ${#CMD[@]} -gt 0 ] || { sed -n '2,22p' "$0"; exit 2; }
+[ -n "$REF" ] && [ ${#PATHS[@]} -gt 0 ] && [ ${#CMD[@]} -gt 0 ] || { sed -n '2,27p' "$0"; exit 2; }
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "refuse: not a git repository" >&2; exit 2; }
 cd "$ROOT"
@@ -55,6 +60,17 @@ if [ -n "$DIRTY" ]; then
 fi
 for p in "${PATHS[@]}"; do
   git cat-file -e "$REF:$p" 2>/dev/null || { echo "refuse: $p does not exist in $REF" >&2; exit 2; }
+done
+# Files that only <ref> has. The swap creates them and the restore deletes them.
+A_ONLY=()
+while IFS= read -r f; do
+  [ -n "$f" ] && A_ONLY+=("$f")
+done < <(git diff --name-only --no-renames --diff-filter=A HEAD "$REF" -- "${PATHS[@]}")
+for f in ${A_ONLY[@]+"${A_ONLY[@]}"}; do
+  if [ -e "$f" ]; then
+    echo "refuse: untracked $f exists only in $REF, the swap would overwrite it" >&2
+    exit 2
+  fi
 done
 if git diff --quiet HEAD "$REF" -- "${PATHS[@]}"; then
   echo "warn: HEAD and $REF are identical for the A/B paths, both runs see the same code" >&2
@@ -81,11 +97,18 @@ server() {
 }
 
 restore() {
-  git checkout HEAD -- "${PATHS[@]}" 2>/dev/null
-  git reset -q HEAD -- "${PATHS[@]}" 2>/dev/null
+  git restore --source=HEAD --worktree --staged -- "${PATHS[@]}" 2>/dev/null
+  local f
+  for f in ${A_ONLY[@]+"${A_ONLY[@]}"}; do
+    rm -f -- "$f"
+    rmdir -p -- "$(dirname "$f")" 2>/dev/null
+  done
   if [ -n "$(git status --porcelain --untracked-files=no -- "${PATHS[@]}")" ]; then
     echo "ERROR: restore left changes under the A/B paths, inspect git status" >&2
   fi
+  for f in ${A_ONLY[@]+"${A_ONLY[@]}"}; do
+    [ -e "$f" ] && echo "ERROR: restore left $f from $REF, delete it" >&2
+  done
 }
 SWAPPED=false
 CHILD=""
@@ -119,9 +142,11 @@ echo "paths: ${PATHS[*]}"
 server ensure
 run_side B "current tree (HEAD $HEAD_SHORT)"
 
-git checkout "$REF" -- "${PATHS[@]}" || { echo "refuse: checkout from $REF failed" >&2; exit 2; }
 SWAPPED=true
-echo "swapped: after a hard kill, restore with: git checkout HEAD -- ${PATHS[*]}"
+git restore --source="$REF" --worktree -- "${PATHS[@]}" || { echo "refuse: restore from $REF failed" >&2; exit 2; }
+HINT="git restore --source=HEAD --worktree --staged -- ${PATHS[*]}"
+[ ${#A_ONLY[@]} -gt 0 ] && HINT="$HINT && rm -f -- ${A_ONLY[*]}"
+echo "swapped: after a hard kill, restore with: $HINT"
 server restart
 run_side A "$REF ($REF_SHORT) for the paths"
 
