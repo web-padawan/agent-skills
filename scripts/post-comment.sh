@@ -49,6 +49,7 @@ while [[ $# -gt 0 ]]; do
     --message) MESSAGE="${2:?--message requires a value}"; shift 2 ;;
     --no-label) CHECK_LABEL=false; shift ;;
     --allow-nearby) ALLOW_NEARBY=true; shift ;;
+    --help|-h) sed -n '2,30p' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done

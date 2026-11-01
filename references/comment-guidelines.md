@@ -7,7 +7,7 @@ you write any finding text.
 
 Every comment is a [Conventional Comment](https://conventionalcomments.org). Render it from the
 label, decorations, claim and fix of the frozen list
-([`../../../references/severity.md`](../../../references/severity.md), *Rendering*):
+([`severity.md`](severity.md), *Rendering*):
 
 ```
 **<label> (<decorations>):** <subject — the frozen claim, one sentence>
@@ -64,3 +64,39 @@ Offer it at the gate. Never post it by default. Make three moves, in this order:
 - "This naming is wrong... actually it's correct" (self-contradictory)
 - `**issue (blocking):** This might leak the listener.` (an unverified claim posted as an issue, so it is a `question`)
 - Any suggestion to implement something already shown as added in the diff
+
+## Posting with post-comment.sh
+
+Post only after the user confirms. Call the script by its full path,
+`${CLAUDE_PLUGIN_ROOT}/scripts/post-comment.sh`. The examples below abbreviate the path.
+
+- The script puts `:robot: AI-generated` above every comment.
+- The script refuses a message whose first line is not a bold label from the closed vocabulary
+  in [`severity.md`](severity.md) (*Rendering*).
+- Use `--no-label` for a plain reply or for the summary comment.
+- If GitHub rejects the position, the script posts a labeled general comment.
+
+```bash
+# Inline comment on an added/modified line (new side); --line 42:48 for a range
+post-comment.sh --pr <number> --file path/to/file.ext --line 42 --message "**issue (behavior, blocking):** <claim>
+
+<fix; verification when not obvious>"
+
+# Removed line (old side)
+post-comment.sh --pr <number> --file path/to/file.ext --old-line 10 --message "**question (impact):** ..."
+
+# The summary comment (three moves, no label), and a reply to an existing thread
+post-comment.sh --pr <number> --no-label --message "<praise line> <census> <what clearing them earns>"
+post-comment.sh --pr <number> --reply <comment-id> --no-label --message "Fixed, thanks."
+
+# A contradiction of an existing thread: a labeled reply, never a new comment on that line
+post-comment.sh --pr <number> --reply <comment-id> --message "**question (logic):** <what the review found instead>?
+
+<what was checked>"
+```
+
+Do not combine `--line` and `--old-line`. Select the most relevant single line or a narrow range.
+
+The script refuses a positioned comment within two lines of an existing thread on the same file.
+It exits with 2 and lists that thread. Reply into that thread instead. If the claim is different,
+pass `--allow-nearby`.

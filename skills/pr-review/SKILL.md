@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a GitHub pull request with the plugin's reviewer agents and, after confirmation, post the findings as inline Conventional Comments (issue / suggestion / question / nitpick, blocking or non-blocking). Use when asked to review a PR and leave line comments, do a full review of a pull request, or post review findings on a PR. Not for a single summary comment (adversarial-review), a walkthrough that never posts (guided-review), or your own branch before it has a PR (self-review).
+description: Review a GitHub pull request with the plugin's reviewer agents and, after confirmation, post the findings as inline Conventional Comments (issue / suggestion / question / nitpick, blocking or non-blocking). Use when asked to review a PR and leave line comments, do a full review of a pull request, or post review findings on a PR. Not for an interactive walkthrough that posts only what you select (guided-review), or your own branch before it has a PR (self-review).
 argument-hint: "[PR number or URL, or blank to auto-detect from current branch] [--deep N]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/post-comment.sh:*)
@@ -15,7 +15,8 @@ run the analysis. They read a context file that a script writes. You read the pl
 | [`../../references/pipeline.md`](../../references/pipeline.md) | The shared pipeline: the plan, the context and notes files, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering, the rendering table |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
-| [`references/comment-guidelines.md`](references/comment-guidelines.md) | Comment tone, backtick escaping, good/bad examples. Read before step 4 |
+| [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Comment tone, examples, posting with `post-comment.sh`. Read before step 4 |
+| [`references/present.md`](references/present.md) | Step 4: the chat template, the verdict rule, the gate |
 | [`references/fallback.md`](references/fallback.md) | Single-context review, only when the agents or the anchors are unavailable |
 
 Relative paths resolve from this file. If a read fails, use
@@ -91,120 +92,13 @@ a `question (tests)`. Two parts whose tests pass without each other are a `scope
 
 ### 4. Present findings
 
-Read [`references/comment-guidelines.md`](references/comment-guidelines.md) first. Open with
-two or three sentences on what the PR does, the goal and the mechanism. Then give the structured
-review. Render each finding from the frozen list in its Conventional Comments shape. Show the
-tier in chat only:
-
-```
-## Review: <PR title> (#<number>)
-
-<2–3 sentences: what the PR does and how.>
-
-**Verdict**: Looks good / Needs attention
-<census by label: N issues (K blocking), N suggestions, N questions, N nitpicks, praise>
-
-### Findings
-
-[A] `path/to/file.ext:42`
-**issue (behavior, blocking):** <the frozen claim>
-<the one-line fix; verification when not obvious>
-
-[B] `path/to/other.ext:17`
-**issue (behavior, non-blocking):** <the frozen claim>
-<the one-line fix>
-
-[B] `path/to/third.ext:88`
-**question (behavior):** <the frozen claim, worded as a question?>
-<what was checked, and what could not be>
-
-**praise** `path/to/test.ext:12`
-<what the author got right — no tier, no decoration, at most one per review>
-
-### Already on the PR
-
-<N> findings match existing threads (<K> bot, <M> human) and are not offered for posting.
-confirms: <thread ids, or "path:line by author", comma-separated>
-contradicts: <one line each — the thread, and what the review found instead>
-not reproduced: <open threads no pass matched, each with your verdict>
-
-### Dropped at triage
-
-<one line: N findings dropped, and the single reason class — pre-existing, unverified,
-answered by a green check. Names only, no claims.>
-```
-
-Every finding carries its decoration. A confirmed B where wrong behavior exists is
-`issue (<category>, non-blocking)`, not a bare `issue (<category>)`. `praise` and `nitpick`
-take no decoration, and `praise` takes no tier. The rendering table in severity.md is the full
-set.
-
-The **Dropped at triage** line stays a count and a reason class. The per-finding detail is what
-the report in Q2 adds over this chat summary. If you list the dropped findings here, that report
-becomes redundant and the offer pointless.
-
-The census line under the verdict counts only findings that are not `already raised`. If
-the plan said `existing_comments: none`, omit the **Already on the PR** block.
-
-Give `Needs attention` whenever any `issue` exists, blocking or not. An `issue` says that wrong
-behavior exists. `Looks good` over an `issue` reads as a clean bill of health that the review
-did not give. Give `Looks good` only when every finding is `suggestion`, `question`, `nitpick`,
-`thought` or `praise`. In that case, say explicitly that the code looks good.
-
-Say which findings are `summary-only` (pipeline.md §5.6) before the gate. They never post
-inline. `Yes — post all` and `All, plus a summary comment` post them as general comments.
-`Only blocking issues` posts them only when their decoration is `blocking`.
-
-Then ask a single `AskUserQuestion` with two questions. **Never post comments without
-confirmation.** Drop an option that would post nothing. That includes `Only blocking issues`
-when the only blocking finding is `already raised`.
-
-- **Q1, header `Post`**: "Post these as comments on the PR?" with the options `Yes — post all`,
-  `Only blocking issues`, `All, plus a summary comment` and `No — chat only`. The summary
-  comment is the three-move general comment in comment-guidelines.md. `Only blocking issues`
-  posts the `issue (…, blocking)` and `chore (blocking)` lines and nothing else.
-  `Yes — post all` and `All, plus a summary comment` post the `contradicts` lines as replies in
-  their threads. Never post `confirms` lines, because agreement is not a comment.
-- **Q2, header `Report`**: "Write the full review report?" with the options `Yes — write it`
-  and `No`. The report goes to `<scratchpad>/pr-<number>-REVIEW.md`. It contains the summary,
-  the verdict, and every triaged finding with its tier, label and category. That includes
-  the findings that the filter in step 3 kept off the PR, marked `not posted`. The report is a
-  record for the reviewer only. Never commit or post it.
+Follow [`references/present.md`](references/present.md). It holds the chat template, the verdict
+rule and the two gate questions. **Never post comments without confirmation.**
 
 ### 5. Post comments (only after the user confirms)
 
-`${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh` prepends `:robot: AI-generated`
-to every comment. It **refuses a message whose first line is not a bold Conventional Comments
-label** from the closed vocabulary in severity.md. Use `--no-label` for a reply or the summary
-comment. When GitHub rejects the position, the script posts a clearly labeled general comment
-instead.
-
-Call the script by its full path. The examples abbreviate it to `post-comment.sh`:
-
-```bash
-# Inline comment on an added/modified line (new side); --line 42:48 for a range
-${CLAUDE_PLUGIN_ROOT}/skills/pr-review/scripts/post-comment.sh \
-  --pr <number> --file path/to/file.ext --line 42 --message "**issue (behavior, blocking):** <claim>
-
-<fix; verification when not obvious>"
-
-# Removed line (old side)
-post-comment.sh --pr <number> --file path/to/file.ext --old-line 10 --message "**question (impact):** ..."
-
-# The summary comment (three moves, no label), and a reply to an existing thread
-post-comment.sh --pr <number> --no-label --message "<praise line> <census> <what clearing them earns>"
-post-comment.sh --pr <number> --reply <comment-id> --no-label --message "Fixed, thanks."
-
-# A contradiction of an existing thread — a labeled reply, never a new comment on that line
-post-comment.sh --pr <number> --reply <comment-id> --message "**question (logic):** <what the review found instead>?
-
-<what was checked>"
-```
-
-Do not combine `--line` and `--old-line`. Pick the most relevant single line or a narrow range.
-The script refuses a positioned comment within two lines of a thread that already exists on the
-same file (exit code 2, the thread listed). Reply into that thread instead. If the claim is
-genuinely different, pass `--allow-nearby`.
+Post per *Posting with post-comment.sh* in
+[`../../references/comment-guidelines.md`](../../references/comment-guidelines.md).
 
 ## Fallback
 
