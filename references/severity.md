@@ -130,6 +130,3 @@ Rules that accompany the table:
   checkable praise.
 - The tier letters stay in chat, the findings report and the review record. A PR reader sees
   the label and decoration. Those say the same thing in words that the reader already knows.
-
-The groups of `adversarial-review` sit on the same rows: 🔴 High is `issue (blocking)`,
-🟠 Medium is `issue` or `suggestion (non-blocking)`, 🟡 Low is `nitpick`, ✅ Done well is `praise`.

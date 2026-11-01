@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Write or rewrite the description of a Vaadin pull request from the branch diff — fills the repo PR template as short, bullet-driven markdown with a "How to test" section. Use when asked to write a PR description, fill in the PR template, describe this branch for a PR, update or improve the PR body, or add a how-to-test section. Drafts in chat and only updates the PR after explicit confirmation. Not for reviewing a PR (guided-review, adversarial-review, pr-review) or for reviewing your own branch before opening it (self-review).
+description: Write or rewrite the description of a Vaadin pull request from the branch diff — fills the repo PR template as short, bullet-driven markdown with a "How to test" section. Use when asked to write a PR description, fill in the PR template, describe this branch for a PR, update or improve the PR body, or add a how-to-test section. Drafts in chat and only updates the PR after explicit confirmation. Not for reviewing a PR (guided-review, pr-review) or for reviewing your own branch before opening it (self-review).
 argument-hint: "[PR number or URL, or blank to use the current branch]"
 ---
 
