@@ -112,7 +112,7 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 - [B] <file>:<line> — **<label> (<category>, non-blocking):** <one-line claim>
 
 ## Next steps
-Fix the A findings, then re-run. Coverage gaps: `/agent-skills:mutation-coverage <file>`.
+Fix the A findings, then re-run. Coverage gaps: write the test that each survivor names.
 ````
 
 - Every finding appears under its category, tagged `[tier]` and `[status]`. Statuses are

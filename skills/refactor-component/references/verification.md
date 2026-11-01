@@ -46,8 +46,7 @@ the command reads from that server, because a running server can keep an old mod
 
 ## Mutation checks
 
-These checks break one decision at a time. The `mutation-coverage` skill removes lines instead,
-so it answers a different question. Use both when you need a full coverage picture.
+These checks break one decision at a time.
 
 A pure move keeps the behavior. A revert of a moved piece therefore also passes, and proves
 nothing. Break the piece instead, then confirm that a test fails.
@@ -81,7 +80,6 @@ Both failures look like a passing run. Check `git status` after each restore.
 A mutation that no test catches has two possible causes.
 
 A coverage gap. A public path reaches the code and no test asserts on the result. Add a test.
-Use the `mutation-coverage` skill to find the full gap and to close it.
 
 An unreachable change. No public path can produce a difference. A change that only aligns one
 call site with the rest of a file is often in this class. Keep the change and state in the pull

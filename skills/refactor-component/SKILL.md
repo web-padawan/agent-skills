@@ -1,6 +1,6 @@
 ---
 name: refactor-component
-description: Plan and run a structural refactor of web component sources without a behavior change. Use when asked to refactor a component, a mixin or a package, to remove duplication between sibling components, to extract a controller or consolidate shared logic, to simplify a mixin that grew too large, or to order several refactors. Not for a review of a branch or a pull request, which is self-review, guided-review or pr-review. Not for finding test gaps, which is mutation-coverage. Not for a cleanup inside an uncommitted diff, which is simplify.
+description: Plan and run a structural refactor of web component sources without a behavior change. Use when asked to refactor a component, a mixin or a package, to remove duplication between sibling components, to extract a controller or consolidate shared logic, to simplify a mixin that grew too large, or to order several refactors. Not for a review of a branch or a pull request, which is self-review, guided-review or pr-review. Not for a cleanup inside an uncommitted diff, which is simplify.
 argument-hint: "[package path, or blank to use the current package]"
 ---
 

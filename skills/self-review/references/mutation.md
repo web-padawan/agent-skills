@@ -101,9 +101,6 @@ line of the fix itself A. Otherwise tier the gap B.
 - A gap that no reasonable behavioral test could pin, for example a defensive branch
   unreachable from the public API, is `accepted` with the reason.
 
-`/agent-skills:mutation-coverage` closes these gaps. Name it in the report next to the
-survivors. Then a report-only run is a handoff rather than a dead end.
-
 ## End of step
 
 Assert all three. Then say so in step 8:
