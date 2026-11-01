@@ -1,24 +1,20 @@
 ---
 name: guided-review
-description: Use when you want to understand and review a GitHub pull request as a reasoning companion rather than an automated reviewer. Phase 1 explains the PR's goal and purpose concisely with a concrete example, then gates on your confirmation before Phase 2 does a thorough code review that surfaces genuine issues, not nitpicks. Read-only — never posts anything to the PR; you post any feedback yourself. This is the default for "review this PR" / "walk me through this PR" requests; when the goal is to post comments, use pr-review or adversarial-review explicitly instead. Not for your own branch before it has a PR (self-review).
+description: Use when you want to understand and review a GitHub pull request as a reasoning companion rather than an automated reviewer. Phase 1 explains the PR's goal and purpose concisely with a concrete example, then gates on your confirmation before Phase 2 does a thorough code review that surfaces genuine issues, not nitpicks. An optional Phase 3 posts only the findings you select, as inline Conventional Comments or one summary comment, after explicit confirmation. This is the default for "review this PR" / "walk me through this PR" / "review and post a comment" requests. For a multi-agent rubric pass with inline comments, use pr-review explicitly. Not for your own branch before it has a PR (self-review).
 argument-hint: "[PR number, URL, or blank to auto-detect from current branch]"
-allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git merge-base:*), Bash(git fetch:*), Bash(*/scripts/gh-context.sh:*), Read, Grep, Glob
+allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(git diff:*), Bash(git log:*), Bash(git show:*), Bash(git merge-base:*), Bash(git fetch:*), Bash(*/scripts/gh-context.sh:*), Read, Grep, Glob, AskUserQuestion
 ---
 
 # Guided Review
 
-A two-phase walkthrough for a PR that a reviewer asked you to review. **Understand first,
-critique second**, and never on behalf of the reviewer. This skill augments human review. It
-does not replace it.
+A walkthrough for a PR that a reviewer asked you to review. **Understand first, critique
+second, post last.** This skill augments human review. It does not replace it.
 
 ## Hard rules
 
-- **Never post anything to the PR.** No comments, reviews, replies, approvals, suggestions,
-  thread resolutions, or label/status changes. Not with `gh pr comment`, not with
-  `gh pr review`, not with `gh api`, not by any other path. The reviewer posts everything.
-  Only read from the PR.
-  - If the reviewer asks you to draft comment text, print it in the chat for the reviewer to
-    copy. Do not send it.
+- **Post nothing without explicit confirmation.** Phases 1 and 2 only read from the PR.
+  Phase 3 posts only the findings that the reviewer selects, and only after a yes.
+- **Never approve, request changes, resolve threads, or change labels.** Post comments only.
 - **Be concise.** Lead with substance. No filler, no line-by-line restatement of the diff, no
   walls of text. The goal is to save review time, not to produce an essay.
 - **Gate between phases.** Do not start the code review until the reviewer confirms. See below.
@@ -82,5 +78,22 @@ For each real issue, give **`file:line`, what is wrong, why it matters, and the 
 failure scenario or fix.** Verify each claim against the actual code before you assert it
 (Read/Grep the code around it). No speculative findings.
 
-Close with a short, actionable verdict: are there blockers, or is the PR good to approve? The
-reviewer continues from there and posts any feedback.
+Close with a short, actionable verdict: are there blockers, or is the PR good to approve?
+
+## Phase 3 — Post (optional)
+
+Start this phase only when the reviewer asks to post, or accepts an offer to post.
+
+1. Read [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md).
+   Render each finding as a Conventional Comment. Use the labels in
+   [`../../references/severity.md`](../../references/severity.md) (*Rendering*).
+2. Show the exact comment text in chat. Then ask one `AskUserQuestion` with header `Post`:
+   - `Inline comments`: one positioned comment for each selected finding.
+   - `One summary comment`: all selected findings in one general comment.
+   - `No — chat only`.
+3. If the reviewer selects a post option, post with `post-comment.sh`, per the guidelines.
+   For a summary comment, use the three moves in *Summary comment* and pass `--no-label`.
+4. Reply with the link of each posted comment.
+
+Do not post a finding that an existing thread already holds. Reply into that thread only to
+contradict it.
