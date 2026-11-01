@@ -60,7 +60,7 @@ lines and one gotcha.
 |---|---|---|
 | **Inline technique** (<80 lines, no subfolders) | A single self-contained procedure | `guided-review` |
 | **Phase / reference-table workflow** | A multi-step process where each step has depth | `self-review` |
-| **Deep reference + guardrails** | A tool or engine with many footguns, budgets, caveats | `mutation-coverage` |
+| **Deep reference + guardrails** | A tool or engine with many footguns, budgets, caveats | `refactor-component` |
 
 Do not build a `references/` tree before you need it.
 
@@ -121,8 +121,8 @@ clause) are in [references/agents.md](references/agents.md).
 3. **Style test:** read each new or changed paragraph against
    `.claude/rules/writing-style.md`. Count the words in the longest sentence. Search the
    diff for `;` and `—` outside code blocks.
-4. **Live test:** reinstall the plugin (`claude plugin update agent-skills@local` after
-   the commit). Run the skill once on a real case before you rely on it.
+4. **Live test:** start a new session. The plugin loads from this checkout. Run the skill
+   once on a real case before you rely on it.
 
 ## Improving an existing skill
 

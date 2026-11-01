@@ -39,8 +39,8 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
 ### `argument-hint`
 - **What:** the usage hint shown next to the slash command.
 - **Convention:** quote it. Use `<angle>` for required parts, `[square]` for
-  optional parts, and `|` for alternatives. Example from `mutation-coverage`:
-  `"<file|--package <pkg>|--diff> [--stryker] [--test '<command>']"`.
+  optional parts, and `|` for alternatives. Example from `self-review`:
+  `"[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--deep N]"`.
   Add it whenever the skill takes a positional input or flags.
 
 ### `disable-model-invocation`
@@ -48,10 +48,10 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
   The skill then runs only when the user types the slash command.
 - **Convention in this repo:** set `true` on any skill that is expensive or
   that can post outside the machine. Expensive skills include multi-agent
-  orchestration (`self-review`) and long test runs (`mutation-coverage`). PR
-  comments (`pr-review`, `adversarial-review`) post outside the machine.
-  Read-only, bounded skills (`guided-review`, `authoring-skills`) stay
-  auto-triggerable, because their descriptions do the routing. The middle case
+  orchestration (`self-review`, `pr-review`). PR comments (`pr-review`) post
+  outside the machine. Bounded skills (`guided-review`, `authoring-skills`)
+  stay auto-triggerable, because their descriptions do the routing.
+  `guided-review` posts only behind an in-body confirmation gate. The middle case
   is an auto-triggerable skill with a bounded common path and an unbounded wide
   path. Such a skill gets an in-body confirmation gate before the wide path
   spends its budget.

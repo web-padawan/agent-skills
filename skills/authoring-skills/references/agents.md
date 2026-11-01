@@ -1,8 +1,7 @@
 # Plugin agents — conventions for `agents/`
 
 Subagent definitions live in `agents/` at the plugin root. Invoke one with
-`subagent_type: "agent-skills:<name>"`. New or changed agents load after
-`claude plugin update agent-skills@local` plus a session restart (or `/reload-plugins`).
+`subagent_type: "agent-skills:<name>"`. New or changed agents load after a session restart (or `/reload-plugins`).
 
 ## When an agent, when skill prose
 

@@ -15,18 +15,16 @@ you can open that skill and copy the shape.
 Reviews code against a rubric, a checklist, or a skeptical stance. May post
 findings. Produces a report. Mostly read-only.
 - In this repo: `self-review` (own branch, pre-PR, three checklist passes),
-  `guided-review` (interactive PR walkthrough, never posts),
-  `adversarial-review` (skeptical pass, one summary comment),
+  `guided-review` (interactive PR walkthrough, posts only what you select),
   `pr-review` (rubric pass, inline comments).
 - This is the crowded category. Every new skill here must carry a boundary
-  clause against the existing four.
+  clause against the existing three.
 
 ### 2. Verification and testing
 Describes how to prove that code works: coverage checks, test-writing
 procedures, external drivers. Anthropic reports that verification skills had the
 most measurable impact on output quality. Invest the effort in them.
-- In this repo: `mutation-coverage` (mutation testing and closing the gaps
-  with tests), `screenshot-diff` (pixel metrics and a class for each visual
+- In this repo: `screenshot-diff` (pixel metrics and a class for each visual
   test screenshot diff).
 
 ### 3. Code transformation
@@ -36,8 +34,7 @@ is the only category that edits the files that the other categories read.
   sources, from the mixin chain outward), `comment-cleanup` (deletes and
   shortens the comments that a diff added).
 - Boundary against category 2: a transformation skill rewrites production code. A
-  verification skill adds tests. `mutation-coverage` writes tests, so it belongs
-  to category 2.
+  verification skill adds tests or proves behavior.
 - Boundary against category 1: a transformation skill edits. A review skill reports
   and leaves the decision to you.
 - Every new skill here must carry a boundary clause against the built-in
@@ -64,8 +61,7 @@ Before you write anything, answer these questions in order:
    - Fits two or more → split into two skills. A skill that covers two
      categories confuses the trigger and the body. For example, split
      "review and fix" into a report-only review skill and an apply skill that
-     reads its report. That is the exact split between `self-review` and
-     `mutation-coverage`. A skill that reports, a skill that proves and a skill
+     reads its report. A skill that reports, a skill that proves and a skill
      that changes the source are three skills, not one.
    - Fits none → it may not be a skill at all. Re-check Step 0.2/0.3 below.
 2. **Does it push the model off its defaults?** If it only restates what the

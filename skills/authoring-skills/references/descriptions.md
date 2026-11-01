@@ -17,12 +17,12 @@ descriptions to the same standard.
 ### 1. Lead with the trigger surface
 Include the literal verbs, nouns, and phrases that a user would type.
 
-- **`mutation-coverage`** embeds the vocabulary of the request:
-  > "Find source lines and expressions no test asserts on via mutation testing
-  > (line-removal by default, Stryker on request), then close each gap with a
-  > test that fails when the code is broken."
+- **`screenshot-diff`** embeds the vocabulary of the request:
+  > "Use when a visual baseline changed or is about to change (a Playwright or
+  > Chromium bump, a component or theme change), when `yarn test:lumo` /
+  > `test:aura` / `test:base` left `failed/` screenshots..."
 
-  The concrete nouns (*mutation testing, Stryker, test, gap*) cover how people phrase
+  The concrete nouns (*baseline, Playwright, failed screenshots*) cover how people phrase
   the request.
 
 ### 2. Enumerate situations, not mechanics
@@ -38,14 +38,13 @@ many phrasings match.
   never said "PR description".
 
 ### 3. State the boundary when a sibling could also match
-This repo has four review skills. Without boundary clauses they would collide on every
+This repo has three review skills. Without boundary clauses they would collide on every
 "review this" prompt. Each one names what it is *not* for:
 
 - **`self-review`**: your own branch before you open or update a PR. Not for a review of
   a PR from someone else.
-- **`guided-review`**: an interactive walkthrough of a PR from someone else. Read-only,
-  never posts.
-- **`adversarial-review`**: one skeptical pass, one posted summary comment.
+- **`guided-review`**: an interactive walkthrough of a PR from someone else. Posts only
+  the findings that you select.
 - **`pr-review`**: a full rubric pass that posts inline line comments.
 
 Without those clauses each skill would over-trigger on the prompts of the other skills.
@@ -63,15 +62,15 @@ Well-written skills open with a present-tense verb phrase. Examples are
 > `description: A tool for checking test quality.`
 
 Problems: no trigger words that a user types, no situations, and it reads like docs. A
-prompt "find code no test asserts on" may not match "checking test quality".
+prompt "why did these screenshots fail" may not match "checking test quality".
 
-✅ **After (trigger-shaped, the real `mutation-coverage`):**
-> `description: Find source lines and expressions no test asserts on via
-> mutation testing (line-removal by default, Stryker on request), then close
-> each gap with a test that fails when the code is broken. Scopes to a file, a
-> package, or the branch diff, and estimates runtime before mutating.`
+✅ **After (trigger-shaped, the real `screenshot-diff`):**
+> `description: Classify a visual test screenshot change as sub-pixel
+> rendering, transition or animation flakiness, browser update rasterization
+> noise, or a real content change. Use when a visual baseline changed or is
+> about to change, or when asked to analyze, triage or rank screenshot diffs.`
 
-Now the verbs and the coverage vocabulary match the phrasing of the request.
+Now the verbs and the screenshot vocabulary match the phrasing of the request.
 
 ### Example B — too broad → bounded (over-triggering fix)
 
@@ -84,9 +83,8 @@ skill cannot handle that branch.
 ✅ **After (bounded):**
 > `description: Review a GitHub pull request against a rubric and post findings
 > as inline comments after confirmation. Use for a full reviewer pass on
-> someone else's PR. Not for a single summary comment (adversarial-review), an
-> interactive walkthrough (guided-review), or your own branch before it has a
-> PR (self-review).`
+> someone else's PR. Not for an interactive walkthrough (guided-review), or
+> your own branch before it has a PR (self-review).`
 
 The explicit "not for…" clause stops the false positives.
 

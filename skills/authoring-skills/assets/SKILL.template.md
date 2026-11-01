@@ -78,7 +78,7 @@ Prefer concrete "X is actually Y" facts over generic advice. Grow this list over
 -->
 
 <!-- ---------- ARCHETYPE C: DEEP REFERENCE + GUARDRAILS ----------
-     For a tool or engine with many footguns, budgets, and caveats. Example: mutation-coverage.
+     For a tool or engine with many footguns, budgets, and caveats. Example: refactor-component.
 
 ## Discovery / usage
 
