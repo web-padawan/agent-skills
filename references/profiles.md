@@ -111,4 +111,4 @@ does that equally well.
 The plan prints the model beside each pass and in its `=== PROMPTS ===` header. The
 orchestrator passes the model as the Agent tool's `model`. A new pass is a new column.
 
-Why the tables look like this: [`rationale.md`](rationale.md).
+Why the tables look like this: [`rationale.md`](../docs/rationale.md).
