@@ -60,6 +60,8 @@ The script wrote the skeleton. The skeleton already holds these parts:
 - the comments already on the PR: thread id, author, bot or human, open or resolved,
   `path:line`, first line
 - the new-unit gaps, when the diff adds a unit: registration and scaffold gaps from its siblings
+- the earlier findings, when the last self-review of the branch left a findings file, and on a
+  newer head the line ranges changed since
 - the conventions excerpt: the whole doc up to 400 lines. A longer doc gives the chapters
   selected by the kinds of file touched and by what the
   added lines use
@@ -137,6 +139,13 @@ lead cleared: <the lead, a few words> — <how, one clause>
 A lead that returns as neither a finding nor a `lead cleared:` line was not worked. Triage
 treats such a lead that way (§5.3).
 
+On a newer head than the last self-review, the pass also writes one line per open earlier
+finding of its categories (the `## Earlier findings` section of the skeleton):
+
+```
+earlier <id> | <fixed|partially_fixed|fixed_wrongly|not_fixed|obsolete> | <how, one clause>
+```
+
 Categories, by owner pass:
 
 - `change`: `scope`, `behavior`, `fix`, `boundary`, `api`, `impact`
@@ -176,6 +185,12 @@ markers and the escalation ladder.
 
    An **open** thread that no pass reproduced is an `[orchestrator]` lead. Verify it within
    the triage ceiling and record `confirmed by review` or `not reproduced`.
+
+   Then dedup against `## Earlier findings`, when the skeleton has it. A finding whose file
+   and claim match an earlier finding is that earlier finding, not a new one. Apply each
+   `earlier` line as the new status of its finding. An open earlier finding with no
+   `earlier` line keeps its status, marked `not checked`. A pass that repeats a `disputed`
+   or `accepted` finding gets the repeat dropped.
 3. **Your own findings count.** A finding from your pre-verification that no pass reported
    goes on the list, tagged `[orchestrator]`. An Open lead whose owner pass returned neither
    a finding nor a `lead cleared:` line also goes on the list. Nobody worked that lead, so it
