@@ -489,8 +489,10 @@ if [ -z "$REPORT_DIR" ]; then
     # never committed or posted (skills/pr-review/SKILL.md step 4).
     pr) REPORT_DIR="SCRATCHPAD" ;;
   esac
+  # The trailing slash marks the path as a directory, so a directory-only pattern such
+  # as `.omc/` matches before the directory exists (a fresh clone or worktree).
   if [ -n "$REPORT_DIR" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] \
-     && ! git check-ignore -q "${REPORT_DIR%%/*}" 2>/dev/null; then
+     && ! git check-ignore -q "${REPORT_DIR%%/*}/" 2>/dev/null; then
     REPORT_DIR="SCRATCHPAD"
   fi
 fi

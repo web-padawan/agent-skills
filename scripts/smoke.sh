@@ -191,6 +191,13 @@ check "float-to-tip.sh refuses a dirty tree" 2 \
   "$SCRIPTS/float-to-tip.sh" --grep "add three"
 git checkout -q -- a.txt
 
+echo "== review-plan.sh"
+printf '.omc/\n' >> .git/info/exclude
+git remote add origin "$REPO" && git fetch -q origin main
+expect "review-plan.sh keeps an ignored report dir that does not exist yet" \
+  "report_dir: .omc/self-review" \
+  "$("$SCRIPTS/review-plan.sh" --mode self --no-context --no-write 2>/dev/null | grep '^report_dir:')"
+
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"
   rm -rf "$WORK"
