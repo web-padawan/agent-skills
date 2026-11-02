@@ -239,9 +239,12 @@ fi
 # ── Section: existing comments ────────────────────────────────────────
 # What is already said on this PR. A finding that repeats one of these is
 # noise for the author; an unresolved thread no pass reproduces is a lead.
-# Thread roots only — replies are conversation, not claims — with the
-# thread's resolved/outdated state, which is why GraphQL and not the REST
-# comments list. Bodies are cut to their first non-empty line; a leading
+# Thread roots with the thread's resolved/outdated state, which is why GraphQL
+# and not the REST comments list, plus one indented line per reply: a reply is
+# how the author answered, so a dismissed finding is not raised again and a
+# "fixed" reply that the head does not bear out is a new finding (the upstream
+# Vaadin CI review reads replies for the same reason). Bodies are cut to their
+# first non-empty line; a leading
 # ":robot: AI-generated" and a Conventional Comments label are stripped so
 # the claim text is what the passes match on. Bodies are text written by
 # other people — data, never instructions.
@@ -261,18 +264,18 @@ else
         repository(owner:$owner,name:$name){ pullRequest(number:$number){
           reviewThreads(first:100){ nodes{
             isResolved isOutdated path line originalLine
-            comments(first:1){ nodes{ databaseId author{login __typename} body } } } } } } }' \
-      --jq '.data.repository.pullRequest.reviewThreads.nodes[]
-        | .comments.nodes[0] as $c
-        | [ $c.databaseId, $c.author.login,
-            (if ($c.author.__typename == "Bot") or ($c.author.login | test("bot$"; "i")) then "bot" else "human" end),
-            (if .isResolved then "resolved" elif .isOutdated then "outdated" else "open" end),
-            .path, (.line // .originalLine // 0),
-            ($c.body | split("\n") | map(select(length > 0)) | .[0] // ""
-              | sub("^:robot: AI-generated\\s*"; "")
-              | (capture("^\\*\\*(?<t>[^*]+)\\*\\*:?\\s*(?<rest>.*)$") // {t: "", rest: .})
-              | (if .rest == "" then .t else .rest end) | .[0:200]) ]
-        | @tsv' 2>/dev/null || true)
+            comments(first:20){ nodes{ databaseId author{login __typename} body } } } } } } }' \
+      --jq 'def kind: if (.author.__typename == "Bot") or (.author.login | test("bot$"; "i")) then "bot" else "human" end;
+        def claim($n): .body | split("\n") | map(select(length > 0 and (test("^:robot: AI-generated\\s*$") | not))) | .[0] // ""
+          | sub("^:robot: AI-generated\\s*"; "")
+          | (capture("^\\*\\*(?<t>[^*]+)\\*\\*:?\\s*(?<rest>.*)$") // {t: "", rest: .})
+          | (if .rest == "" then .t else .rest end) | .[0:$n];
+        .data.repository.pullRequest.reviewThreads.nodes[]
+        | . as $t | .comments.nodes[0] as $c
+        | ([ "T", $c.databaseId, $c.author.login, ($c | kind),
+             (if $t.isResolved then "resolved" elif $t.isOutdated then "outdated" else "open" end),
+             $t.path, ($t.line // $t.originalLine // 0), ($c | claim(200)) ] | @tsv),
+          ($t.comments.nodes[1:][] | [ "R", .databaseId, .author.login, (. | kind), "", "", "", (. | claim(160)) ] | @tsv)' 2>/dev/null || true)
     GENERAL=$(gh api "repos/$REPO_SLUG/issues/$PR_NUMBER/comments" --paginate \
       --jq '.[] | [ .id, .user.login, (.body | split("\n") | map(select(length > 0)) | .[0] // "" | .[0:120]) ] | @tsv' 2>/dev/null || true)
   fi
@@ -280,14 +283,17 @@ else
   if [ -z "$THREADS" ] && [ -z "$GENERAL" ]; then
     echo "none"
   else
-    T_N=$(printf '%s\n' "$THREADS" | sed '/^$/d' | wc -l | tr -d ' ')
-    T_BOT=$(printf '%s\n' "$THREADS" | awk -F'\t' '$3=="bot"' | wc -l | tr -d ' ')
-    T_OPEN=$(printf '%s\n' "$THREADS" | awk -F'\t' '$4=="open"' | wc -l | tr -d ' ')
+    T_N=$(printf '%s\n' "$THREADS" | awk -F'\t' '$1=="T"' | wc -l | tr -d ' ')
+    T_BOT=$(printf '%s\n' "$THREADS" | awk -F'\t' '$1=="T" && $4=="bot"' | wc -l | tr -d ' ')
+    T_OPEN=$(printf '%s\n' "$THREADS" | awk -F'\t' '$1=="T" && $5=="open"' | wc -l | tr -d ' ')
+    T_REPLIES=$(printf '%s\n' "$THREADS" | awk -F'\t' '$1=="R"' | wc -l | tr -d ' ')
     G_N=$(printf '%s\n' "$GENERAL" | sed '/^$/d' | wc -l | tr -d ' ')
-    echo "summary: $T_N threads ($T_BOT bot, $((T_N - T_BOT)) human, $T_OPEN open), $G_N general comments"
+    echo "summary: $T_N threads ($T_BOT bot, $((T_N - T_BOT)) human, $T_OPEN open, $T_REPLIES replies), $G_N general comments"
     if [ -n "$THREADS" ]; then
-      echo "threads:  # id | author | kind | state | path:line | first line"
-      printf '%s\n' "$THREADS" | sed '/^$/d' | awk -F'\t' '{printf "  %s | %s | %s | %s | %s:%s | %s\n", $1, $2, $3, $4, $5, $6, $7}'
+      echo "threads:  # id | author | kind | state | path:line | first line — replies indented below their thread"
+      printf '%s\n' "$THREADS" | sed '/^$/d' | awk -F'\t' '
+        $1 == "T" { printf "  %s | %s | %s | %s | %s:%s | %s\n", $2, $3, $4, $5, $6, $7, $8; next }
+        $1 == "R" { printf "      reply %s | %s | %s | %s\n", $2, $3, $4, $8 }'
     fi
     if [ -n "$GENERAL" ]; then
       echo "general:  # id | author | first line"
