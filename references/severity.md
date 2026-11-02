@@ -81,7 +81,7 @@ rules literally, because nothing else discriminates as sharply:
 
 ## What a skill does with a tier
 
-The plan script copies the report rule and the mode-variant C rule into every skeleton. Both
+The plan script copies the report rule and the C rule into every skeleton. Both
 rules are in [`skeleton-blocks.md`](skeleton-blocks.md). The rubric block above is the one
 piece of this file that travels too.
 
