@@ -42,12 +42,14 @@ label, decorations, claim and fix of the frozen list
 
 ## Summary comment
 
-Offer it at the gate. Never post it by default. It goes in the review body
-(`post-review.sh --summary`). Make three moves, in this order:
+Offer it at the gate. Never post it by default. Make three moves, in this order:
 
 1. One specific thing done well. Use the `praise` finding, if one exists.
 2. A census by label: "2 issues, 3 suggestions, 1 question".
 3. What clearing the findings earns: "then this is ready to merge" / "the questions decide the verdict".
+
+In a review, the summary goes in the review body (`post-review.sh --summary`). The script
+writes the census line, so the summary file holds moves 1 and 3 only.
 
 ## Good and bad comment examples
 
@@ -74,7 +76,7 @@ Then the author gets one notification, not one for each finding. Call
 
 1. Write the selected findings to a JSON file in the scratchpad. Give each finding its
    `file`, its `line` and its `message`. Use `null` for a line or a file that does not apply.
-2. If the user chose a summary comment, write its three moves to a markdown file.
+2. If the user chose a summary comment, write its moves 1 and 3 to a markdown file.
 3. Run the script once with `--dry-run`. Read the bodies that it prints.
 4. Run it again without `--dry-run`.
 
@@ -92,8 +94,9 @@ post-review.sh --pr <number> --findings <scratchpad>/pr-<number>-post.json \
   When GitHub refuses the file, the finding goes in the review body.
 - A finding within two lines of an existing thread is skipped. Reply into that thread
   with `post-comment.sh --reply <id>`. Set `"allow_nearby": true` only for a different claim.
-- The review body holds an overview line, the summary, a table of all findings and a
-  hidden marker with the reviewed head SHA.
+- The review body holds a census line by label, the summary and a hidden marker with the
+  reviewed head SHA. It also holds each finding that GitHub refused to anchor. It does not
+  repeat a finding that has a thread.
 
 ## Posting with post-comment.sh
 
