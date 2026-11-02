@@ -186,7 +186,10 @@ with Write as one JSON object:
       "line": 42,
       "claim": "<the frozen claim>",
       "fix": "<the one-line fix>",
-      "verified": "<how, when not obvious>"
+      "verified": "<how, when not obvious>",
+      "merged": [
+        { "file": "packages/foo/src/foo.js", "line": 40, "claim": "<a claim merged into this one>" }
+      ]
     }
   ]
 }
@@ -201,6 +204,11 @@ with Write as one JSON object:
   `verdict` is the record of a run that did not finish.
 - Keep every finding of the earlier file, with its new status. Give a new finding the next
   free id. Never reuse an id.
+- When triage merges a finding into another one (pipeline.md §5.2), add it to the `merged`
+  list of the kept finding. Give each entry its `file`, `line` and `claim`. The plan lists
+  the entries with the kept finding, so a later round does not report them again. Example:
+  triage merged a docblock claim at `:441` into a finding at `:446` and left it out of the
+  file. The next round reported it again.
 - `status` is one of these values:
   - `open`: real and not fixed. Every new `confirmed` finding starts here.
   - `accepted`: needs no action, a false positive or a deliberate choice.

@@ -197,6 +197,15 @@ git remote add origin "$REPO" && git fetch -q origin main
 expect "review-plan.sh keeps an ignored report dir that does not exist yet" \
   "report_dir: .omc/self-review" \
   "$("$SCRIPTS/review-plan.sh" --mode self --no-context --no-write 2>/dev/null | grep '^report_dir:')"
+mkdir -p .omc/self-review
+jq -n --arg head "$(git rev-parse HEAD)" '{branch: "feature", head: $head, round: 1, findings: [
+  {id: "F1", round: 1, category: "logic", tier: "B", status: "open", file: "a.txt", line: 2,
+   claim: "kept claim", merged: [{file: "a.txt", line: 3, claim: "merged claim"}]}]}' \
+  > .omc/self-review/feature-findings.json
+"$SCRIPTS/review-plan.sh" --mode self --no-context > "$WORK/plan.log" 2>&1
+expect "review-plan.sh lists a merged finding with the finding that kept it" \
+  "- F1 | open | logic | a.txt:2 | B | kept claim Merged: a.txt:3 merged claim" \
+  "$(grep '^- F1 ' .omc/self-review/context.md 2>/dev/null)"
 
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"

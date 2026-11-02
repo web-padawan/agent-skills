@@ -539,7 +539,9 @@ if [ "$MODE" = "self" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] && [ -n "$HEAD" ]; 
     else
       EARLIER_MODE="rewritten"
     fi
-    EARLIER_LIST=$(jq -r '.findings[] | "\(.id) | \(.status) | \(.category) | \(.file // "-"):\(.line // "-") | \(.tier) | \(.claim)"' "$FINDINGS_FILE")
+    # A finding that triage merged into another one rides on the kept line, so a
+    # further round sees it and does not report it again.
+    EARLIER_LIST=$(jq -r '.findings[] | "\(.id) | \(.status) | \(.category) | \(.file // "-"):\(.line // "-") | \(.tier) | \(.claim)" + ([.merged[]? | " Merged: \(.file // "-"):\(.line // "-") \(.claim)"] | join(""))' "$FINDINGS_FILE")
   fi
 fi
 
@@ -1111,7 +1113,7 @@ if [ -n "$CONTEXT_PATH" ]; then
           block "$PLUGIN_ROOT/references/skeleton-blocks.md" earlier-findings-delta
         fi
         echo
-        echo "Source: \`$FINDINGS_FILE\`, reviewed head \`${EARLIER_HEAD:0:10}\`. Each line: id | status | category | file:line | tier | claim."
+        echo "Source: \`$FINDINGS_FILE\`, reviewed head \`${EARLIER_HEAD:0:10}\`. Each line: id | status | category | file:line | tier | claim. A \`Merged:\` entry after a claim is a finding that triage merged into it."
         echo
         if [ -n "$EARLIER_LIST" ]; then
           printf '%s\n' "$EARLIER_LIST" | sed '/^$/d; s/^/- /'
