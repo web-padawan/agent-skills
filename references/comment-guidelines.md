@@ -42,7 +42,8 @@ label, decorations, claim and fix of the frozen list
 
 ## Summary comment
 
-Offer it at the gate. Never post it by default. Make three moves, in this order:
+Offer it at the gate. Never post it by default. It goes in the review body
+(`post-review.sh --summary`). Make three moves, in this order:
 
 1. One specific thing done well. Use the `praise` finding, if one exists.
 2. A census by label: "2 issues, 3 suggestions, 1 question".
@@ -65,9 +66,39 @@ Offer it at the gate. Never post it by default. Make three moves, in this order:
 - `**issue (blocking):** This might leak the listener.` (an unverified claim posted as an issue, so it is a `question`)
 - Any suggestion to implement something already shown as added in the diff
 
+## Posting a review with post-review.sh
+
+Post only after the user confirms. Post the findings that the user selected as one review.
+Then the author gets one notification, not one for each finding. Call
+`${CLAUDE_PLUGIN_ROOT}/scripts/post-review.sh`:
+
+1. Write the selected findings to a JSON file in the scratchpad. Give each finding its
+   `file`, its `line` and its `message`. Use `null` for a line or a file that does not apply.
+2. If the user chose a summary comment, write its three moves to a markdown file.
+3. Run the script once with `--dry-run`. Read the bodies that it prints.
+4. Run it again without `--dry-run`.
+
+```bash
+post-review.sh --pr <number> --findings <scratchpad>/pr-<number>-post.json \
+  [--summary <scratchpad>/pr-<number>-summary.md] [--dry-run]
+```
+
+```json
+{"findings": [{"file": "path/to/file.ext", "line": 42, "message": "**issue (logic, blocking):** <claim>\n\n<fix>"}]}
+```
+
+- The script refuses the whole batch when one message has no valid label.
+- Each finding goes on its line. When GitHub refuses the line, the finding goes on the file.
+  When GitHub refuses the file, the finding goes in the review body.
+- A finding within two lines of an existing thread is skipped. Reply into that thread
+  with `post-comment.sh --reply <id>`. Set `"allow_nearby": true` only for a different claim.
+- The review body holds an overview line, the summary, a table of all findings and a
+  hidden marker with the reviewed head SHA.
+
 ## Posting with post-comment.sh
 
-Post only after the user confirms. Call the script by its full path,
+Use `post-comment.sh` for a reply into an existing thread, and for a single comment outside
+a review run. Post only after the user confirms. Call the script by its full path,
 `${CLAUDE_PLUGIN_ROOT}/scripts/post-comment.sh`. The examples below abbreviate the path.
 
 - The script puts `:robot: AI-generated` above every comment.
