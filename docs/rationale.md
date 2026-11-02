@@ -41,6 +41,9 @@ skill loads that file. Read this file before you drop a rule that looks like cer
   is an A by itself. No pass re-runs locally what CI already proved.
 - **The passes never learn the bar.** A pass that knows which tiers ship raises a
   borderline finding or drops it. Triage alone filters, and a PR run drops C there.
+- **One round does not find everything.** On four pdf-viewer feature branches, a second round
+  on the same head found 61 new findings after 92, 19 of them B. Hence the rounds budget and
+  the findings file. The same idea drives the reconciliation of GitLab Duo Code Review.
 - **The tier is not the comment.** A/B/C is the plugin's scale. A PR reader gets a
   Conventional Comment. Its label and decoration say the same thing in words that the
   reader knows. An unverified claim posts as a question. The label freezes together with

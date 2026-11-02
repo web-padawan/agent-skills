@@ -34,6 +34,8 @@ Restart the session so that the skills load.
 /agent-skills:guided-review 9042                # walkthrough, review, optional posting
 /agent-skills:self-review                       # current branch, type detected
 /agent-skills:self-review --fix --no-coverage   # force type, skip the coverage check
+/agent-skills:self-review --rounds 3            # up to 3 rounds, stops when one adds no new A or B
+/agent-skills:self-review --fresh               # ignore the findings file of the last run
 /agent-skills:pr-review 9042 --deep 2           # agent pass, inline comments after you confirm
 /agent-skills:refactor-component packages/<name>
 /agent-skills:comment-cleanup --commit HEAD

@@ -1,7 +1,7 @@
 ---
 name: self-review
-description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs three review passes in one parallel batch: a change pass (scope, behavior, fix correctness, plus boundary/impact blocks on the top significant changes), a code pass (logic, conventions, reuse, maintainability, comments) and a tests pass; the diff's scale tier (trivial/lite/full) sizes the coverage and deep-block budgets only. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review).
-argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--scale trivial|lite|full] [--deep N] [--no-coverage]"
+description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs three review passes in one parallel batch: a change pass (scope, behavior, fix correctness, plus boundary/impact blocks on the top significant changes), a code pass (logic, conventions, reuse, maintainability, comments) and a tests pass; the diff's scale tier (trivial/lite/full) sizes the coverage, deep-block and rounds budgets only. A large feature gets a second round that looks for what the first missed, and a run on a newer head reconciles the findings of the last run. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Use on your own branch; not for reviewing someone else's PR (guided-review, pr-review).
+argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--scale trivial|lite|full] [--deep N] [--rounds N] [--fresh] [--no-coverage]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, Skill, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/test-summary.sh:*), Bash(*/scripts/ab.sh:*)
 ---
@@ -18,9 +18,9 @@ Three rules outrank everything else:
 - **Leave `HEAD` and the index exactly as you found them.** Never run commit, amend, push,
   `git add`, `stash`, `reset --hard`, or `git clean`.
 - **This skill creates only the context file, its notes file, the patch files for a diff too
-  large to inline, and the report.** The plan script writes the skeleton and the patches in
-  the git-ignored report directory that the plan names. You write the notes file before
-  fan-out. You write the report only after the gate in step 6 approves it.
+  large to inline, the findings file and the report.** The plan script writes the skeleton
+  and the patches in the git-ignored report directory that the plan names. You write the
+  notes file before fan-out. You write the report only after the gate in step 6 approves it.
 
 Every finding goes in the report as `confirmed` or `accepted`.
 
@@ -42,7 +42,7 @@ resolve from this file. If a read fails, use
 1. **Plan.** Resolve the plugin root to a literal path. Then run the plan script in one call:
    `${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode self` plus the flags that the user
    passed (`--fix|--feature|--refactor|--chore` → `--type`, `--scale`, `--deep N`,
-   `--no-coverage`). If the output has a `guard: refuse:` line, say the reason in one line and
+   `--rounds N`, `--fresh`, `--no-coverage`). If the output has a `guard: refuse:` line, say the reason in one line and
    stop. Record `base`, `head` and `head0` as literal SHAs. When the user gave `$0`, fetch it
    with `gh`.
 
@@ -76,7 +76,19 @@ resolve from this file. If a read fails, use
 
    The context, notes and patch files live in the git-ignored report directory, so they
    never appear here. Leave every pre-existing untracked file alone.
-5. **Roll call, then triage.** Do both per pipeline.md, in that order.
+5. **Roll call, triage, then the next round.** Do the roll call and triage per pipeline.md,
+   in that order. Then read the `round: <k> of <n>` line of the plan:
+   - When k is less than n and this round added a confirmed A or B finding, write the
+     findings file per finalize.md. Re-run the plan with the same flags, then repeat steps 3
+     to 5 with its new prompts.
+   - Otherwise, go on to the gate.
+
+   The re-run plan lists the findings of the earlier rounds in the skeleton, so that the
+   passes look for what those rounds missed. Keep the notes file. The frozen list grows by
+   the new findings of each round.
+
+   The `earlier_findings:` line of the first plan tells you whether an earlier run left
+   findings. On a newer head, the passes reconcile them, and triage applies their status.
 6. **Gate.** Per finalize.md, print the classified list in chat. Then ask one
    `AskUserQuestion` with two questions: write the report, and run the coverage check. The
    skill applies nothing either way. The gate decides what you produce, not what you
@@ -84,10 +96,12 @@ resolve from this file. If a read fails, use
 7. **Coverage check.** Run it per mutation.md, with the `mutants` budget from the plan. Skip
    it when the gate skipped it or the budget is 0.
 8. **Report and verdict.** Per finalize.md, assert that `HEAD` equals `head0` from the plan,
-   with nothing unstaged and nothing staged. Write the report when the gate approved it. Reply
+   with nothing unstaged and nothing staged. Write the report when the gate approved it.
+   Write the findings file whenever the review has a finding, also when the gate declined the
+   report. The next run of this skill starts from it. Reply
    in chat with the type, scale tier, tier counts, the reminder that nothing was changed,
    and the verdict. The verdict is **ready for PR** / **needs more work**.
 
 The profile lives in [`../../references/profiles.md`](../../references/profiles.md) and
-reaches you through the plan. The profile covers which passes run, the mutant budget and the
-deep-block budget. Do not re-derive it here.
+reaches you through the plan. The profile covers which passes run, the mutant budget, the
+deep-block budget and the rounds budget. Do not re-derive it here.
