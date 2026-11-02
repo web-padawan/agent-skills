@@ -81,7 +81,8 @@ Then the author gets one notification, not one for each finding. Call
 4. Run it again without `--dry-run`.
 
 ```bash
-post-review.sh --pr <number> --findings <scratchpad>/pr-<number>-post.json \
+post-review.sh --pr <number> --head <head SHA of the review> \
+  --findings <scratchpad>/pr-<number>-post.json \
   [--summary <scratchpad>/pr-<number>-summary.md] [--dry-run]
 ```
 
@@ -90,6 +91,9 @@ post-review.sh --pr <number> --findings <scratchpad>/pr-<number>-post.json \
 ```
 
 - The script refuses the whole batch when one message has no valid label.
+- Pass the full head SHA that the review read as `--head`. The plan prints it as `head:`.
+- If the PR head moved after the review and a commented file changed, the script refuses.
+  Then re-run the review on the new head.
 - Each finding goes on its line. When GitHub refuses the line, the finding goes on the file.
   When GitHub refuses the file, the finding goes in the review body.
 - A finding within two lines of an existing thread is skipped. Reply into that thread
