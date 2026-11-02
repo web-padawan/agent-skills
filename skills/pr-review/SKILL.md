@@ -71,7 +71,9 @@ what reaches the PR:
 
 **Keep** a finding only when it impacts correctness, performance, security or maintainability.
 It must be discrete and actionable. This PR must have introduced it. It must have provable
-impact and be clearly not intentional.
+impact and be clearly not intentional. A finding that reverts a commit of this branch is
+intentional by default. The `commits:` list of the plan names those commits. Post such a
+finding as a `question (design)`, or drop it.
 
 **Drop** style nits, unless they obscure meaning or violate a quoted convention. Drop rigor
 demands inconsistent with the codebase, pre-existing bugs, generic observations, and
