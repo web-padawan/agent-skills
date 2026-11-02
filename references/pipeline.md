@@ -59,6 +59,7 @@ The script wrote the skeleton. The skeleton already holds these parts:
 - the Settled facts that the script can prove (CI digest, image dimensions)
 - the comments already on the PR: thread id, author, bot or human, open or resolved,
   `path:line`, first line
+- the new-unit gaps, when the diff adds a unit: registration and scaffold gaps from its siblings
 - the conventions excerpt: chapters selected by the kinds of file touched and by what the
   added lines use
 - the comment policy, when the diff touches a comment
