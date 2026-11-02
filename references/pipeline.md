@@ -60,7 +60,8 @@ The script wrote the skeleton. The skeleton already holds these parts:
 - the comments already on the PR: thread id, author, bot or human, open or resolved,
   `path:line`, first line
 - the new-unit gaps, when the diff adds a unit: registration and scaffold gaps from its siblings
-- the conventions excerpt: chapters selected by the kinds of file touched and by what the
+- the conventions excerpt: the whole doc up to 400 lines. A longer doc gives the chapters
+  selected by the kinds of file touched and by what the
   added lines use
 - the comment policy, when the diff touches a comment
 - the severity rubric
@@ -167,6 +168,11 @@ markers and the escalation ladder.
    `dup:` on a pass finding or from your own comparison. The finding stays in the frozen
    list with your verdict on the thread, `confirms` or `contradicts`. Never post it as a new
    comment.
+
+   Read the `reply` lines under each matched thread. A finding that a reply dismissed gets
+   status `dismissed (<author>, <id>)` and never posts. A reply that calls the thread fixed,
+   where the head does not fix it, gives the verdict `not fixed`. A `not fixed` finding
+   posts as a reply into that thread.
 
    An **open** thread that no pass reproduced is an `[orchestrator]` lead. Verify it within
    the triage ceiling and record `confirmed by review` or `not reproduced`.
