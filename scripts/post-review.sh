@@ -12,15 +12,17 @@
 #   `line` may be null (file-level). `file` may be null (review body only). Every
 #   message must open with a Conventional Comments label (lib/conventional-label.sh).
 #   One bad message refuses the whole batch before any network call.
-# <file.md>: optional text for the review body, e.g. the three-move summary.
+# <file.md>: optional text for the review body: the praise and what clearing the
+#   findings earns. The script writes the census itself.
 #
 # Each finding becomes its own review thread, anchored try-then-demote: a line
 # thread, then a file thread, then a block in the review body. GitHub judges the
 # anchor (a line outside the diff, a deleted or binary file), so any failure
-# demotes and nothing breaks the review. The body opens with an overview line and
-# a table over all findings, and ends with a hidden marker that records the
-# reviewed head SHA. The review is built pending and submitted once, so the
-# author gets one notification, not one per finding (the same flow as the
+# demotes and nothing breaks the review. The body holds one census line by label,
+# the summary, and only the findings that no thread could hold — the threads carry
+# the rest, so the body never repeats them. It ends with a hidden marker that
+# records the reviewed head SHA. The review is built pending and submitted once,
+# so the author gets one notification, not one per finding (the same flow as the
 # upstream vaadin/github-actions code-review action).
 #
 # A line finding within two lines of an existing thread root on the same file is
@@ -45,7 +47,7 @@ while [[ $# -gt 0 ]]; do
     --findings) FINDINGS="${2:?--findings requires a value}"; shift 2 ;;
     --summary) SUMMARY="${2:?--summary requires a value}"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
-    --help|-h) sed -n '2,35p' "$0"; exit 0 ;;
+    --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -126,7 +128,26 @@ add_thread() {  # add_thread <line|file> <path> <line> <body>
   [ -n "$out" ]
 }
 
-table_cell() { printf '%s' "$1" | tr '\n' ' ' | sed 's/|/\\|/g'; }
+# census — "4 issues (**2 blocking**), 7 suggestions" from one "<label> [blocking]"
+# line per posted finding, in the order of the closed vocabulary (references/severity.md).
+census() {
+  printf '%s\n' "$1" | awk '
+    NF { n[$1]++; if ($2 == "blocking") b[$1]++ }
+    END {
+      k = split("issue suggestion todo question chore nitpick thought praise", order, " ")
+      for (i = 1; i <= k; i++) seen[order[i]] = 1
+      for (w in n) if (!(w in seen)) order[++k] = w
+      for (i = 1; i <= k; i++) {
+        w = order[i]
+        if (!(w in n)) continue
+        part = n[w] " " w (n[w] > 1 && w != "praise" ? "s" : "")
+        if (w in b) part = part " (**" b[w] " blocking**)"
+        out = out (out == "" ? "" : ", ") part
+      }
+      print out
+    }'
+}
+BLOCKING_RE='[(, ]blocking[),]'
 
 # ── Build the threads ────────────────────────────────────────────────
 REVIEW_ID=""
@@ -152,8 +173,7 @@ if [ "$DRY_RUN" != true ] && [ "$N" -gt 0 ]; then
   [ -n "$REVIEW_ID" ] || { echo "error: could not create a pending review" >&2; exit 1; }
 fi
 
-TABLE="| Label | Finding |
-| --- | --- |"
+KINDS=""
 UNANCHORED=""
 INLINE=0
 BODY_N=0
@@ -165,7 +185,6 @@ for ((i = 0; i < N; i++)); do
   allow=$(field "$i" allow_nearby)
   first="${msg%%$'\n'*}"
   label=$(printf '%s' "$first" | sed -n 's/^\*\*\([^*]*\):\*\* .*/\1/p')
-  subject=$(printf '%s' "$first" | sed -n 's/^\*\*[^*]*:\*\* \(.*\)/\1/p')
   where="${file:-}${line:+:$line}"
 
   if [ -n "$file" ] && [ -n "$line" ] && [ "$allow" != true ]; then
@@ -176,8 +195,10 @@ for ((i = 0; i < N; i++)); do
       continue
     fi
   fi
-  TABLE="$TABLE
-| $(table_cell "$label") | $(table_cell "$subject") |"
+  kind="${label%% *}"
+  [[ "$label" =~ $BLOCKING_RE ]] && kind="$kind blocking"
+  KINDS="$KINDS
+$kind"
 
   thread_body="$PREFIX
 
@@ -221,13 +242,12 @@ fi
 if [ "$POSTED" -eq 0 ]; then
   OVERVIEW="Reviewed \`${HEAD_SHA:0:7}\`. Nothing to flag."
 else
-  OVERVIEW="Reviewed \`${HEAD_SHA:0:7}\`"
-  [ "$INLINE" -gt 0 ] && OVERVIEW="$OVERVIEW: left **$INLINE comment$([ "$INLINE" -eq 1 ] || echo s)**"
-  if [ "$BODY_N" -gt 0 ]; then
-    [ "$INLINE" -gt 0 ] && OVERVIEW="$OVERVIEW, and" || OVERVIEW="$OVERVIEW:"
-    OVERVIEW="$OVERVIEW collected $BODY_N finding$([ "$BODY_N" -eq 1 ] || echo s) below that could not be attached to the diff"
+  OVERVIEW="Reviewed \`${HEAD_SHA:0:7}\` and left $POSTED comment$([ "$POSTED" -eq 1 ] || echo s): $(census "$KINDS")."
+  if [ "$BODY_N" -eq 1 ]; then
+    OVERVIEW="$OVERVIEW One of them is below, because it could not be attached to the diff."
+  elif [ "$BODY_N" -gt 1 ]; then
+    OVERVIEW="$OVERVIEW $BODY_N of them are below, because they could not be attached to the diff."
   fi
-  OVERVIEW="$OVERVIEW."
 fi
 BODY="$PREFIX
 
@@ -235,9 +255,6 @@ $OVERVIEW"
 [ -n "$SUMMARY" ] && BODY="$BODY
 
 $(cat "$SUMMARY")"
-[ "$POSTED" -gt 0 ] && BODY="$BODY
-
-$TABLE"
 [ -n "$UNANCHORED" ] && BODY="$BODY$UNANCHORED"
 BODY="$BODY
 
