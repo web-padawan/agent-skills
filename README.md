@@ -79,8 +79,9 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 
 ## Update a skill
 
-The directory marketplace loads skills and scripts from this checkout. Save the change and
-start a new session. Create a new skill with `authoring-skills`.
+The plugin runs from a cached copy of one commit. Commit the change, run
+`claude plugin update agent-skills@local`, and start a new session. Create a new skill with
+`authoring-skills`.
 
 ## Dependencies
 
