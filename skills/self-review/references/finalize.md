@@ -163,8 +163,9 @@ Fix the A findings, then re-run. Coverage gaps: write the test that each survivo
 
 ## Findings file — at the plan's `findings_file:` path
 
-The next run of this skill starts from this file. The plan script reads it with `jq`. Write
-it with Write as one JSON object:
+The next run of this skill starts from this file. It is also the record of the review: the
+head that the run reviewed, and its verdict. The plan script reads it with `jq`. Write it
+with Write as one JSON object:
 
 ```json
 {
@@ -173,6 +174,7 @@ it with Write as one JSON object:
   "base": "<the base SHA of this run>",
   "date": "2026-11-02",
   "round": 2,
+  "verdict": "ready for PR",
   "findings": [
     {
       "id": "F1",
@@ -190,8 +192,13 @@ it with Write as one JSON object:
 }
 ```
 
+- Write the file at the end of every run, also when the review has no finding. Then
+  `findings` is `[]`, which records a clean review of `head`.
 - `round` at the top is the number of the last round of this run. Each finding keeps the
   round that found it.
+- `verdict` is the verdict of the run, per the verdict rubric: `ready for PR` or
+  `needs more work`. Omit it when you write the file between rounds. A file without
+  `verdict` is the record of a run that did not finish.
 - Keep every finding of the earlier file, with its new status. Give a new finding the next
   free id. Never reuse an id.
 - `status` is one of these values:
