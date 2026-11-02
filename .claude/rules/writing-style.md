@@ -71,8 +71,6 @@ The rules adapt ASD-STE100 Issue 9. No word list is enforced.
 - The frontmatter `description` field. It follows the trigger conventions in `skills/authoring-skills/references/descriptions.md`.
 - Quoted examples that show good or bad output. These files are examples in full:
   - `references/comment-guidelines.md`
-  - `skills/pr-description/references/STYLE.md`
-  - `skills/pr-description/references/TEMPLATE.md`
   - `skills/work-summary/assets/TEMPLATE.md`
 - Text that a skill prints to the user, even outside a fenced block.
 - `docs/retrospective.md`. It is a historical record.

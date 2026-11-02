@@ -10,7 +10,6 @@ single-plugin marketplace. You install it from a local path. Nothing is publishe
 | `guided-review` | A PR from someone else. Explains the PR, reviews it after you confirm, then posts only the findings you select. |
 | `self-review` | Your own branch before you open or update a PR. Three agent passes, A / B / C findings, a `FINDINGS.md` report. Never edits code. |
 | `pr-review` | A full agent pass over a PR, then inline Conventional Comments after you confirm. |
-| `pr-description` | The PR body from the branch diff, in the Vaadin template. Updates the PR after you confirm. |
 | `refactor-component` | A structural refactor of web component sources without a behavior change. |
 | `comment-cleanup` | Deletes and shortens comments in a diff, a file or a package. Edits comment lines only. |
 | `screenshot-diff` | Classifies visual test screenshot diffs. Never updates a baseline. |
@@ -36,7 +35,6 @@ Restart the session so that the skills load.
 /agent-skills:self-review                       # current branch, type detected
 /agent-skills:self-review --fix --no-coverage   # force type, skip the coverage check
 /agent-skills:pr-review 9042 --deep 2           # agent pass, inline comments after you confirm
-/agent-skills:pr-description 9042               # rewrite the body of a PR
 /agent-skills:refactor-component packages/<name>
 /agent-skills:comment-cleanup --commit HEAD
 /agent-skills:screenshot-diff packages/button

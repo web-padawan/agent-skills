@@ -29,13 +29,13 @@ Include the literal verbs, nouns, and phrases that a user would type.
 List the kinds of request that the skill covers. Breadth here is deliberate, so that
 many phrasings match.
 
-- **`pr-description`** lists the requests that it answers rather than how it works:
-  > "Use when asked to write a PR description, fill in the PR template,
-  > describe this branch for a PR, update or improve the PR body, or add a
-  > how-to-test section."
+- **`work-summary`** lists the requests that it answers rather than how it works:
+  > "Use when asked to summarize my work, my PRs or my commits, write a work
+  > report, a status update, a monthly or sprint summary, or
+  > `"what I did on <component> in <period>"`."
 
-  A user who types "fill in the template for this branch" matches even though the user
-  never said "PR description".
+  A user who types "write my status update for September" matches even though the user
+  never said "work summary".
 
 ### 3. State the boundary when a sibling could also match
 This repo has three review skills. Without boundary clauses they would collide on every
