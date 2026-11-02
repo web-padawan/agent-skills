@@ -4,7 +4,7 @@
 # Requires the `gh` CLI (authenticated) and `jq`. Fails loudly without them.
 #
 # Usage:
-#   post-review.sh [--pr <number-or-url>] --findings <file.json> [--summary <file.md>] [--dry-run]
+#   post-review.sh [--pr <number-or-url>] --head <sha> --findings <file.json> [--summary <file.md>] [--dry-run]
 #
 # <file.json>:
 #   {"findings": [{"file": "path/in/diff", "line": 42, "message": "**issue (logic, blocking):** ...",
@@ -12,6 +12,8 @@
 #   `line` may be null (file-level). `file` may be null (review body only). Every
 #   message must open with a Conventional Comments label (lib/conventional-label.sh).
 #   One bad message refuses the whole batch before any network call.
+# <sha>: the full head SHA that the review read (the plan's `head:`). When the PR head
+#   moved since, the script refuses if a commented file differs between the two heads.
 # <file.md>: optional text for the review body: the praise and what clearing the
 #   findings earns. The script writes the census itself.
 #
@@ -39,11 +41,13 @@ set -euo pipefail
 PR=""
 FINDINGS=""
 SUMMARY=""
+REVIEWED_HEAD=""
 DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
+    --head) REVIEWED_HEAD="${2:?--head requires a value}"; shift 2 ;;
     --findings) FINDINGS="${2:?--findings requires a value}"; shift 2 ;;
     --summary) SUMMARY="${2:?--summary requires a value}"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
@@ -62,6 +66,11 @@ if [ -n "$SUMMARY" ] && [ ! -f "$SUMMARY" ]; then
 fi
 jq -e '.findings | type == "array"' "$FINDINGS" >/dev/null 2>&1 || {
   echo "error: $FINDINGS must be a JSON object with a \"findings\" array" >&2; exit 2
+}
+# The line numbers of the findings belong to the head that the review read. Without
+# it, the script cannot tell whether the PR moved under the anchors.
+[[ "$REVIEWED_HEAD" =~ ^[0-9a-f]{40}$ ]] || {
+  echo "error: --head <sha> is required: the full 40-character SHA that the review read (the plan's head:)" >&2; exit 2
 }
 
 # shellcheck source=lib/conventional-label.sh
@@ -93,6 +102,31 @@ HEAD_SHA=$(printf '%s' "$PR_JSON" | jq -r .headRefOid)
 PR_URL=$(printf '%s' "$PR_JSON" | jq -r .url)
 REPO_SLUG=$(printf '%s' "$PR_URL" | sed -n 's|^https://[^/]*/\([^/]*/[^/]*\)/pull/.*|\1|p')
 [ -n "$REPO_SLUG" ] || { echo "error: could not derive the repo from $PR_URL" >&2; exit 1; }
+
+# ── The PR head must still match the reviewed head on every commented file ──
+# A push after the review (a rebase, a fixup) can shift the lines under the anchors.
+# Refuse when a commented file differs; a move that leaves them alone is harmless.
+if [ "$REVIEWED_HEAD" != "$HEAD_SHA" ]; then
+  for sha in "$REVIEWED_HEAD" "$HEAD_SHA"; do
+    git cat-file -e "$sha^{commit}" 2>/dev/null \
+      || git fetch -q --no-tags "https://github.com/$REPO_SLUG.git" "$sha" 2>/dev/null || true
+    git cat-file -e "$sha^{commit}" 2>/dev/null || {
+      echo "error: the PR head moved from ${REVIEWED_HEAD:0:7} to ${HEAD_SHA:0:7}, and commit ${sha:0:7} is not available — run from a clone of $REPO_SLUG; nothing posted" >&2
+      exit 2
+    }
+  done
+  COMMENTED=()
+  while IFS= read -r f; do [ -n "$f" ] && COMMENTED+=("$f"); done < <(jq -r '.findings[].file // empty' "$FINDINGS" | sort -u)
+  MOVED=""
+  [ "${#COMMENTED[@]}" -gt 0 ] && MOVED=$(git diff --name-only "$REVIEWED_HEAD" "$HEAD_SHA" -- "${COMMENTED[@]}")
+  if [ -n "$MOVED" ]; then
+    echo "error: the PR head moved from ${REVIEWED_HEAD:0:7} to ${HEAD_SHA:0:7}, and these commented files changed:" >&2
+    printf '  %s\n' $MOVED >&2
+    echo "re-run the review on ${HEAD_SHA:0:7}; nothing posted" >&2
+    exit 2
+  fi
+  echo "note: the PR head moved from ${REVIEWED_HEAD:0:7} to ${HEAD_SHA:0:7}; no commented file changed, so the anchors hold"
+fi
 
 # Thread roots already on the PR, for the nearby guard.
 ROOTS=$(gh api "repos/$REPO_SLUG/pulls/$PR_NUMBER/comments" --paginate \
@@ -240,9 +274,9 @@ if [ "$POSTED" -eq 0 ] && [ "$SKIPPED" -gt 0 ]; then
   exit 0
 fi
 if [ "$POSTED" -eq 0 ]; then
-  OVERVIEW="Reviewed \`${HEAD_SHA:0:7}\`. Nothing to flag."
+  OVERVIEW="Reviewed \`${REVIEWED_HEAD:0:7}\`. Nothing to flag."
 else
-  OVERVIEW="Reviewed \`${HEAD_SHA:0:7}\` and left $POSTED comment$([ "$POSTED" -eq 1 ] || echo s): $(census "$KINDS")."
+  OVERVIEW="Reviewed \`${REVIEWED_HEAD:0:7}\` and left $POSTED comment$([ "$POSTED" -eq 1 ] || echo s): $(census "$KINDS")."
   if [ "$BODY_N" -eq 1 ]; then
     OVERVIEW="$OVERVIEW One of them is below, because it could not be attached to the diff."
   elif [ "$BODY_N" -gt 1 ]; then
@@ -258,7 +292,7 @@ $(cat "$SUMMARY")"
 [ -n "$UNANCHORED" ] && BODY="$BODY$UNANCHORED"
 BODY="$BODY
 
-<!-- agent-skills:reviewed-head $HEAD_SHA -->"
+<!-- agent-skills:reviewed-head $REVIEWED_HEAD -->"
 
 if [ "$DRY_RUN" = true ]; then
   printf -- '--- review body ---\n%s\n' "$BODY"

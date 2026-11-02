@@ -8,8 +8,9 @@
 # branch of three commits. Then runs ab.sh, fixup-into.sh and float-to-tip.sh against it and
 # checks their exit codes and their effect on the tree. Runs dev-server.sh and `ab.sh --port`
 # against a fake web-dev-server (a python3 http.server) and checks that they return through a
-# pipe, restore on SIGTERM, and leave no shell behind. Also checks that every script in this
-# directory answers --help with exit 0.
+# pipe, restore on SIGTERM, and leave no shell behind. Checks the review-plan.sh report dir
+# and earlier-findings list, and the post-review.sh --head refusal. Also checks that every
+# script in this directory answers --help with exit 0.
 #
 # Exit codes: 0 all checks passed · 1 a check failed.
 set -uo pipefail
@@ -206,6 +207,11 @@ jq -n --arg head "$(git rev-parse HEAD)" '{branch: "feature", head: $head, round
 expect "review-plan.sh lists a merged finding with the finding that kept it" \
   "- F1 | open | logic | a.txt:2 | B | kept claim Merged: a.txt:3 merged claim" \
   "$(grep '^- F1 ' .omc/self-review/context.md 2>/dev/null)"
+
+echo "== post-review.sh"
+printf '{"findings": []}\n' > "$WORK/post.json"
+check "post-review.sh refuses a run without --head" 2 \
+  "$SCRIPTS/post-review.sh" --findings "$WORK/post.json" --dry-run
 
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"
