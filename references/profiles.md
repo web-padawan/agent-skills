@@ -8,8 +8,9 @@ The tables below are the single source. Everything else in this plugin reads the
   delivery clause. The script resolves that column into the literal prompt that it prints
   under `=== PROMPTS ===`. Every other contract (questions, category, output format,
   verification rules) lives in the agent definition at `agents/<name>.md`.
-- **Matrix**. For a mode, change type and scale tier, the passes that run and the mutant
-  budget. The plan script resolves a row into a launch list.
+- **Matrix**. For a mode, change type and scale tier, the passes that run, the mutant
+  budget, the deep budget and the rounds budget. The plan script resolves a row into a
+  launch list.
 - **Pass effort** and **Pass model**. What the scale tier caps per pass, and the model that
   runs each pass.
 
@@ -30,20 +31,26 @@ A pass never reads a patch outside its lane. A pass never regenerates a patch wi
 
 ## Matrix
 
-| mode | type | scale | passes | mutants | deep |
-| --- | --- | --- | --- | --- | --- |
-| self | feature | any | change code tests | 15 | 3 |
-| self | fix | any | change code tests | 5 | 3 |
-| self | refactor | any | change code tests | 10 | 3 |
-| self | chore | any | change code tests | 0 | 0 |
-| pr | feature | any | change code tests | 0 | 3 |
-| pr | fix | any | change code tests | 0 | 3 |
-| pr | refactor | any | change code tests | 0 | 3 |
-| pr | chore | any | change code tests | 0 | 0 |
-| pr | undetermined | any | change code tests | 0 | 3 |
+| mode | type | scale | passes | mutants | deep | rounds |
+| --- | --- | --- | --- | --- | --- | --- |
+| self | feature | any | change code tests | 15 | 3 | 2 |
+| self | fix | any | change code tests | 5 | 3 | 1 |
+| self | refactor | any | change code tests | 10 | 3 | 1 |
+| self | chore | any | change code tests | 0 | 0 | 1 |
+| pr | feature | any | change code tests | 0 | 3 | 1 |
+| pr | fix | any | change code tests | 0 | 3 | 1 |
+| pr | refactor | any | change code tests | 0 | 3 | 1 |
+| pr | chore | any | change code tests | 0 | 0 | 1 |
+| pr | undetermined | any | change code tests | 0 | 3 | 1 |
 
-The scale tier caps both budgets on top of the row. Mutants: **trivial 3, lite 8, full
-uncapped**. Deep blocks: **trivial 1, lite 2, full uncapped**.
+The scale tier caps the budgets on top of the row. Mutants: **trivial 3, lite 8, full
+uncapped**. Deep blocks: **trivial 1, lite 2, full uncapped**. Rounds: **trivial 1, lite 1,
+full uncapped**. `--rounds N` overrides the rounds budget outright.
+
+A **round** is one fan-out of the passes. One round does not find everything in a large
+feature. On four pdf-viewer feature branches, a second round on the same head found 61 new
+findings after 92 in the first, 19 of them B. A further round lists the findings of the
+earlier rounds as reported, so the passes look for what they missed (self-review step 5).
 
 The plan script then caps the deep budget a second time by what the diff offers. It counts
 **deep candidates**: `.d.ts` hunks, new exports, and added public (non-underscore) members.
