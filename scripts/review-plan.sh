@@ -456,6 +456,7 @@ esac
 
 # ── Conventions doc (named in the plan, quoted into the context) ──────
 CONVENTIONS=""
+CONVENTIONS_WHOLE_MAX=400
 for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTIONS.md CLAUDE.md AGENTS.md; do
   if [ -f "$f" ]; then CONVENTIONS="$f"; break; fi
 done
@@ -736,10 +737,16 @@ block() {  # block <doc> <name> — print one marked block from a reference doc,
 
 conventions_excerpt() {  # conventions_excerpt <doc> "<signals>" — chapters selected by signal
   local doc="$1" signals="$2" nhead re=""
+  # A doc that fits the budget is quoted whole: chapter selection is lossy, and a missed
+  # "when you add X, also update Y" rule is a missed finding (the upstream Vaadin CI review
+  # reads the whole doc for the same reason).
+  if [ "$(wc -l < "$doc")" -le "$CONVENTIONS_WHOLE_MAX" ]; then
+    awk '/^# / { next } { print }' "$doc" | sed 's/^#/##/'
+    return
+  fi
   nhead=$(grep -c '^## ' "$doc" 2>/dev/null || true)
   if [ "${nhead:-0}" -lt 3 ]; then
-    if [ "$(wc -l < "$doc")" -le 200 ]; then sed 's/^#/##/' "$doc"
-    else echo "(the conventions doc has no chapters and is over 200 lines — not quoted; open \`$doc\` only for a finding that needs it)"; fi
+    echo "(the conventions doc has no chapters and is over $CONVENTIONS_WHOLE_MAX lines — not quoted; open \`$doc\` only for a finding that needs it)"
     return
   fi
   for sig in $signals; do
@@ -950,7 +957,7 @@ if [ -n "$CONTEXT_PATH" ]; then
     echo
     block "$PLUGIN_ROOT/references/skeleton-blocks.md" rule-report
     echo
-    block "$PLUGIN_ROOT/references/skeleton-blocks.md" "c-rule-$MODE"
+    block "$PLUGIN_ROOT/references/skeleton-blocks.md" c-rule
     echo
     echo 'Findings come back one per line: `<category> | <file>:<line> | <A|B|C> | <claim>`.'
     if [ -n "$PR_BODY" ]; then
@@ -978,7 +985,11 @@ if [ -n "$CONTEXT_PATH" ]; then
     block "$PLUGIN_ROOT/references/skeleton-blocks.md" conventions-header
     echo
     if [ -n "$CONVENTIONS" ]; then
-      echo "Source: \`$CONVENTIONS\`. Chapters selected by signals: ${SIGNALS:-(none)}."
+      if [ "$(wc -l < "$CONVENTIONS")" -le "$CONVENTIONS_WHOLE_MAX" ]; then
+        echo "Source: \`$CONVENTIONS\`, quoted whole ($(wc -l < "$CONVENTIONS" | tr -d ' ') lines)."
+      else
+        echo "Source: \`$CONVENTIONS\`. Chapters selected by signals: ${SIGNALS:-(none)}."
+      fi
       echo
       conventions_excerpt "$CONVENTIONS" "$SIGNALS"
     else

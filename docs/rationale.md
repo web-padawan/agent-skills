@@ -39,8 +39,8 @@ skill loads that file. Read this file before you drop a rule that looks like cer
   not the questions. The change type is a prompt add, not a pass.
 - **CI is authoritative on a PR.** A green check retires that class of finding. A red check
   is an A by itself. No pass re-runs locally what CI already proved.
-- **C findings are the point of a local review, and noise on a PR.** Hence the mode-variant
-  C rule.
+- **The passes never learn the bar.** A pass that knows which tiers ship raises a
+  borderline finding or drops it. Triage alone filters, and a PR run drops C there.
 - **The tier is not the comment.** A/B/C is the plugin's scale. A PR reader gets a
   Conventional Comment. Its label and decoration say the same thing in words that the
   reader knows. An unverified claim posts as a question. The label freezes together with
