@@ -9,8 +9,12 @@
 # Usage:
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
 #                  [--type fix|feature|refactor|chore] [--scale trivial|lite|full]
-#                  [--deep N] [--no-coverage] [--report-dir <path>] [--no-context]
-#                  [--context-out <path>] [--no-write]
+#                  [--deep N] [--rounds N] [--fresh] [--no-coverage] [--report-dir <path>]
+#                  [--no-context] [--context-out <path>] [--no-write]
+#
+# In self mode it also reads the findings file of the last review of the branch
+# (`<report-dir>/<branch>-findings.json`): the same head starts a further round, a newer
+# head reconciles the earlier findings. `--fresh` ignores the file.
 #
 # Prints get-pr-context.sh's PR_METADATA, CI_STATUS and EXISTING_COMMENTS sections (skip
 # with --no-context; the other sections are restated by the plan) then === PLAN ===, and
@@ -35,6 +39,8 @@ REPORT_DIR=""
 WANT_CONTEXT=true
 CONTEXT_OUT=""
 NO_WRITE=false
+ROUNDS_FLAG=""
+FRESH=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -43,6 +49,8 @@ while [[ $# -gt 0 ]]; do
     --type) TYPE_FLAG="${2:?--type requires a value}"; shift 2 ;;
     --scale) SCALE_FLAG="${2:?--scale requires a value}"; shift 2 ;;
     --deep) DEEP="${2:?--deep requires a value}"; shift 2 ;;
+    --rounds) ROUNDS_FLAG="${2:?--rounds requires a value}"; shift 2 ;;
+    --fresh) FRESH=true; shift ;;
     --no-coverage) COVERAGE="off"; shift ;;
     --report-dir) REPORT_DIR="${2:?--report-dir requires a value}"; shift 2 ;;
     --no-context) WANT_CONTEXT=false; shift ;;
@@ -57,6 +65,9 @@ case "$MODE" in self|pr) ;; *) echo "error: --mode must be self or pr" >&2; exit
 case "$TYPE_FLAG" in ""|fix|feature|refactor|chore) ;; *) echo "error: --type must be fix, feature, refactor or chore" >&2; exit 1 ;; esac
 case "$SCALE_FLAG" in ""|trivial|lite|full) ;; *) echo "error: --scale must be trivial, lite or full" >&2; exit 1 ;; esac
 case "$DEEP" in ""|*[!0-9]*) [ -z "$DEEP" ] || { echo "error: --deep takes a number" >&2; exit 1; } ;; esac
+if [ -n "$ROUNDS_FLAG" ] && ! [[ "$ROUNDS_FLAG" =~ ^[1-9][0-9]*$ ]]; then
+  echo "error: --rounds takes a number of 1 or more" >&2; exit 1
+fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
@@ -353,11 +364,11 @@ matrix_row() {
   awk -F'|' -v mode="$1" -v type="$2" -v scale="$3" '
     /^## Matrix/ { in_matrix = 1; next }
     /^## / { in_matrix = 0 }
-    !in_matrix || NF < 7 { next }
+    !in_matrix || NF < 8 { next }
     {
-      for (i = 2; i <= 7; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
+      for (i = 2; i <= 8; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
       if ($2 == "mode" || $2 ~ /^-+$/) next
-      if ($2 == mode && $3 == type && ($4 == scale || $4 == "any")) { print $5 "\t" $6 "\t" $7; exit }
+      if ($2 == mode && $3 == type && ($4 == scale || $4 == "any")) { print $5 "\t" $6 "\t" $7 "\t" $8; exit }
     }
   ' "$PROFILES"
 }
@@ -403,7 +414,15 @@ if [ -n "$ROW" ]; then
   PASS_TOKENS=$(printf '%s' "$ROW" | cut -f1)
   MUTANTS=$(printf '%s' "$ROW" | cut -f2)
   DEEP_ROW=$(printf '%s' "$ROW" | cut -f3)
+  ROUNDS=$(printf '%s' "$ROW" | cut -f4)
 fi
+
+# Rounds budget: the row's number, capped by the scale tier; --rounds N overrides outright.
+# A small diff gives a pass little to miss, so only the full tier repeats the fan-out.
+case "${ROUNDS:-}" in ''|*[!0-9]*) ROUNDS=1 ;; esac
+case "$SCALE" in trivial|lite) [ "$ROUNDS" -gt 1 ] && ROUNDS=1 ;; esac
+ROUNDS_SOURCE="matrix, capped by scale"
+[ -n "$ROUNDS_FLAG" ] && { ROUNDS="$ROUNDS_FLAG"; ROUNDS_SOURCE="--rounds flag"; }
 
 # Effective mutant budget: the row's number, capped by the scale tier.
 case "$MUTANTS" in ''|*[!0-9]*) MUTANTS=0 ;; esac
@@ -473,6 +492,52 @@ if [ -z "$REPORT_DIR" ]; then
   if [ -n "$REPORT_DIR" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] \
      && ! git check-ignore -q "${REPORT_DIR%%/*}" 2>/dev/null; then
     REPORT_DIR="SCRATCHPAD"
+  fi
+fi
+
+# ── Earlier findings ──────────────────────────────────────────────────
+# The findings file that the last self-review of this branch wrote
+# (skills/self-review/references/finalize.md, "Findings file"). One review does not find
+# everything, so the next one starts from it:
+#   same      the head is unchanged: a further round. The earlier findings must not repeat.
+#   delta     the head descends from the reviewed one: the author changed the branch. Each
+#             pass reconciles the earlier findings of its categories, and C findings stay
+#             on the lines changed since (the markers below).
+#   rewritten the reviewed head is gone (rebase, force-push): reconcile, no line markers.
+FINDINGS_FILE=""; EARLIER_MODE="none"; EARLIER_HEAD=""; EARLIER_COUNT=0; EARLIER_OPEN=0
+EARLIER_LIST=""; CHANGED_SINCE=""; ROUND=1
+if [ "$MODE" = "self" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] && [ -n "$HEAD" ]; then
+  FINDINGS_FILE="$REPORT_DIR/$SLUG-findings.json"
+  if [ ! -f "$FINDINGS_FILE" ]; then
+    EARLIER_MODE="none"
+  elif [ "$FRESH" = true ]; then
+    EARLIER_MODE="ignored (--fresh)"
+  elif ! command -v jq >/dev/null 2>&1; then
+    EARLIER_MODE="unreadable (jq not found)"
+  elif ! jq -e '.findings | type == "array"' "$FINDINGS_FILE" >/dev/null 2>&1; then
+    EARLIER_MODE="unreadable (no findings array)"
+  else
+    EARLIER_HEAD=$(jq -r '.head // empty' "$FINDINGS_FILE")
+    EARLIER_COUNT=$(jq '.findings | length' "$FINDINGS_FILE")
+    EARLIER_OPEN=$(jq '[.findings[] | select(.status as $s | ["open", "not_fixed", "partially_fixed", "fixed_wrongly"] | index($s))] | length' "$FINDINGS_FILE")
+    if [ "$EARLIER_HEAD" = "$HEAD" ]; then
+      EARLIER_MODE="same"
+      ROUND=$(( $(jq -r '.round // 1' "$FINDINGS_FILE") + 1 ))
+    elif [ -n "$EARLIER_HEAD" ] && git merge-base --is-ancestor "$EARLIER_HEAD" "$HEAD" 2>/dev/null; then
+      EARLIER_MODE="delta"
+      # One line per file: the new-side line ranges that changed since the reviewed head.
+      CHANGED_SINCE=$(git diff --unified=0 --no-renames "$EARLIER_HEAD..$HEAD" 2>/dev/null | awk '
+        /^\+\+\+ b\// { f = substr($0, 7); next }
+        /^\+\+\+ / { f = ""; next }
+        /^@@/ && f != "" {
+          split($3, a, ","); s = substr(a[1], 2) + 0; n = (a[2] == "" ? 1 : a[2] + 0)
+          if (n > 0) r[f] = r[f] (r[f] == "" ? "" : ", ") (n > 1 ? s "-" (s + n - 1) : s)
+        }
+        END { for (f in r) print f ": " r[f] }' | sort)
+    else
+      EARLIER_MODE="rewritten"
+    fi
+    EARLIER_LIST=$(jq -r '.findings[] | "\(.id) | \(.status) | \(.category) | \(.file // "-"):\(.line // "-") | \(.tier) | \(.claim)"' "$FINDINGS_FILE")
   fi
 fi
 
@@ -1033,6 +1098,31 @@ if [ -n "$CONTEXT_PATH" ]; then
       ""|none|unavailable:*) echo "(no comments on the PR yet — every finding is new)" ;;
       *) printf '%s\n' "$COMMENTS_SECTION" | grep -v '^hint:' | sed 's/^/    /' ;;
     esac
+    case "$EARLIER_MODE" in
+      same|delta|rewritten)
+        echo
+        echo "## Earlier findings"
+        echo
+        if [ "$EARLIER_MODE" = "same" ]; then
+          block "$PLUGIN_ROOT/references/skeleton-blocks.md" earlier-findings-same
+        else
+          block "$PLUGIN_ROOT/references/skeleton-blocks.md" earlier-findings-delta
+        fi
+        echo
+        echo "Source: \`$FINDINGS_FILE\`, reviewed head \`${EARLIER_HEAD:0:10}\`. Each line: id | status | category | file:line | tier | claim."
+        echo
+        printf '%s\n' "$EARLIER_LIST" | sed '/^$/d; s/^/- /'
+        if [ "$EARLIER_MODE" = "delta" ]; then
+          echo
+          echo "### Changed since ${EARLIER_HEAD:0:10}"
+          echo
+          if [ -n "$CHANGED_SINCE" ]; then printf '%s\n' "$CHANGED_SINCE" | sed 's/^/- /'; else echo "- none"; fi
+        elif [ "$EARLIER_MODE" = "rewritten" ]; then
+          echo
+          echo "The reviewed head is not an ancestor of this head, so no line is marked as changed since. Review the whole diff at full priority."
+        fi
+        ;;
+    esac
     echo
     echo "## Diff"
     echo
@@ -1105,6 +1195,14 @@ if [ "$MUTANTS" -gt 0 ] 2>/dev/null; then
     echo "mutant_pool: ~$MUTANT_POOL non-styling source lines"
   fi
 fi
+echo "round: $ROUND of $ROUNDS (rounds budget: $ROUNDS_SOURCE)"
+case "$EARLIER_MODE" in
+  same) echo "earlier_findings: same head — $EARLIER_COUNT findings of the earlier rounds, listed so that no pass repeats them" ;;
+  delta) echo "earlier_findings: delta from ${EARLIER_HEAD:0:10} — $EARLIER_COUNT findings, $EARLIER_OPEN open to reconcile, $(printf '%s\n' "$CHANGED_SINCE" | grep -c . || true) files changed since" ;;
+  rewritten) echo "earlier_findings: rewritten — ${EARLIER_HEAD:0:10} is not an ancestor of the head; $EARLIER_COUNT findings, $EARLIER_OPEN open to reconcile, no line markers" ;;
+  *) echo "earlier_findings: $EARLIER_MODE" ;;
+esac
+[ -n "$FINDINGS_FILE" ] && echo "findings_file: $FINDINGS_FILE"
 echo "conventions_doc: ${CONVENTIONS:-none}"
 if [ -n "$NEW_UNIT" ]; then
   echo "new_unit: $NEW_UNIT (token $UNIT_TOKEN, $UNIT_NSIB siblings), registration_gaps $REG_GAP_COUNT, scaffold_gaps $SCAFFOLD_GAP_COUNT"
