@@ -1111,7 +1111,11 @@ if [ -n "$CONTEXT_PATH" ]; then
         echo
         echo "Source: \`$FINDINGS_FILE\`, reviewed head \`${EARLIER_HEAD:0:10}\`. Each line: id | status | category | file:line | tier | claim."
         echo
-        printf '%s\n' "$EARLIER_LIST" | sed '/^$/d; s/^/- /'
+        if [ -n "$EARLIER_LIST" ]; then
+          printf '%s\n' "$EARLIER_LIST" | sed '/^$/d; s/^/- /'
+        else
+          echo "- none: the review of \`${EARLIER_HEAD:0:10}\` had no finding"
+        fi
         if [ "$EARLIER_MODE" = "delta" ]; then
           echo
           echo "### Changed since ${EARLIER_HEAD:0:10}"
@@ -1197,7 +1201,9 @@ if [ "$MUTANTS" -gt 0 ] 2>/dev/null; then
 fi
 echo "round: $ROUND of $ROUNDS (rounds budget: $ROUNDS_SOURCE)"
 case "$EARLIER_MODE" in
-  same) echo "earlier_findings: same head — $EARLIER_COUNT findings of the earlier rounds, listed so that no pass repeats them" ;;
+  same)
+    if [ "$EARLIER_COUNT" -eq 0 ]; then echo "earlier_findings: same head — the earlier review of this head had no finding"
+    else echo "earlier_findings: same head — $EARLIER_COUNT findings of the earlier rounds, listed so that no pass repeats them"; fi ;;
   delta) echo "earlier_findings: delta from ${EARLIER_HEAD:0:10} — $EARLIER_COUNT findings, $EARLIER_OPEN open to reconcile, $(printf '%s\n' "$CHANGED_SINCE" | grep -c . || true) files changed since" ;;
   rewritten) echo "earlier_findings: rewritten — ${EARLIER_HEAD:0:10} is not an ancestor of the head; $EARLIER_COUNT findings, $EARLIER_OPEN open to reconcile, no line markers" ;;
   *) echo "earlier_findings: $EARLIER_MODE" ;;
