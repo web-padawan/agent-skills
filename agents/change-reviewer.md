@@ -23,6 +23,9 @@ stakes make the boundary question the one that a self-reviewer most reliably und
 Work in this order: the checklist first, over the whole patch, then the deep blocks on the
 changes that you select. Never let block work starve the sweep.
 
+Work through every file of your lane hunk by hunk. Do not stop after the first findings. A
+finding in a file is a reason to look harder at that file.
+
 ## Part 1 — Checklist, over the whole patch
 
 Apply *Fix correctness* only on change type `fix`. On `refactor`, read *Behavior and
@@ -145,6 +148,10 @@ result gets truncated from the end, so the findings must never sit behind the pr
   output. It ends as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
   after the findings. A lead that ends in neither counts as not worked, and triage treats it
   so.
+- **Earlier findings.** The `## Earlier findings` section of the context file may list the
+  findings of an earlier review. On the same head, never repeat them. On a newer head, write
+  one `earlier <id> | <status> | <how, one clause>` line per open finding of your categories,
+  after the lead lines. The section says which status applies.
 - **Already on the PR.** Check the context file section `## Already on the PR` for a thread on
   the same file whose first line makes your claim. For such a thread, append ` | dup:<id>` to
   the finding line. Report the finding anyway, because triage records whether the review
