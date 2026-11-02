@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Code review pass of the self-review and pr-review pipelines — reviews how the production diff is written, against a checklist: logic and edge cases, conventions, reuse, maintainability, and the comments the diff touches. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Code review pass of the self-review and pr-review pipelines — reviews how the production diff is written, against a checklist: logic and edge cases, registration, conventions, reuse, maintainability, the comments the diff touches and the API docs it owes. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
@@ -27,6 +27,8 @@ both categories.
 - Correct handling of edge cases: empty, null, undefined, zero, out-of-range indices
 - No conditions that are always true or always false, and no inverted checks
 - Correct under re-entry, detach / re-attach, and rapid repeated calls
+- New components, handlers, providers and listeners are registered and reachable at runtime. Name the registration point that is missing
+- Paired operations change on both sides: add and remove, open and close, register and unregister
 
 ### Conventions — category `conventions`
 
@@ -55,7 +57,7 @@ both categories.
 
 ### Comments — category `comments`
 
-Two questions share this category. Answer both.
+Three questions share this category. Answer all three.
 
 - **The comments that the diff adds.** Judge each one against the `## Comment policy` section
   of the context file. A DROP is a finding. Name the row that drops it. A REWRITE is a
@@ -64,6 +66,10 @@ Two questions share this category. Answer both.
   matches that code is a finding. The comment-adjacent files in your prompt are that input.
   A diff that adds no comment carries no `## Comment policy` section. Answer this question
   alone then
+- **The API docs that the change owes.** New or changed public API has docs that state the
+  parameters, the return value, the defaults and the fired events. A doc outside the diff
+  that the change made stale is a finding, for example a README or a guide. Name the stale
+  sentence. Do not ask for docs on internal code
 - No decorative banners, and no comment longer than 1 line in a CSS file
 - No mention of a protected or a private method, property or flag
 
