@@ -61,7 +61,8 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | Script | Does |
 | --- | --- |
 | `gh-context.sh` | One issue or PR as markdown, with comments, reviews and threads |
-| `post-comment.sh` | One Conventional Comment on a PR, inline or general |
+| `post-comment.sh` | One Conventional Comment on a PR, inline or general, or a reply |
+| `post-review.sh` | All selected findings as one PR review: line, then file, then body anchors |
 | `review-plan.sh` | The review plan and the context file of the pipeline |
 | `get-pr-context.sh` | PR metadata, anchor SHAs, CI state and diffs for `review-plan.sh` |
 | `dev-server.sh` | Start, check, restart or stop `web-dev-server` on one port |

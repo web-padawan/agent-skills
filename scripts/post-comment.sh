@@ -60,22 +60,12 @@ if [ -z "$MESSAGE" ]; then
 fi
 
 # ── Conventional Comments label check ─────────────────────────────────
-# The first line must be `**<label>:**` or `**<label> (<deco>[, <deco>]):**`,
-# every token from the closed vocabulary in references/severity.md. A comment
-# that fails here never reaches GitHub — a refused post beats an unparseable one.
+# The vocabulary and the check live in lib/conventional-label.sh, shared with
+# post-review.sh. A comment that fails here never reaches GitHub.
+# shellcheck source=lib/conventional-label.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/conventional-label.sh"
 if [ "$CHECK_LABEL" = true ]; then
-  LABELS='praise|nitpick|suggestion|issue|todo|question|thought|chore|note'
-  CATEGORIES='scope|behavior|fix|boundary|api|impact|logic|conventions|reuse|maintainability|comments|tests'
-  ROUTES='a11y|design|semver|flow'
-  MODIFIERS='blocking|non-blocking|if-minor'
-  DECO="($CATEGORIES|$ROUTES|$MODIFIERS)"
-  FIRST_LINE="${MESSAGE%%$'\n'*}"
-  if ! printf '%s' "$FIRST_LINE" | grep -Eq "^\*\*($LABELS)( \($DECO(, $DECO)?\))?:\*\* .+"; then
-    echo "error: the message must open with a bold Conventional Comments label, e.g. '**issue (behavior, blocking):** <claim>'" >&2
-    echo "hint: labels: ${LABELS//|/ } · decorations: a pipeline category, a11y/design/semver/flow, blocking/non-blocking/if-minor (at most two) · pass --no-label for a reply or the summary comment" >&2
-    echo "got: $FIRST_LINE" >&2
-    exit 1
-  fi
+  check_conventional_label "$MESSAGE" || exit 1
 fi
 
 if ! command -v gh >/dev/null 2>&1; then
