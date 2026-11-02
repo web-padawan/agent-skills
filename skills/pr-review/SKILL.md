@@ -15,7 +15,7 @@ run the analysis. They read a context file that a script writes. You read the pl
 | [`../../references/pipeline.md`](../../references/pipeline.md) | The shared pipeline: the plan, the context and notes files, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering, the rendering table |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
-| [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Comment tone, examples, posting with `post-comment.sh`. Read before step 4 |
+| [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Comment tone, examples, posting with `post-review.sh` and `post-comment.sh`. Read before step 4 |
 | [`references/present.md`](references/present.md) | Step 4: the chat template, the verdict rule, the gate |
 | [`references/fallback.md`](references/fallback.md) | Single-context review, only when the agents or the anchors are unavailable |
 
@@ -83,7 +83,8 @@ Drop what you cannot confirm. Drop anything that a green CI check already answer
 **Never post a finding that is already on the PR** (`already raised`, pipeline.md §5.2). Only
 one thing is worth a post on such a thread: a contradiction. A contradiction means that the
 claim on the thread is wrong, or that its fix would regress something that the review can name.
-Post it as a `question` reply into the thread (`--reply <id>`).
+Post it as a `question` reply into the thread (`--reply <id>`). A `dismissed` finding never
+posts. A `not fixed` finding posts as an `issue` reply into its thread.
 
 Rank first the A findings that are reachable in released behavior or security-relevant.
 
@@ -99,8 +100,9 @@ rule and the two gate questions. **Never post comments without confirmation.**
 
 ### 5. Post comments (only after the user confirms)
 
-Post per *Posting with post-comment.sh* in
-[`../../references/comment-guidelines.md`](../../references/comment-guidelines.md).
+Post the selected findings as one review, per *Posting a review with post-review.sh* in
+[`../../references/comment-guidelines.md`](../../references/comment-guidelines.md). Post the
+replies into existing threads with `post-comment.sh --reply`.
 
 ## Fallback
 
