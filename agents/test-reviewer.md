@@ -124,6 +124,9 @@ tests | <file>:<line> | <A|B|C> | <claim>
 - Read the code that an assertion exercises to verify what the assertion actually pins. Do not
   rely on the name or the comments of the test. An intent claim is reportable only when it
   names the intent requirement that the assertion contradicts.
+- Before you call a test redundant or at the wrong level, read the `## Conventions excerpt`.
+  A test that a quoted rule asks for is not a finding.
+- A suggested fix uses the test level that the conventions excerpt prescribes.
 - When a claim needs the implementation, read the specific hunk in the production patch.
   Never re-derive the diff yourself.
 - If you cannot verify a claim, append `unverified` to its finding line. If verification
