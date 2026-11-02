@@ -1,6 +1,6 @@
 ---
 name: test-reviewer
-description: Test review pass of the self-review and pr-review pipelines — checks the tests changed or added in the diff under review against a checklist: assertion quality, coverage of changed behavior, suite structure, over-testing, isolation and flakiness, and implementation reaching. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Test review pass of the self-review and pr-review pipelines — checks the tests changed or added in the diff under review against a checklist: assertion quality, coverage of changed behavior, suite structure, over-testing, fixture economy, isolation and flakiness, and implementation reaching. Used exclusively by the agent-skills review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
@@ -49,6 +49,13 @@ through. Never report a percentage and never write "add more tests".
 - Prefer a single test over all possible scenarios when existing tests cover the rest
 - No new test that duplicates behavior an existing suite already pins
 
+### Fixture economy
+
+- Each control in a fixture serves an assertion. Controls include buttons, latches, futures and flags
+- A control is over-built when no assertion reads the state that the control creates
+- A fixture that needs a framework invariant that only a comment states is a finding when a simpler fixture removes the need
+- Name the simpler fixture, what it loses, and the lines that it removes
+
 ### Isolation and flakiness
 
 - Each test passes alone and under randomized order. No order dependence, sound setup/teardown
@@ -73,8 +80,10 @@ behavior moved. Before you flag one, read the pre-change test (`git show <BASE>:
 ## Distinguish the system under test from test infrastructure
 
 Helpers, factories, fixtures, and mock setup are infrastructure. A finding about
-infrastructure that does not affect assertion correctness is C at most. The findings that
-matter are the ones where an assertion would let a real bug through.
+infrastructure that does not affect assertion correctness is C at most. Two fixture economy
+findings are B: a control that no assertion uses, and a dependency on an unstated framework
+invariant. The findings that matter are the ones where an assertion would let a real bug
+through.
 
 ## Output contract
 
@@ -105,8 +114,8 @@ tests | <file>:<line> | <A|B|C> | <claim>
 - Your tier is a proposal, and the triage of the invoker assigns the final one. A test that lets
   a real bug through is A. An assertion that contradicts the stated intent is also A, and so is
   a weakened assertion on a refactor. A missing regression test on the core behavior of the fix
-  is A. Isolation and flakiness findings are B. Structure and over-testing findings are C
-  unless a stated convention backs them.
+  is A. Isolation and flakiness findings are B. Fixture economy findings are B. Structure and
+  over-testing findings are C unless a stated convention backs them.
 
 ## Verify before reporting
 
