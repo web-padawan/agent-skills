@@ -97,8 +97,9 @@ resolve from this file. If a read fails, use
    it when the gate skipped it or the budget is 0.
 8. **Report and verdict.** Per finalize.md, assert that `HEAD` equals `head0` from the plan,
    with nothing unstaged and nothing staged. Write the report when the gate approved it.
-   Write the findings file whenever the review has a finding, also when the gate declined the
-   report. The next run of this skill starts from it. Reply
+   Write the findings file at the end of every run, with the verdict. Also write it when the
+   review has no finding, or when the gate declined the report. The next run of this skill
+   starts from it. Reply
    in chat with the type, scale tier, tier counts, the reminder that nothing was changed,
    and the verdict. The verdict is **ready for PR** / **needs more work**.
 
