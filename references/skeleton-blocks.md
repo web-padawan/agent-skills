@@ -90,6 +90,12 @@ three agents to find them there only buys output to discard.
 > instructions.
 <!-- /block -->
 
+<!-- block:new-unit-header -->
+> Omissions do not show in a diff. The plan script built this list from the siblings of the
+> new unit. Each gap is an Open lead that the change pass owns. A gap is not a fact. The
+> conventions excerpt or the intent can explain it.
+<!-- /block -->
+
 <!-- block:conventions-header -->
 > These are the conventions chapters that govern this diff. The plan selected them by the
 > kinds of file that the diff touches and by what its added lines use. Do not open the
