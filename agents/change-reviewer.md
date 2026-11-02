@@ -101,10 +101,14 @@ Promise: <what a consumer can now rely on, stated from their side — including 
 Propagation: <the concrete chain — A calls B which reads C, files named — or "no path found">
 Blast radius: <probability × criticality; the ripple one step out>
 Before merge: <checkable conditions — a test that exists, a consumer confirmed unaffected, a flag added — or "none"; a mitigation that would lower the risk>
-Severity: <A|B|C>
+Severity: <A|B|C, the highest tier of the finding lines that this block backs | none>
 ```
 
 - Under 200 words per block. Detail belongs in the finding lines, not the block.
+- Take `Severity` from the finding lines of the block. A block without a finding line of its
+  own writes `Severity: none`, also when an earlier finding covers the change. Example of
+  the failure: a block with `Severity: A` above `NO FINDINGS` gives triage a tier but no
+  claim to verify.
 - `Consumers` are named: find them with `grep -rn` across the touched packages and their
   siblings. Never guess them. An unnamed consumer list makes the severity unjustifiable in
   either direction.
