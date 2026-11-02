@@ -134,8 +134,8 @@ Diagnose the symptom, then make the smallest fix:
   the failure to the gotchas section and loosen over-specific steps.
 - **Too long / slow to load**: move sub-case sections into `references/`.
 
-Always capture the failure as a gotcha, so that it cannot recur. This is how skills
-compound in value.
+Encode each failure so that it cannot recur. Prefer a script check or a contract field to a
+gotcha, per `.claude/rules/encode-lessons-in-structure.md` at the plugin root.
 
 ## Anti-patterns
 

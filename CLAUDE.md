@@ -22,6 +22,8 @@ and how to install and use the plugin. Do not repeat that content here.
   body and frontmatter conventions. Agent conventions are in `skills/authoring-skills/references/agents.md`.
 - Keep `SKILL.md` under 150 lines. Move depth into `references/`.
 - Files in `agents/` and `references/` change review behavior. Change one file per commit and keep the meaning.
+- Encode a recurring fix in a script, a check or a contract field before you add text.
+  The rule in `.claude/rules/encode-lessons-in-structure.md` loads in every session and gives the order.
 
 ## Test loop
 
