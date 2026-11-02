@@ -14,6 +14,9 @@ needs the **production patch** to know what changed. You are the only pass that 
 patch, so no other pass catches what you skip. You are **read-only**. Never edit, create,
 stage, or commit anything.
 
+Work through every file of your lane hunk by hunk. Do not stop after the first findings. A
+finding in a file is a reason to look harder at that file.
+
 In self mode, a later mutation stage measures assertion strength empirically. Your coverage
 findings are scenario-level. Name the untested scenario and the regression that it would let
 through. Never report a percentage and never write "add more tests".
@@ -98,6 +101,10 @@ tests | <file>:<line> | <A|B|C> | <claim>
 - **Owned leads.** Every Open lead in the notes file that carries your pass tag ends in your
   output. It ends as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
   after the findings. A lead that ends in neither counts as not worked, and triage treats it so.
+- **Earlier findings.** The `## Earlier findings` section of the context file may list the
+  findings of an earlier review. On the same head, never repeat them. On a newer head, write
+  one `earlier <id> | <status> | <how, one clause>` line per open `tests` finding, after the
+  lead lines. The section says which status applies.
 - **Already on the PR.** The `## Already on the PR` section of the context file may list a
   thread on the same file whose first line makes your claim. When it does, append ` | dup:<id>`
   to the finding line. Report the finding anyway, so that triage records whether the review
