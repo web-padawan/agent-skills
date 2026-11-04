@@ -274,6 +274,14 @@ expect "pr-intake.sh proposes a decision for a low-impact change with a wide rea
   --meta "$WORK/intake-meta.json" --flow-dir "$WORK/none") > "$WORK/intake-now.log" 2>&1
 expect "pr-intake.sh reads the current labels without --as-of" \
   "verdict_reason: behavior-altering -> question (semver)" "$(grep -m1 '^verdict_reason:' "$WORK/intake-now.log")"
+jq '.data.repository.pullRequest.title = "fix!: change the core mixin"
+  | .data.repository.pullRequest.body = "Text\r\nBREAKING CHANGE: M is 2"' "$WORK/intake-meta.json" > "$WORK/intake-breaking.json"
+(cd "$INTAKE_REPO" && "$SCRIPTS/pr-intake.sh" --pr 1 --base "$INTAKE_BASE" --head "$INTAKE_HEAD" \
+  --meta "$WORK/intake-breaking.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/intake-breaking.log" 2>&1
+expect "pr-intake.sh reads a breaking change that the title and the body mark" \
+  "breaking_marker: title and body" "$(grep '^breaking_marker:' "$WORK/intake-breaking.log")"
+expect "pr-intake.sh sets behavior-altering for a marked breaking change" \
+  "issue_flags: behavior-altering low-impact" "$(grep '^issue_flags:' "$WORK/intake-breaking.log")"
 
 echo "== bash-guard.py"
 GUARD="$SCRIPTS/hooks/bash-guard.py"
