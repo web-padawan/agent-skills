@@ -26,7 +26,7 @@ A pass never reads a patch outside its lane. A pass never regenerates a patch wi
 | id | agent | reads | prompt adds |
 | --- | --- | --- | --- |
 | change | agent-skills:change-reviewer | prod | the change type; the plan's `type_conflict` line, when it is not `none`; the plan's `deep` budget (`deep budget N`) |
-| code | agent-skills:code-reviewer | prod+comments | in `pr` mode, `no reuse/maintainability nits`. Both need the author's judgment and a local checkout, so they stay in `self` |
+| code | agent-skills:code-reviewer | prod+comments | in `pr` mode on a same-repo PR, `no reuse/maintainability nits`. Both need the author's judgment and a local checkout, so they stay in `self`. A fork PR keeps both: its author is outside the team, so the review gives the team judgment |
 | tests | agent-skills:test-reviewer | both | — |
 
 ## Matrix
@@ -60,6 +60,10 @@ the capped numbers and the candidate count.
 
 `--deep N` overrides the deep budget outright. `--deep 0` keeps the change pass but skips
 its blocks.
+
+A fork PR (`fork: true` in the plan) keeps a deep budget of at least 1. Its author is outside
+the team, so the consumer trace of the top change belongs to the review. On #12966 the
+consumer that broke was crud, a package that the PR did not touch.
 
 **Production lines** size the scale tier, not the whole branch. Tests never enter the mutant
 or deep budgets. A 30-line fix with 80 lines of tests is a lite review.
