@@ -61,6 +61,10 @@ the capped numbers and the candidate count.
 `--deep N` overrides the deep budget outright. `--deep 0` keeps the change pass but skips
 its blocks.
 
+The plan script drops the tests pass when no test, code or binary file changed. A workflow,
+config or doc change gives that pass no subject. The plan prints `passes_dropped:`. The risk
+override still raises the scale of the other passes.
+
 A fork PR (`fork: true` in the plan) keeps a deep budget of at least 1. Its author is outside
 the team, so the consumer trace of the top change belongs to the review. On #12966 the
 consumer that broke was crud, a package that the PR did not touch.
