@@ -4,6 +4,59 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-04 — Fork PR dry run: 11 web-components PRs from forks
+
+The bot skips forks, so the maintainers reviewed alone. Each PR ran at its pre-review head,
+with labels, body and comments replayed to the first maintainer comment. 33 passes, no
+code of a head ran. Ground truth: 23 maintainer findings (`.omc/plans/fork-pr-corpus.md`).
+
+- Two of 11 merged as written. The costliest maintainer work was the question "should this
+  exist?", and no pass read the linked issue → `pr-intake.sh`: issue labels as of a time,
+  import reach, Flow counterpart, a verdict hint (`687eb14`, `6c07fad`).
+- The hint said `decide` on #12970, #12976 and #13316, the three PRs that stopped at a team
+  decision, and on no other PR. #12974 got `take`, because its `behavior altering change`
+  label came 16 days later. Its change pass raised the semver question anyway.
+- An audit read the current state of the PR: later labels, rewritten bodies, review threads
+  → `--head` and `--as-of` (`d41d7a0`).
+- A fork head had no guard and the passes had unrestricted Bash. `tools:` patterns in agent
+  frontmatter did not restrict Bash in a probe → a fork guard in the plan and a PreToolUse
+  hook that holds the reviewer passes to read commands (`6c07fad`, `0aa06d8`). Verified live.
+- `pr` mode muted `reuse`, the class of two maintainer findings → a fork PR keeps it
+  (`d4dd44d`). The code pass then found the dead `readyState` check of #12975.
+- Recall 15 of 23. Misses: CSS unit tests, a new suite, a shadow DOM reach
+  → `css_rule`, `new_test_files`, `shadow_reach` facts (`2a6aa6e`, `21afe21`, `abbd85a`).
+  A re-run found all three, two of them only as C → a rule-backed finding is B
+  (`042f244`). Recall after the re-run: 18 of 23.
+- Still missed: the Flow synchronous data provider (#12969), the `_onInput` location
+  (#12969), the offset API (#4565, #12976) and the component JSDoc (#12976).
+- New true findings, by a read: #12975 leaves `uploading: true` after an abort (still on
+  `main`), and #13316 misses the notification container. One A of 9 was false: a stale
+  snapshot claim on an overlay that keeps its own role.
+- One skill for a PR of someone else: `guided-review` merged into `pr-review`, with an intake
+  card and a gate before the fan-out (`55c1700`).
+- Cost: about 3M subagent tokens for 36 passes. The longest pass took 6 minutes.
+
+## 2026-11-03 — Docs profile for the Vaadin CI code review: dry run on vaadin/docs #6526, #6495, #6535, #6544
+
+The shared action got `review-docs.md`, with the judgement-before-value step of `review.md`.
+One independent agent per PR verified every finding against the product checkouts.
+
+- 16 posted findings: 14 true, 2 partly true, 0 wrong. Every finding with a cited source
+  `file:line` was right. Both partials were strong wording with no cited contradiction →
+  `src:` on the finding line (`12b7c7e`).
+- 4 of 16 tiers one level too high → a docs rubric that maps value to A / B / C (open: item 4
+  of `.omc/plans/review-followups.md`).
+- The precision of this plugin was never measured → a verification audit (the 2026-11-04
+  fork dry run above is the first).
+- A live run on #6544 matched 2 of 3 dry-run findings on the same head, one new, one gone →
+  `--rounds 2` on a full docs review (open: item 4).
+- The author agent fixed 3 findings within 12 minutes. Cost about $4.80 and 5 to 11 minutes
+  per review, against 3 to 4 minutes per round here.
+- On 60 docs PRs, word lists found 3 AI-tell words. Density did the work: 2.3 times the
+  cross references, 3 times the parentheticals per sentence → `prose_density:` (open: item 7).
+- A PR controls hooks, `.mcp.json` and `CLAUDE.md` of its checkout, and read-only
+  commands have side-effect flags → `fork:` and a guard (`6c07fad`), a Bash guard (`0aa06d8`).
+
 ## 2026-11-02 — Self-review loop dry run: web-components #13301, #13312, #13313, #13335
 
 Prompted by GitLab Duo Code Review, which reruns until nothing is left. Two rounds of the three
