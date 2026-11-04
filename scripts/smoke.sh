@@ -10,7 +10,8 @@
 # against a fake web-dev-server (a python3 http.server) and checks that they return through a
 # pipe, restore on SIGTERM, and leave no shell behind. Checks the review-plan.sh report dir
 # and earlier-findings list, the post-review.sh --head refusal, the pr-screen.sh facts on a
-# fixture, and the bash-guard.py decisions. Also checks that every
+# fixture, the workflow-facts.sh facts and the dropped tests pass on a workflow-only change,
+# and the bash-guard.py decisions. Also checks that every
 # script in this directory answers --help with exit 0.
 #
 # Exit codes: 0 all checks passed · 1 a check failed.
@@ -288,6 +289,38 @@ expect "pr-screen.sh reads a breaking change that the title and the body mark" \
   "breaking_marker: title and body" "$(grep '^breaking_marker:' "$WORK/screening-breaking.log")"
 expect "pr-screen.sh sets behavior-altering for a marked breaking change" \
   "issue_flags: behavior-altering low-impact" "$(grep '^issue_flags:' "$WORK/screening-breaking.log")"
+
+echo "== workflow-facts.sh"
+# A workflow change only: a new job without permissions that calls an action on a branch.
+WF_REPO="$WORK/workflow"
+git init -q -b main "$WF_REPO"
+(
+  cd "$WF_REPO" || exit 1
+  git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
+  mkdir -p .github/workflows
+  printf 'on: push\njobs:\n  build:\n    permissions:\n      contents: read\n    runs-on: x\n    steps:\n      - uses: actions/checkout@v7\n' \
+    > .github/workflows/ci.yml
+  git add . && git commit -q -m base
+  git update-ref refs/remotes/origin/main HEAD
+  git checkout -q -b feature
+  printf '  dismiss:\n    runs-on: x\n    steps:\n      - name: Dismiss\n        uses: owner/actions/review@feat/x\n' \
+    >> .github/workflows/ci.yml
+  git add . && git commit -q -m change
+)
+(cd "$WF_REPO" && "$SCRIPTS/workflow-facts.sh" --base HEAD~1 --head HEAD --no-gh) > "$WORK/workflow.log" 2>&1
+expect "workflow-facts.sh names a branch ref and where to read the action" \
+  "uses: owner/actions/review@feat/x (branch) read: repos/owner/actions/contents/review/action.yml?ref=feat/x" \
+  "$(grep '^uses:' "$WORK/workflow.log")"
+expect "workflow-facts.sh lists a new job without permissions" \
+  "jobs_without_permissions: .github/workflows/ci.yml: dismiss (new)" \
+  "$(grep '^jobs_without_permissions:' "$WORK/workflow.log")"
+(cd "$WF_REPO" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type chore) > "$WORK/workflow-plan.log" 2>&1
+expect "review-plan.sh drops the tests pass for a workflow-only change" \
+  "passes_dropped: tests (no test, code or binary file changed)" \
+  "$(grep '^passes_dropped:' "$WORK/workflow-plan.log")"
+expect "review-plan.sh prints the workflow facts" \
+  "  jobs_without_permissions: .github/workflows/ci.yml: dismiss (new)" \
+  "$(grep '^  jobs_without_permissions:' "$WORK/workflow-plan.log")"
 
 echo "== bash-guard.py"
 GUARD="$SCRIPTS/hooks/bash-guard.py"

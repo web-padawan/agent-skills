@@ -13,6 +13,9 @@
 #                  [--no-context] [--context-out <path>] [--no-write]
 #                  [--head <sha>] [--as-of <iso-time>]
 #
+# When a file under .github/workflows/ changed, it prints the `workflow:` facts of
+# scripts/workflow-facts.sh. When no test, code or binary file changed, it drops the tests pass.
+#
 # In pr mode it also prints the screening facts of scripts/pr-screen.sh, and `fork:`. A fork
 # PR turns off the revert check and ab.sh (hints), keeps reuse and maintainability in the
 # code pass, and writes the fork marker that scripts/hooks/bash-guard.py reads. A pr-mode
@@ -455,6 +458,17 @@ if [ -n "$ROW" ]; then
   ROUNDS=$(printf '%s' "$ROW" | cut -f4)
 fi
 
+# The tests pass has no subject when no test, no code and no baseline changed: a workflow,
+# a config or a doc change. The risk override still raises the scale for the other passes.
+CODE_RE='\.([cm]?[jt]sx?|java|kt|css|scss|html|py|sh)$'
+PASSES_DROPPED=""
+if [ -n "$CHANGED" ] && [ -z "$TEST_FILES" ] && [ -z "$BINARY_FILES" ] \
+  && ! printf '%s\n' $PROD_FILES | grep -qE "$CODE_RE" \
+  && [[ " $PASS_TOKENS " == *" tests "* ]]; then
+  PASS_TOKENS=$(printf '%s\n' $PASS_TOKENS | grep -vx tests | tr '\n' ' ' | sed 's/ $//')
+  PASSES_DROPPED="tests (no test, code or binary file changed)"
+fi
+
 # Rounds budget: the row's number, capped by the scale tier; --rounds N overrides outright.
 # A small diff gives a pass little to miss, so only the full tier repeats the fan-out.
 case "${ROUNDS:-}" in ''|*[!0-9]*) ROUNDS=1 ;; esac
@@ -534,6 +548,17 @@ if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ -n "$BASE" ] && [ -n "$HEAD" ] && [ "
     || SCREENING="error: pr-screen.sh failed — $(printf '%s' "$SCREENING" | tail -1)"
 fi
 SCREENING_FOR_PASSES=$(printf '%s\n' "$SCREENING" | grep -E '^(issue|reach|snapshot_packages|flow_counterpart|diff_noise|css_unit_assertions|css_rule|shadow_reach|new_test_files): ' || true)
+
+# ── Workflow facts ────────────────────────────────────────────────────
+# A workflow change depends on the actions it calls, the token of each job and who
+# triggers the runs. None of that is in the diff (retrospective, PR review 6).
+WORKFLOW_FACTS=""
+if [ -n "$BASE" ] && [ -n "$HEAD" ] && printf '%s\n' "$CHANGED" | grep -q '^\.github/workflows/'; then
+  WF_ARGS=(--base "$BASE" --head "$HEAD")
+  [ "$WANT_CONTEXT" = true ] || WF_ARGS+=(--no-gh)
+  WORKFLOW_FACTS=$("$SCRIPT_DIR/workflow-facts.sh" "${WF_ARGS[@]}" 2>&1) \
+    || WORKFLOW_FACTS="error: workflow-facts.sh failed — $(printf '%s' "$WORKFLOW_FACTS" | tail -1)"
+fi
 
 # ── Fork marker ───────────────────────────────────────────────────────
 if [ "$NO_WRITE" != true ]; then
@@ -1162,6 +1187,10 @@ if [ -n "$CONTEXT_PATH" ]; then
       echo "- Screening (scripts/pr-screen.sh; \`reach\` counts the other packages whose sources import the module on the base):"
       printf '%s\n' "$SCREENING_FOR_PASSES" | sed 's/^/    /'
     fi
+    if [ -n "$WORKFLOW_FACTS" ]; then
+      echo "- Workflow (scripts/workflow-facts.sh; read each \`uses:\` action at its ref before a claim about its inputs or behavior):"
+      printf '%s\n' "$WORKFLOW_FACTS" | sed 's/^/    /'
+    fi
     if [ -n "$NEW_UNIT" ]; then
       echo
       echo "## New unit"
@@ -1275,6 +1304,10 @@ if [ -n "$SCREENING" ]; then
   echo "screening:"
   printf '%s\n' "$SCREENING" | grep -v '^fork: ' | sed 's/^/  /'
 fi
+if [ -n "$WORKFLOW_FACTS" ]; then
+  echo "workflow:"
+  printf '%s\n' "$WORKFLOW_FACTS" | sed 's/^/  /'
+fi
 echo "type: $TYPE"
 echo "type_signal: $TYPE_SIGNAL"
 echo "type_conflict: $TYPE_CONFLICT"
@@ -1337,6 +1370,7 @@ else
       "$token" "$AGENT" "${MODEL:-inherit}" "${READS:-both}"
   done
   echo "agents: $COUNT"
+  [ -n "$PASSES_DROPPED" ] && echo "passes_dropped: $PASSES_DROPPED"
   echo "launch: one message · one Agent call per pass · subagent_type, model and prompt from === PROMPTS === verbatim · no name (references/delivery.md)"
 fi
 

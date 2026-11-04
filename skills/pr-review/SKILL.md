@@ -50,8 +50,8 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode pr [--pr <number-or-url>] [-
   --context-out <scratchpad>/pr-<number>-context.md
 ```
 
-Read `fork:`, `screening:`, `ci:` and `existing_comments:` first. Then read the rest of the plan
-per pipeline.md §1, and act on every `hint:`.
+Read `fork:`, `screening:`, `ci:`, `existing_comments:` and `workflow:` first. Then read the
+rest of the plan per pipeline.md §1, and act on every `hint:`.
 
 ### 2. Understand
 
