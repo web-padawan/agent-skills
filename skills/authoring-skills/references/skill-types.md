@@ -14,11 +14,11 @@ you can open that skill and copy the shape.
 ### 1. Code quality and review
 Reviews code against a rubric, a checklist, or a skeptical stance. May post
 findings. Produces a report. Mostly read-only.
-- In this repo: `self-review` (own branch, pre-PR, three checklist passes),
-  `guided-review` (interactive PR walkthrough, posts only what you select),
-  `pr-review` (rubric pass, inline comments).
+- In this repo: `self-review` (own branch, pre-PR, three checklist passes) and
+  `pr-review` (a PR from someone else: walkthrough, intake, review, posts only what
+  you select).
 - This is the crowded category. Every new skill here must carry a boundary
-  clause against the existing three.
+  clause against the existing two.
 
 ### 2. Verification and testing
 Describes how to prove that code works: coverage checks, test-writing

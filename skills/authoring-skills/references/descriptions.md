@@ -38,16 +38,15 @@ many phrasings match.
   never said "work summary".
 
 ### 3. State the boundary when a sibling could also match
-This repo has three review skills. Without boundary clauses they would collide on every
+This repo has two review skills. Without boundary clauses they would collide on every
 "review this" prompt. Each one names what it is *not* for:
 
 - **`self-review`**: your own branch before you open or update a PR. Not for a review of
   a PR from someone else.
-- **`guided-review`**: an interactive walkthrough of a PR from someone else. Posts only
-  the findings that you select.
-- **`pr-review`**: a full rubric pass that posts inline line comments.
+- **`pr-review`**: a PR from someone else. Explains it, reviews it after a gate, and posts
+  only what you select. Not for your own branch before it has a PR.
 
-Without those clauses each skill would over-trigger on the prompts of the other skills.
+Without those clauses each skill would over-trigger on the prompts of the other skill.
 
 ### 4. Third-person present, no fluff
 Well-written skills open with a present-tense verb phrase. Examples are
@@ -83,8 +82,8 @@ skill cannot handle that branch.
 ✅ **After (bounded):**
 > `description: Review a GitHub pull request against a rubric and post findings
 > as inline comments after confirmation. Use for a full reviewer pass on
-> someone else's PR. Not for an interactive walkthrough (guided-review), or
-> your own branch before it has a PR (self-review).`
+> someone else's PR. Not for your own branch before it has a PR
+> (self-review).`
 
 The explicit "not for…" clause stops the false positives.
 

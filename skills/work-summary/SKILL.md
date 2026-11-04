@@ -1,6 +1,6 @@
 ---
 name: work-summary
-description: Summarize your merged pull requests to the main branch of a repo for your manager — highlights, delivered value, fixed issues and a categorized PR list, in a short and clear voice. Use when asked to summarize my work, my PRs or my commits, write a work report, a status update, a monthly or sprint summary, or "what I did on <component> in <period>". Covers vaadin/web-components by default and vaadin/flow-components on request. Leaves out backports. Writes a local markdown file and posts nothing. Not for a single PR body, explaining one PR (guided-review) or reviewing code (self-review, pr-review).
+description: Summarize your merged pull requests to the main branch of a repo for your manager — highlights, delivered value, fixed issues and a categorized PR list, in a short and clear voice. Use when asked to summarize my work, my PRs or my commits, write a work report, a status update, a monthly or sprint summary, or "what I did on <component> in <period>". Covers vaadin/web-components by default and vaadin/flow-components on request. Leaves out backports. Writes a local markdown file and posts nothing. Not for a single PR body, explaining or reviewing one PR (pr-review), or reviewing code (self-review).
 argument-hint: "[component|all] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--repo web-components|flow-components|owner/name]"
 allowed-tools: Read, Write, Glob, AskUserQuestion, Bash(*/scripts/collect.sh:*), Bash(*/scripts/gh-context.sh:*), Bash(gh pr view:*), Bash(gh issue view:*)
 ---

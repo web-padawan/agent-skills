@@ -48,13 +48,12 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
   The skill then runs only when the user types the slash command.
 - **Convention in this repo:** set `true` on any skill that is expensive or
   that can post outside the machine. Expensive skills include multi-agent
-  orchestration (`self-review`, `pr-review`). PR comments (`pr-review`) post
-  outside the machine. Bounded skills (`guided-review`, `authoring-skills`)
-  stay auto-triggerable, because their descriptions do the routing.
-  `guided-review` posts only behind an in-body confirmation gate. The middle case
+  orchestration (`self-review`). Bounded skills (`authoring-skills`) stay
+  auto-triggerable, because their descriptions do the routing. The middle case
   is an auto-triggerable skill with a bounded common path and an unbounded wide
   path. Such a skill gets an in-body confirmation gate before the wide path
-  spends its budget.
+  spends its budget. `pr-review` is that case: the walkthrough is cheap, a gate
+  comes before the agent fan-out, and a second gate comes before any post.
 
 ### `allowed-tools`
 - **What:** restricts which tools the skill may call, for example

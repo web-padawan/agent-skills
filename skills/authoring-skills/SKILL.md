@@ -58,7 +58,7 @@ lines and one gotcha.
 
 | Archetype | Use for | Representative example |
 |---|---|---|
-| **Inline technique** (<80 lines, no subfolders) | A single self-contained procedure | `guided-review` |
+| **Inline technique** (<80 lines, no subfolders) | A single self-contained procedure | `screenshot-diff` (no subfolders) |
 | **Phase / reference-table workflow** | A multi-step process where each step has depth | `self-review` |
 | **Deep reference + guardrails** | A tool or engine with many footguns, budgets, caveats | `refactor-component` |
 

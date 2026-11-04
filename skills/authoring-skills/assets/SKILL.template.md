@@ -35,7 +35,7 @@ description: <one trigger-shaped sentence — lead with the verbs/phrases a user
 <!-- ===================================================================== -->
 
 <!-- ---------- ARCHETYPE A: INLINE TECHNIQUE (under about 80 lines, no subfolders) ----------
-     For a single self-contained procedure. Example shape: guided-review.
+     For a single self-contained procedure. Example shape: screenshot-diff.
 
 ## Gotchas
 
