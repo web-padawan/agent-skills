@@ -7,7 +7,7 @@
 #   stderr and returns 1. A comment that fails here never reaches GitHub — a
 #   refused post beats an unparseable one.
 
-CC_LABELS='praise|nitpick|suggestion|issue|todo|question|thought|chore|note'
+CC_LABELS='nitpick|suggestion|issue|todo|question|thought|chore|note'
 CC_CATEGORIES='scope|behavior|fix|boundary|api|impact|logic|conventions|reuse|maintainability|comments|tests'
 CC_ROUTES='a11y|design|semver|flow'
 CC_MODIFIERS='blocking|non-blocking|if-minor'

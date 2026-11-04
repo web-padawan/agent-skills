@@ -15,8 +15,7 @@
 #   One bad message refuses the whole batch before any network call.
 # <sha>: the full head SHA that the review read (the plan's `head:`). When the PR head
 #   moved since, the script refuses if a commented file differs between the two heads.
-# <file.md>: optional text for the review body: the praise and what clearing the
-#   findings earns. The script writes the census itself.
+# <file.md>: optional text for the review body: what clearing the findings earns. The script writes the census itself.
 #
 # Each finding becomes its own review thread, anchored try-then-demote: a line
 # thread, then a file thread, then a block in the review body. GitHub judges the
@@ -175,13 +174,13 @@ census() {
   printf '%s\n' "$1" | awk '
     NF { n[$1]++; if ($2 == "blocking") b[$1]++ }
     END {
-      k = split("issue suggestion todo question chore nitpick thought praise", order, " ")
+      k = split("issue suggestion todo question chore nitpick thought", order, " ")
       for (i = 1; i <= k; i++) seen[order[i]] = 1
       for (w in n) if (!(w in seen)) order[++k] = w
       for (i = 1; i <= k; i++) {
         w = order[i]
         if (!(w in n)) continue
-        part = n[w] " " w (n[w] > 1 && w != "praise" ? "s" : "")
+        part = n[w] " " w (n[w] > 1 ? "s" : "")
         if (w in b) part = part " (**" b[w] " blocking**)"
         out = out (out == "" ? "" : ", ") part
       }
