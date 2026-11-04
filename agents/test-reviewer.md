@@ -128,6 +128,10 @@ tests | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>]
   a weakened assertion on a refactor. A missing regression test on the core behavior of the fix
   is A. Isolation and flakiness findings are B. Fixture economy findings are B. Structure and
   over-testing findings are C unless a stated convention backs them.
+- A stated convention is a rule that you can cite as `src:`: a line of the conventions excerpt,
+  the `css_rule` guideline line, or a *Structure* item of this file. A finding that it backs
+  is B at least. Example: a 52-line new suite for a 5-line fix, or CSS pinned only by
+  `getComputedStyle` where `css_rule` names a visual-test rule, is B, not C.
 
 ## Verify before reporting
 
