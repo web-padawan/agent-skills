@@ -58,5 +58,9 @@ skill loads that file. Read this file before you drop a rule that looks like cer
 - **Existing comments are a filter and a recall source.** The review does not post a
   finding that is already on the PR. Triage verifies an open thread that no pass
   reproduced. The bot's claim is not authoritative. Only the claim's existence is.
+- **A decision comes before a review.** On 11 fork PRs, labels and import counts named every
+  PR that stopped at a team decision. Hence the intake facts and a gate before the fan-out.
+- **A fact in the plan beats a rule in a doc.** Passes missed rules that lived in a guideline
+  or in their own checklist. The same passes found them once the plan named the line.
 - **Loaded docs carry rules. The retrospective carries the measurements.** Every run pays
   for every token in each document that it reads.
