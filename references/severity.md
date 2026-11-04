@@ -109,7 +109,6 @@ the tier and category. Nothing downstream picks a label from the tier again.
 | routed to a human: AT verdict, design intent, semver call, Flow parity | `question` | `(a11y)` · `(design)` · `(semver)` · `(flow)` |
 | a process step, not a code change: a `.d.ts` entry, a dev page, a companion PR | `chore` | `(blocking)` when merge depends on it |
 | a concern that pre-dates the diff, worth a follow-up issue | `thought` | none |
-| one per review, on something real | `praise` | none |
 
 Rules that accompany the table:
 
@@ -129,8 +128,7 @@ Rules that accompany the table:
 - **An `issue` needs a source that contradicts the diff**: a test, a convention, an API doc,
   the pre-change code, or a measurement. Without one, the finding renders as a `question` or
   a `nitpick`. The review verifies, and the maintainer decides.
-- **One `praise`, never false.** Verify it like a finding. The clean deep block of the change
-  pass is the usual source. A boundary that returned `NO FINDINGS` with named consumers is
-  checkable praise.
+- **No `praise`.** The team found it noise, and praise has its own channel at Vaadin. When an
+  external PR looks good, the reviewer may write a praise comment by hand.
 - The tier letters stay in chat, the findings report and the review record. A PR reader sees
   the label and decoration. Those say the same thing in words that the reader already knows.
