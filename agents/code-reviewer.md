@@ -44,6 +44,7 @@ finding in a file is a reason to look harder at that file.
 ### Reuse and cost — category `reuse`
 
 - No new code that re-implements an existing helper that the sweep found. Name the helper to call instead
+- No imperative wiring where the component family has a declarative mechanism for it, for example a delegated property or a template binding. Name the mechanism and one use site
 - No duplication or copy-paste with slight variation
 - No unnecessary complexity or tight coupling
 - No unused or unreachable code, no obsolete checks
@@ -79,7 +80,7 @@ Three questions share this category. Answer all three.
 ## Output contract
 
 ```
-<logic|conventions|reuse|maintainability|comments> | <file>:<line> | <A|B|C> | <claim>
+<logic|conventions|reuse|maintainability|comments> | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>]
 ```
 
 - One line per finding, at most 12 across all categories, ranked most severe first. When
@@ -87,6 +88,11 @@ Three questions share this category. Answer all three.
 - **Anchor on the declaration line** that the claim is about: the selector, the statement, the
   signature. Never anchor on the enclosing block, and never on a range. Another pass may find
   the same defect from its own angle. Matched anchors let triage dedup mechanically.
+- **Source.** When the proof of a claim lies outside the anchored hunk, append
+  ` | src:<file>:<line>`: the helper to call, the sibling that shows the pattern, the
+  convention, or the pre-change line as `src:<BASE>:<path>:<line>`. A claim about code outside
+  the hunk without `src:` counts as unverified. Example: "use `delegateProps`" cites the line
+  that delegates `opened`.
 - **Owned leads.** Every Open lead in the notes file tagged with your pass ends in your
   output. It ends as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
   after the findings. A lead that ends in neither counts as not worked, and triage treats it
