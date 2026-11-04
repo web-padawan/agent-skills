@@ -26,7 +26,7 @@ code of a head ran. Ground truth: 23 maintainer findings (`.omc/plans/fork-pr-co
 - Recall 15 of 23. Misses: CSS unit tests, a new suite, a shadow DOM reach
   → `css_rule`, `new_test_files`, `shadow_reach` facts (`2a6aa6e`, `21afe21`, `abbd85a`).
   A re-run found all three, two of them only as C → a rule-backed finding is B
-  (`042f244`). Recall after the re-run: 18 of 23.
+  (`042f244`). Recall after the re-run: 19 of 23.
 - Still missed: the Flow synchronous data provider (#12969), the `_onInput` location
   (#12969), the offset API (#4565, #12976) and the component JSDoc (#12976).
 - New true findings, by a read: #12975 leaves `uploading: true` after an abort (still on
