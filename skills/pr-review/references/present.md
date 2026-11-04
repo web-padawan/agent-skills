@@ -10,7 +10,7 @@ kept) in its Conventional Comments shape. Show the tier in chat only:
 
 <2–3 sentences: what the PR does and how.>
 
-**Verdict**: Looks good / Needs attention
+**Result**: Looks good / Needs attention
 <census by label: N issues (K blocking), N suggestions, N questions, N nitpicks, praise>
 
 ### Findings
@@ -51,7 +51,7 @@ full set.
 Keep the **Dropped at triage** line to a count and a reason class. The report of Q2 gives the
 detail of each finding. A list of the dropped findings here makes that report redundant.
 
-The census line under the verdict counts only findings that are not `already raised`. If
+The census line under the result counts only findings that are not `already raised`. If
 the plan said `existing_comments: none`, omit the **Already on the PR** block.
 
 Give `Needs attention` whenever any `issue` exists, blocking or not. An `issue` says that wrong
@@ -84,6 +84,6 @@ when the only blocking finding is `already raised`.
   threads. Never post `confirms` lines, because agreement is not a comment.
 - **Q2, header `Report`**: "Write the full review report?" with the options `Yes — write it`
   and `No`. The report goes to `<scratchpad>/pr-<number>-REVIEW.md`. It holds the summary, the
-  verdict, and every triaged finding with its tier, label and category. That includes the
+  result, and every triaged finding with its tier, label and category. That includes the
   findings that the filter of step 5 kept off the PR, marked `not posted`. The report is a
   record for the reviewer only. Never commit or post it.

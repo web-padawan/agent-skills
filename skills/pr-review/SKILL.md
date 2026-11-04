@@ -23,7 +23,7 @@ only in the revert check of a same-repo PR (step 5).
 | [`../../references/severity.md`](../../references/severity.md) | Step 5: A / B / C, tiers by change type, the rendering table |
 | [`../../references/delivery.md`](../../references/delivery.md) | Steps 4 and 5: launch rules, the delivery clause, the roll call, the escalation ladder |
 | [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Steps 6 and 7: comment tone, replies by verdict, posting. Read it before step 6 |
-| [`references/present.md`](references/present.md) | Step 6: the chat template, the verdict rule, the post gate |
+| [`references/present.md`](references/present.md) | Step 6: the chat template, the result rule, the post gate |
 
 Relative paths resolve from this file. If a read fails, put
 `${CLAUDE_PLUGIN_ROOT}/skills/pr-review/` before the relative path.
@@ -131,7 +131,7 @@ change, run the tests of the package. Then restore the file with `git checkout -
 
 ### 6. Present findings
 
-Follow [`references/present.md`](references/present.md): the chat template, the verdict rule
+Follow [`references/present.md`](references/present.md): the chat template, the result rule
 and the gate questions. **Never post without confirmation.**
 
 ### 7. Post (only after the reviewer confirms)
