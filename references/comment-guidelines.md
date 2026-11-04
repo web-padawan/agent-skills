@@ -20,8 +20,6 @@ each label. Render each comment from the frozen list in this shape:
 - The discussion is one short paragraph at most. It gives the fix, and the verification when a
   reader would otherwise have to trust you (`git show <base>` read, the suite searched, the
   browsers reproduced in). Leave no trace of how you found the finding.
-- Give `praise` for a decision that the author actually made, for example a regression test
-  that fails without the fix. Never give generic praise.
 
 ## Rules
 
@@ -34,14 +32,13 @@ each label. Render each comment from the frozen list in this shape:
 
 ## Summary comment
 
-Offer it at the gate. Never post it by default. Make three moves, in this order:
+Offer it at the gate. Never post it by default. Make two moves, in this order:
 
-1. One specific thing done well. Use the `praise` finding, if one exists.
-2. A census by label: "2 issues, 3 suggestions, 1 question".
-3. What clearing the findings earns: "then this is ready to merge" / "the questions decide the verdict".
+1. A census by label: "2 issues, 3 suggestions, 1 question".
+2. What clearing the findings earns: "then this is ready to merge" / "the questions decide the verdict".
 
 In a review, the summary goes in the review body (`post-review.sh --summary`). The script
-writes the census line, so the summary file holds moves 1 and 3 only.
+writes the census line, so the summary file holds move 2 only.
 
 ## Replies by verdict
 
@@ -89,7 +86,7 @@ Then the author gets one notification, not one for each finding. Call
 
 1. Write the selected findings to a JSON file in the scratchpad. Give each finding its
    `file`, its `line` and its `message`. Use `null` for a line or a file that does not apply.
-2. If the user chose a summary comment, write its moves 1 and 3 to a markdown file.
+2. If the user chose a summary comment, write its move 2 to a markdown file.
 3. Run the script once with `--dry-run`. Read the bodies that it prints.
 4. Run it again without `--dry-run`.
 
@@ -136,8 +133,8 @@ post-comment.sh --pr <number> --file path/to/file.ext --line 42 --message "**iss
 # Removed line (old side)
 post-comment.sh --pr <number> --file path/to/file.ext --old-line 10 --message "**question (impact):** ..."
 
-# The summary comment (three moves, no label), and a reply to an existing thread
-post-comment.sh --pr <number> --no-label --message "<praise line> <census> <what clearing them earns>"
+# The summary comment (two moves, no label), and a reply to an existing thread
+post-comment.sh --pr <number> --no-label --message "<census> <what clearing them earns>"
 post-comment.sh --pr <number> --reply <comment-id> --no-label --message "Fixed, thanks."
 
 # A contradiction of an existing thread: a labeled reply, never a new comment on that line
