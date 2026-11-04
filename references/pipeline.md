@@ -119,7 +119,7 @@ the body of the corresponding `agents/<name>.md` into the prompt.
 Findings arrive one per line:
 
 ```
-<category> | <file>:<line> | <A|B|C> | <claim>[ | dup:<thread-id>]
+<category> | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>][ | dup:<thread-id>]
 ```
 
 `<line>` is the single declaration that the claim is about: the selector, the statement, the
@@ -128,6 +128,11 @@ that find the same defect must land on the same line. Otherwise triage dedups by
 `dup:` names the `## Already on the PR` thread that makes the same claim on the same file.
 For that match the line matters less than the claim, because a bot and a pass anchor
 differently.
+
+`src:` names the line that proves the claim when the proof lies outside the anchored hunk.
+Examples: a caller, a consumer, the pre-change code, a convention, a helper, a test. Write the
+pre-change code as `src:<BASE>:<path>:<line>`. A claim about code outside the hunk that
+carries no `src:` is `unverified` (§5.1).
 
 After the finding lines, the pass writes one line per Open lead that it owns and closed
 without a finding:
@@ -164,7 +169,11 @@ markers and the escalation ladder.
 ## 5 — Triage
 
 1. **Verify** every finding against the code. Mark what you cannot confirm as `accepted`,
-   with a one-line reason. Keep such a finding in the report.
+   with a one-line reason. Keep such a finding in the report. A claim that names code outside
+   its hunk and carries no `src:` enters as `unverified`. Open that code before you confirm
+   it. This applies to the categories `behavior`, `fix`, `api`, `impact`, `logic` and
+   `reuse`. Example: "the crud dialog inherits the margin" needs the crud line that
+   inherits it.
 2. **Dedup**: the same file, line and claim from several agents is one finding. Keep the
    clearest wording. When agents filed the finding under different categories, it lives
    under the category of the owner pass, with a one-line pointer from the other. Two passes
