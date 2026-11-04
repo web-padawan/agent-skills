@@ -553,7 +553,7 @@ if [ -z "$REPORT_DIR" ]; then
   case "$MODE" in
     self) REPORT_DIR=".omc/self-review" ;;
     # pr mode never writes into the repo: the review record is the reviewer's own,
-    # never committed or posted (skills/pr-review/SKILL.md step 4).
+    # never committed or posted (skills/pr-review/SKILL.md step 6).
     pr) REPORT_DIR="SCRATCHPAD" ;;
   esac
   # The trailing slash marks the path as a directory, so a directory-only pattern such

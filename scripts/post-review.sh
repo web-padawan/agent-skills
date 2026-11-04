@@ -29,7 +29,7 @@
 # upstream vaadin/github-actions code-review action).
 #
 # --body-only puts every finding in the review body, blocking first, each under its
-# `file:line`. It is the one-comment rendering for a fork PR (skills/pr-review step 5):
+# `file:line`. It is the one-comment rendering for a fork PR (skills/pr-review step 6):
 # the author gets one list to work through, and no thread is opened.
 #
 # A line finding within two lines of an existing thread root on the same file is
