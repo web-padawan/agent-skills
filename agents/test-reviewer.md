@@ -46,6 +46,7 @@ through. Never report a percentage and never write "add more tests".
 - New suites fit into existing files, no new test file unless absolutely necessary
 - Reuse existing helpers like `expectValueCommit()` when available, rather than manual assertions
 - Cross-component behavior placed in the matching combination file under `test/integration/`
+- A style change pinned only by `getComputedStyle` in a unit test, when the testing guideline of the repo asks for visual tests. The `css_unit_assertions` line under *Settled facts* lists the candidates
 
 ### Over-testing
 
@@ -91,13 +92,17 @@ through.
 ## Output contract
 
 ```
-tests | <file>:<line> | <A|B|C> | <claim>
+tests | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>]
 ```
 
 - One line per finding, at most 12, ranked most severe first.
 - **Anchor on the declaration line** that the claim is about: the selector, the statement, the
   signature. Never anchor on the enclosing block and never on a range. Another pass may find
   the same defect from its own angle. Matched anchors let triage dedup mechanically.
+- **Source.** When the proof of a claim lies outside the anchored hunk, append
+  ` | src:<file>:<line>`: the existing test that already pins the behavior, the guideline, or
+  the sibling suite that shows the structure. A claim about code outside the hunk without
+  `src:` counts as unverified. Example: "visual tests cover CSS here" cites the guideline line.
 - **Owned leads.** Every Open lead in the notes file that carries your pass tag ends in your
   output. It ends as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
   after the findings. A lead that ends in neither counts as not worked, and triage treats it so.
