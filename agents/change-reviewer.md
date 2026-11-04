@@ -60,6 +60,7 @@ compatibility* strictly. Nothing observable may change.
 - The fix does not reverse a behavior pinned by an existing test
 - No other components with the same pattern that still carry the bug
 - No existing behavior changed for consumers who did not hit the bug
+- The fix sits where the cause lives. When another location fixes the same symptom and reaches fewer consumers, name it and its precedent
 
 ## Part 2 — Deep blocks on the significant changes
 
@@ -111,7 +112,9 @@ Severity: <A|B|C, the highest tier of the finding lines that this block backs | 
   claim to verify.
 - `Consumers` are named: find them with `grep -rn` across the touched packages and their
   siblings. Never guess them. An unnamed consumer list makes the severity unjustifiable in
-  either direction.
+  either direction. On a PR, the `reach` lines under *Settled facts* list the packages that
+  import each changed module on the base. Start there. A `flow_counterpart` line names the
+  Flow wrapper, which is a consumer of every changed default, event and data path.
 - Write `Promise` from the side of the consumer: "the `opened` property can be set before the
   element is attached", not "we moved the listener". A promise that nobody could state in one
   sentence is usually an accidental one. That accident is itself the finding.
@@ -140,7 +143,7 @@ Finding lines first, then the blocks, then `BELOW LINE`. The order is load-beari
 result gets truncated from the end, so the findings must never sit behind the prose.
 
 ```
-<scope|behavior|fix|boundary|api|impact> | <file>:<line> | <A|B|C> | <claim>
+<scope|behavior|fix|boundary|api|impact> | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>]
 ```
 
 - One line per finding, at most 12 across all categories, ranked most severe first. When
@@ -148,6 +151,10 @@ result gets truncated from the end, so the findings must never sit behind the pr
 - **Anchor on the declaration line** that the claim is about: the selector, the statement, the
   signature. Never anchor on the enclosing block, and never on a range. Another pass may find
   the same defect from its own angle. Matched anchors let triage dedup mechanically.
+- **Source.** When the proof of a claim lies outside the anchored hunk, append
+  ` | src:<file>:<line>`: the consumer, the caller, the convention, or the pre-change line as
+  `src:<BASE>:<path>:<line>`. A claim about code outside the hunk without `src:` counts as
+  unverified. Example: "crud inherits the new margin" cites the crud selector that inherits it.
 - **Owned leads.** Every Open lead in the notes file tagged with your pass ends in your
   output. It ends as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
   after the findings. A lead that ends in neither counts as not worked, and triage treats it
