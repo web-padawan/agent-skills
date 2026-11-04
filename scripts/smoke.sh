@@ -210,6 +210,12 @@ expect "review-plan.sh lists a merged finding with the finding that kept it" \
   "$(grep '^- F1 ' .omc/self-review/context.md 2>/dev/null)"
 
 echo "== post-review.sh"
+# shellcheck source=lib/conventional-label.sh
+. "$SCRIPTS/lib/conventional-label.sh"
+check "the label check refuses praise, which the review never posts" 1 \
+  check_conventional_label "**praise:** clean tests"
+check "the label check accepts a decorated issue" 0 \
+  check_conventional_label "**issue (logic, blocking):** wrong branch"
 printf '{"findings": []}\n' > "$WORK/post.json"
 check "post-review.sh refuses a run without --head" 2 \
   "$SCRIPTS/post-review.sh" --findings "$WORK/post.json" --dry-run
