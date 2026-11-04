@@ -1,9 +1,8 @@
 # Present findings and gate (step 6)
 
 Read [`../../../references/comment-guidelines.md`](../../../references/comment-guidelines.md)
-first. Open with two or three sentences on what the PR does, its goal and its mechanism. Then
-give the structured review. Render each finding of the frozen list (the findings that triage
-kept) in its Conventional Comments shape. Show the tier in chat only:
+first. Then give the review below. Render each finding of the frozen list (the findings that
+triage kept) as a Conventional Comment:
 
 ```
 ## Review: <PR title> (#<number>)
@@ -44,12 +43,11 @@ answered by a green check. Names only, no claims.>
 ```
 
 Every finding carries its decoration. Example: a confirmed B that shows wrong behavior is
-`issue (<category>, non-blocking)`, not a bare `issue (<category>)`. `praise` and `nitpick`
-take no decoration, and `praise` takes no tier. The rendering table in severity.md gives the
-full set.
+`issue (<category>, non-blocking)`, not a bare `issue (<category>)`. The rendering table in
+severity.md gives the full set.
 
-Keep the **Dropped at triage** line to a count and a reason class. The report of Q2 gives the
-detail of each finding. A list of the dropped findings here makes that report redundant.
+The report of Q2 gives the detail of each dropped finding. A list of them in the chat makes
+that report redundant.
 
 The census line under the result counts only findings that are not `already raised`. If
 the plan said `existing_comments: none`, omit the **Already on the PR** block.
@@ -60,22 +58,20 @@ problem, which is false. Give `Looks good` only when every finding is `suggestio
 `question`, `nitpick`, `thought` or `praise`. In that case, say explicitly that the code looks
 good.
 
-Before the post gate, say which findings are `summary-only` (pipeline.md §5.6). They never
-post inline. `Yes — post all` puts them in the review body. `Only blocking issues` posts them
+Before the post gate, say which findings are `summary-only` (pipeline.md §5.6).
+`Yes — post all` puts them in the review body. `Only blocking issues` posts them
 only when their decoration is `blocking`.
 
 On a fork PR, or on a `redirect` verdict, put `One summary review` first. The author then gets
 one list of changes, as in *Replies by verdict* of comment-guidelines.md.
 
-Then ask one `AskUserQuestion` with two questions. **Never post comments without
-confirmation.** Drop an option that would post nothing. Example: drop `Only blocking issues`
+Then ask one `AskUserQuestion` with two questions. Drop an option that would post nothing. Example: drop `Only blocking issues`
 when the only blocking finding is `already raised`.
 
 - **Q1, header `Post`**: "Post these as comments on the PR?" The options:
   - `Yes — post all`: one review, with a thread per finding and the three-move summary of
     comment-guidelines.md in its body.
-  - `One summary review`: every finding in the review body, blocking first
-    (`post-review.sh --body-only`).
+  - `One summary review`: every finding in the review body, blocking first.
   - `Only blocking issues`: the `issue (…, blocking)` and `chore (blocking)` lines, and nothing
     else.
   - `No — chat only`.
