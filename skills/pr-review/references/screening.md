@@ -2,7 +2,7 @@
 
 `scripts/pr-screen.sh` prints the screening facts and a `verdict_hint` from a fixed table.
 The plan quotes them under `screening:`. The hint is a proposal, and the reviewer picks at the
-gate. The skill never approves a PR, and it never closes one.
+gate.
 
 ## The verdicts
 
