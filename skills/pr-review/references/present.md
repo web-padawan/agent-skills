@@ -10,7 +10,7 @@ triage kept) as a Conventional Comment:
 <2–3 sentences: what the PR does and how.>
 
 **Result**: Looks good / Needs attention
-<census by label: N issues (K blocking), N suggestions, N questions, N nitpicks, praise>
+<census by label: N issues (K blocking), N suggestions, N questions, N nitpicks>
 
 ### Findings
 
@@ -25,9 +25,6 @@ triage kept) as a Conventional Comment:
 [B] `path/to/third.ext:88`
 **question (behavior):** <the frozen claim, worded as a question?>
 <what was checked, and what could not be>
-
-**praise** `path/to/test.ext:12`
-<what the author got right — no tier, no decoration, at most one per review>
 
 ### Already on the PR
 
@@ -55,7 +52,7 @@ the plan said `existing_comments: none`, omit the **Already on the PR** block.
 Give `Needs attention` whenever any `issue` exists, blocking or not. An `issue` says that wrong
 behavior exists. `Looks good` above an `issue` tells the reader that the review found no
 problem, which is false. Give `Looks good` only when every finding is `suggestion`,
-`question`, `nitpick`, `thought` or `praise`. In that case, say explicitly that the code looks
+`question`, `nitpick` or `thought`. In that case, say explicitly that the code looks
 good.
 
 Before the post gate, say which findings are `summary-only` (pipeline.md §5.6).
@@ -69,7 +66,7 @@ Then ask one `AskUserQuestion` with two questions. Drop an option that would pos
 when the only blocking finding is `already raised`.
 
 - **Q1, header `Post`**: "Post these as comments on the PR?" The options:
-  - `Yes — post all`: one review, with a thread per finding and the three-move summary of
+  - `Yes — post all`: one review, with a thread per finding and the summary of
     comment-guidelines.md in its body.
   - `One summary review`: every finding in the review body, blocking first.
   - `Only blocking issues`: the `issue (…, blocking)` and `chore (blocking)` lines, and nothing
