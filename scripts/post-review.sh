@@ -37,9 +37,9 @@
 #
 # The :robot: AI-generated prefix opens the body and every thread.
 #
-# Prints one line per finding (`line:`, `file:`, `body:` or `skipped:`), then the
-# review URL. Exit codes: 0 posted (or dry run), 1 an API failure, 2 a usage or
-# validation error.
+# Prints one line per finding (`line:`, `file:`, `body:` or `skipped:`), a posted thread
+# with its URL, then the review URL. Exit codes: 0 posted (or dry run), 1 an API failure,
+# 2 a usage or validation error.
 set -euo pipefail
 
 PR=""
@@ -149,22 +149,25 @@ PREFIX=":robot: AI-generated"
 Q_PENDING='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){reviews(states:PENDING,first:10){nodes{id}}}}}'
 M_DELETE='mutation($reviewId:ID!){deletePullRequestReview(input:{pullRequestReviewId:$reviewId}){pullRequestReview{id}}}'
 M_ADD_PENDING='mutation($prId:ID!){addPullRequestReview(input:{pullRequestId:$prId}){pullRequestReview{id}}}'
-M_LINE='mutation($reviewId:ID!,$path:String!,$line:Int!,$body:String!){addPullRequestReviewThread(input:{pullRequestReviewId:$reviewId,path:$path,line:$line,side:RIGHT,subjectType:LINE,body:$body}){thread{id}}}'
-M_FILE='mutation($reviewId:ID!,$path:String!,$body:String!){addPullRequestReviewThread(input:{pullRequestReviewId:$reviewId,path:$path,subjectType:FILE,body:$body}){thread{id}}}'
+M_LINE='mutation($reviewId:ID!,$path:String!,$line:Int!,$body:String!){addPullRequestReviewThread(input:{pullRequestReviewId:$reviewId,path:$path,line:$line,side:RIGHT,subjectType:LINE,body:$body}){thread{id comments(first:1){nodes{url}}}}}'
+M_FILE='mutation($reviewId:ID!,$path:String!,$body:String!){addPullRequestReviewThread(input:{pullRequestReviewId:$reviewId,path:$path,subjectType:FILE,body:$body}){thread{id comments(first:1){nodes{url}}}}}'
 M_SUBMIT='mutation($reviewId:ID!,$body:String!){submitPullRequestReview(input:{pullRequestReviewId:$reviewId,event:COMMENT,body:$body}){pullRequestReview{url}}}'
 M_BODY_ONLY='mutation($prId:ID!,$body:String!){addPullRequestReview(input:{pullRequestId:$prId,event:COMMENT,body:$body}){pullRequestReview{url}}}'
 
 # A failed thread is a GraphQL error OR a 200 with thread: null — GitHub reports a
 # line outside the diff the second way.
+# Sets THREAD_URL to the URL of the first comment of the new thread.
+THREAD_JQ='.data.addPullRequestReviewThread.thread // empty | "\(.id) \(.comments.nodes[0].url // "")"'
 add_thread() {  # add_thread <line|file> <path> <line> <body>
   local out
   if [ "$1" = line ]; then
     out=$(gh api graphql -f query="$M_LINE" -f reviewId="$REVIEW_ID" -f path="$2" -F line="$3" -f body="$4" \
-      --jq '.data.addPullRequestReviewThread.thread.id // empty' 2>/dev/null || true)
+      --jq "$THREAD_JQ" 2>/dev/null || true)
   else
     out=$(gh api graphql -f query="$M_FILE" -f reviewId="$REVIEW_ID" -f path="$2" -f body="$4" \
-      --jq '.data.addPullRequestReviewThread.thread.id // empty' 2>/dev/null || true)
+      --jq "$THREAD_JQ" 2>/dev/null || true)
   fi
+  THREAD_URL="${out#* }"
   [ -n "$out" ]
 }
 
@@ -265,7 +268,7 @@ $msg"
     continue
   fi
   if [ -n "$file" ] && [ -n "$line" ] && add_thread line "$file" "$line" "$thread_body"; then
-    echo "line: $where"; INLINE=$((INLINE + 1)); continue
+    echo "line: $where${THREAD_URL:+ $THREAD_URL}"; INLINE=$((INLINE + 1)); continue
   fi
   if [ -n "$file" ]; then
     file_body="$thread_body"
@@ -275,7 +278,7 @@ _About line $line._
 
 $msg"
     if add_thread file "$file" "" "$file_body"; then
-      echo "file: $where"; INLINE=$((INLINE + 1)); continue
+      echo "file: $where${THREAD_URL:+ $THREAD_URL}"; INLINE=$((INLINE + 1)); continue
     fi
   fi
   [ "$BODY_ONLY" = true ] || echo "body: ${where:-(no anchor)}"
