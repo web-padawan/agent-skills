@@ -234,6 +234,25 @@ if printf '%s\n' "$PROD" | grep -qE '\.css$|-styles\.[cm]?[jt]s$|/styles/'; then
   fi
 fi
 
+# The rule behind the CSS hits, as a file:line on the base, so the tests pass can quote it.
+# In web-components it lives in guidelines/testing.md, which the context file does not quote.
+CSS_RULE=""
+if [ -n "$CSS_HITS" ]; then
+  CSS_RULE=$(git grep -n -i -E 'visual tests? (over|instead of|rather than) unit tests?' "$BASE" -- \
+    CONVENTIONS.md 'guidelines/*.md' CLAUDE.md AGENTS.md CONTRIBUTING.md 2>/dev/null \
+    | head -1 | sed "s#^$BASE:##" | cut -d: -f1,2 || true)
+fi
+
+# New test files, with their size next to the production size. A new suite for a small fix
+# breaks the "no new test file unless necessary" rule of the tests pass (#12974: 52 lines of
+# a new suite for a 5-line fix).
+NEW_TESTS=""
+PROD_LINES=$(git diff --numstat "$BASE..$HEAD" -- $PROD 2>/dev/null | awk '$1 != "-" { n += $1 + $2 } END { print n + 0 }')
+for f in $(git diff --name-only --diff-filter=A "$BASE..$HEAD" -- $TESTS 2>/dev/null | grep -v '__snapshots__' | grep -v '/screenshots/' || true); do
+  n=$(git show "$HEAD:$f" 2>/dev/null | wc -l | tr -d ' ')
+  NEW_TESTS="${NEW_TESTS:+$NEW_TESTS, }$f ($n lines)"
+done
+
 # ── Verdict hint ──────────────────────────────────────────────────────
 has() { case " $FLAGS " in *" $1 "*) return 0 ;; esac; return 1; }
 VERDICT="take"; REASONS=""
@@ -262,5 +281,7 @@ if [ "$SNAP_N" -ge 2 ]; then echo "snapshot_packages: $SNAP_N [${SNAP_PKGS% }]";
 echo "flow_counterpart: $FLOW_LINE"
 echo "diff_noise: $NOISE_N of $NOISE_TOTAL changed production lines are moved or reindented (the same text on both sides)"
 echo "css_unit_assertions: ${CSS_HITS:-none}"
+[ -n "$CSS_RULE" ] && echo "css_rule: $CSS_RULE"
+echo "new_test_files: ${NEW_TESTS:-none}${NEW_TESTS:+ for $PROD_LINES changed production lines}"
 echo "verdict_hint: $VERDICT"
 printf '%s' "$REASONS"

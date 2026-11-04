@@ -533,7 +533,7 @@ if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ -n "$BASE" ] && [ -n "$HEAD" ] && [ "
   INTAKE=$("$SCRIPT_DIR/pr-intake.sh" "${INTAKE_ARGS[@]}" 2>&1 | sed '/^=== INTAKE ===$/d') \
     || INTAKE="error: pr-intake.sh failed — $(printf '%s' "$INTAKE" | tail -1)"
 fi
-INTAKE_FOR_PASSES=$(printf '%s\n' "$INTAKE" | grep -E '^(issue|reach|snapshot_packages|flow_counterpart|diff_noise|css_unit_assertions): ' || true)
+INTAKE_FOR_PASSES=$(printf '%s\n' "$INTAKE" | grep -E '^(issue|reach|snapshot_packages|flow_counterpart|diff_noise|css_unit_assertions|css_rule|new_test_files): ' || true)
 
 # ── Fork marker ───────────────────────────────────────────────────────
 if [ "$NO_WRITE" != true ]; then
