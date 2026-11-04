@@ -27,7 +27,8 @@ says why.
 
 **Verification caps the tier:** a finding whose key claim triage could not verify is **B**
 at most. Name the unverified part in the claim. Impact decides the tier only after triage
-confirms the claim.
+confirms the claim. A claim about code outside the hunk with no `src:` line counts as
+unverified until triage reads that code.
 
 **CI is authoritative on a PR scope.** The `ci:` digest of the plan settles lint, test and
 visual-baseline state for the head. A green check means that no pass may report that failure.
@@ -125,6 +126,9 @@ Rules that accompany the table:
 - **`if-minor`** only on a B `suggestion` whose fix could balloon past its one-line
   description. Otherwise `non-blocking`.
 - **Every `issue` pairs with its fix**: the one-line fix from the frozen list is the discussion.
+- **An `issue` needs a source that contradicts the diff**: a test, a convention, an API doc,
+  the pre-change code, or a measurement. Without one, the finding renders as a `question` or
+  a `nitpick`. The review verifies, and the maintainer decides.
 - **One `praise`, never false.** Verify it like a finding. The clean deep block of the change
   pass is the usual source. A boundary that returned `NO FINDINGS` with named consumers is
   checkable praise.
