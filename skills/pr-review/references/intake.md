@@ -28,6 +28,8 @@ gate. The skill never approves, and it never closes a PR.
 Why each row:
 
 - A behavior change in a minor release is a semver call. #12974 changed the host `display`.
+  An issue label, a `type!:` title or a `BREAKING CHANGE:` footer in the body sets the flag.
+  For a title or a footer, the intake also prints `breaking_marker:`.
 - The PR template of web-components asks for a feature to be discussed in an issue with
   acceptance criteria first. #12970 had no such issue.
 - A Low-impact issue rarely pays for a change to a module that many packages import.
