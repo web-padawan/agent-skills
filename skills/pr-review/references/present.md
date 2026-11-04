@@ -61,19 +61,24 @@ did not give. Give `Looks good` only when every finding is `suggestion`, `questi
 `thought` or `praise`. In that case, say explicitly that the code looks good.
 
 Say which findings are `summary-only` (pipeline.md §5.6) before the gate. They never post
-inline. `Yes — post all` and `All, plus a summary comment` post them as general comments.
-`Only blocking issues` posts them only when their decoration is `blocking`.
+inline. `Yes — post all` puts them in the review body. `Only blocking issues` posts them only
+when their decoration is `blocking`.
+
+On a fork PR, or on a `redirect` verdict, put `One summary review` first. The author then
+gets one list to work through, as in the replies by verdict of comment-guidelines.md.
 
 Then ask a single `AskUserQuestion` with two questions. **Never post comments without
 confirmation.** Drop an option that would post nothing. That includes `Only blocking issues`
 when the only blocking finding is `already raised`.
 
 - **Q1, header `Post`**: "Post these as comments on the PR?" with the options `Yes — post all`,
-  `Only blocking issues`, `All, plus a summary comment` and `No — chat only`. The summary
-  comment is the three-move general comment in comment-guidelines.md. `Only blocking issues`
-  posts the `issue (…, blocking)` and `chore (blocking)` lines and nothing else.
-  `Yes — post all` and `All, plus a summary comment` post the `contradicts` lines as replies in
-  their threads. Never post `confirms` lines, because agreement is not a comment.
+  `One summary review`, `Only blocking issues` and `No — chat only`. `Yes — post all` posts
+  one review with a thread per finding and the three-move summary in its body.
+  `One summary review` posts every finding in the review body, blocking first
+  (`post-review.sh --body-only`). `Only blocking issues` posts the `issue (…, blocking)` and
+  `chore (blocking)` lines and nothing else. `Yes — post all` and `One summary review` post
+  the `contradicts` lines as replies in their threads. Never post `confirms` lines, because
+  agreement is not a comment.
 - **Q2, header `Report`**: "Write the full review report?" with the options `Yes — write it`
   and `No`. The report goes to `<scratchpad>/pr-<number>-REVIEW.md`. It contains the summary,
   the verdict, and every triaged finding with its tier, label and category. That includes

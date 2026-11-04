@@ -1,6 +1,6 @@
 {
   "name": "agent-skills",
-  "description": "Personal Claude Code skills. Review: self-review (own branch, pre-PR), guided-review (PR walkthrough, optional posting), pr-review (agent rubric pass, inline PR comments). Plus refactor-component, comment-cleanup, screenshot-diff, work-summary and authoring-skills.",
+  "description": "Personal Claude Code skills. Review: self-review (own branch, pre-PR), pr-review (PR walkthrough, intake, agent or quick review, optional posting). Plus refactor-component, comment-cleanup, screenshot-diff, work-summary and authoring-skills.",
   "author": {
     "name": "Serhii Kulykov",
     "url": "https://github.com/web-padawan"
