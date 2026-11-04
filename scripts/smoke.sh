@@ -230,7 +230,7 @@ git init -q -b main "$INTAKE_REPO"
     printf "import { M } from '@vaadin/core/src/vaadin-core-mixin.js';\n" > "packages/$p/src/vaadin-$p.js"
   done
   git add . && git commit -q -m base
-  printf 'export const M = 2;\n' > packages/core/src/vaadin-core-mixin.js
+  printf 'export const M = 2;\nconst b = child.$.button;\n' > packages/core/src/vaadin-core-mixin.js
   printf ':host { color: blue; }\n' > packages/core/src/vaadin-core-styles.css
   printf "it('x', () => {\n  expect(getComputedStyle(el).color).to.equal('blue');\n});\n" > packages/core/test/core.test.js
   git add . && git commit -q -m change
@@ -265,7 +265,9 @@ expect "pr-intake.sh flags CSS that a unit test asserts" \
 expect "pr-intake.sh names the rule behind the CSS hits" \
   "css_rule: guidelines/testing.md:3" "$(grep '^css_rule:' "$WORK/intake.log")"
 expect "pr-intake.sh lists a new test file with its size" \
-  "new_test_files: packages/core/test/core.test.js (3 lines) for 4 changed production lines" "$(grep '^new_test_files:' "$WORK/intake.log")"
+  "new_test_files: packages/core/test/core.test.js (3 lines) for 5 changed production lines" "$(grep '^new_test_files:' "$WORK/intake.log")"
+expect "pr-intake.sh lists a read of the shadow DOM of another element" \
+  "shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" "$(grep '^shadow_reach:' "$WORK/intake.log")"
 expect "pr-intake.sh proposes a decision for a low-impact change with a wide reach" \
   "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/intake.log")"
 (cd "$INTAKE_REPO" && "$SCRIPTS/pr-intake.sh" --pr 1 --base "$INTAKE_BASE" --head "$INTAKE_HEAD" \
