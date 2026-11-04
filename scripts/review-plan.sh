@@ -11,6 +11,14 @@
 #                  [--type fix|feature|refactor|chore] [--scale trivial|lite|full]
 #                  [--deep N] [--rounds N] [--fresh] [--no-coverage] [--report-dir <path>]
 #                  [--no-context] [--context-out <path>] [--no-write]
+#                  [--head <sha>] [--as-of <iso-time>]
+#
+# In pr mode it also prints the intake facts of scripts/pr-intake.sh, and `fork:`. A fork
+# PR turns off the revert check and ab.sh (hints), keeps reuse and maintainability in the
+# code pass, and writes the fork marker that scripts/hooks/bash-guard.py reads. A pr-mode
+# run on a same-repo PR removes it, and it expires after 3 hours. A fork head that is the
+# working tree refuses: its project settings loaded at session start.
+# --head and --as-of audit an earlier head of the PR (get-pr-context.sh --help).
 #
 # In self mode it also reads the findings file of the last review of the branch
 # (`<report-dir>/<branch>-findings.json`): the same head starts a further round, a newer
@@ -41,6 +49,8 @@ CONTEXT_OUT=""
 NO_WRITE=false
 ROUNDS_FLAG=""
 FRESH=false
+AUDIT_HEAD=""
+AS_OF=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -56,7 +66,9 @@ while [[ $# -gt 0 ]]; do
     --no-context) WANT_CONTEXT=false; shift ;;
     --context-out) CONTEXT_OUT="${2:?--context-out requires a value}"; shift 2 ;;
     --no-write) NO_WRITE=true; shift ;;
-    --help|-h) sed -n '2,25p' "$0"; exit 0 ;;
+    --head) AUDIT_HEAD="${2:?--head requires a value}"; shift 2 ;;
+    --as-of) AS_OF="${2:?--as-of requires a value}"; shift 2 ;;
+    --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -68,11 +80,19 @@ case "$DEEP" in ""|*[!0-9]*) [ -z "$DEEP" ] || { echo "error: --deep takes a num
 if [ -n "$ROUNDS_FLAG" ] && ! [[ "$ROUNDS_FLAG" =~ ^[1-9][0-9]*$ ]]; then
   echo "error: --rounds takes a number of 1 or more" >&2; exit 1
 fi
+if { [ -n "$AUDIT_HEAD" ] || [ -n "$AS_OF" ]; } && { [ "$MODE" != "pr" ] || [ -z "$PR" ]; }; then
+  echo "error: --head and --as-of need --mode pr and --pr" >&2; exit 1
+fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
 PROFILES="$PLUGIN_ROOT/references/profiles.md"
 [ -f "$PROFILES" ] || { echo "error: profile matrix not found at $PROFILES" >&2; exit 1; }
+# shellcheck source=lib/pr-history.sh
+. "$SCRIPT_DIR/lib/pr-history.sh"
+# The fork marker: scripts/hooks/bash-guard.py reads it and holds the reviewer passes to
+# read-only commands while a fork review runs. It expires on its own (bash-guard.py).
+FORK_MARKER="${XDG_CACHE_HOME:-$HOME/.cache}/agent-skills/fork-review"
 
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "error: not a git repository" >&2; exit 1; }
 cd "$REPO_ROOT"
@@ -86,6 +106,8 @@ CTX_NOTE=""
 if [ "$WANT_CONTEXT" = true ]; then
   CTX_ARGS=(--no-diff)
   [ -n "$PR" ] && CTX_ARGS+=(--pr "$PR")
+  [ -n "$AUDIT_HEAD" ] && CTX_ARGS+=(--head "$AUDIT_HEAD")
+  [ -n "$AS_OF" ] && CTX_ARGS+=(--as-of "$AS_OF")
   if ! CTX=$("$SCRIPT_DIR/get-pr-context.sh" "${CTX_ARGS[@]}" 2>&1); then
     CTX_NOTE="context script failed — plan uses git-only facts"
   fi
@@ -151,6 +173,17 @@ ANCHOR_BASE=$(anchor merge_base)
 ANCHOR_HEAD=$(anchor head)
 case "$ANCHOR_BASE" in *[!0-9a-f]*) ANCHOR_BASE="" ;; esac
 case "$ANCHOR_HEAD" in *[!0-9a-f]*) ANCHOR_HEAD="" ;; esac
+FORK=$(anchor fork)
+case "$FORK" in true|false) ;; *) FORK="" ;; esac
+[ "$MODE" = "pr" ] || FORK=""
+HEAD_REPO=$(anchor head_repo)
+[[ "$HEAD_REPO" =~ ^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$ ]] || HEAD_REPO=""
+# anchor() returns the first word of a key, so test the word and write the description.
+AUDIT_LINE=""
+[ "$(anchor head_source)" = "audit" ] && AUDIT_LINE="an earlier head of the PR (--head)"
+if [ -n "$AUDIT_HEAD" ] && [ -z "$AUDIT_LINE" ]; then
+  echo "error: --head $AUDIT_HEAD did not resolve (see the context script output above)" >&2; exit 1
+fi
 
 # self mode always reviews the local branch, so its head is local HEAD; the anchors'
 # base is only trusted when it was computed against that same head (an unpushed or
@@ -189,6 +222,11 @@ if [ "$MODE" = "self" ]; then
 fi
 if [ "$GUARD" = "ok" ] && [ -z "$BASE" ]; then
   GUARD="refuse: cannot resolve the merge base — fetch the base branch, or pass --pr"
+fi
+# A fork head in the working tree means that its .claude/settings.json, hooks, skills,
+# rules and CLAUDE.md loaded when this session started. Nothing in this run can undo that.
+if [ "$GUARD" = "ok" ] && [ "$FORK" = "true" ] && [ -n "$HEAD" ] && [ "$HEAD0" = "$HEAD" ]; then
+  GUARD="refuse: the fork head is the working tree, and its project settings loaded at session start — check out the base branch, start a new session, and run the review again"
 fi
 
 # ── Change type ───────────────────────────────────────────────────────
@@ -464,6 +502,9 @@ if [ "$DEEP_ROW" -gt 0 ]; then
   CAND_CAP=$DEEP_CANDIDATES; [ "$CAND_CAP" -lt 1 ] && CAND_CAP=1
   if [ "$DEEP_ROW" -gt "$CAND_CAP" ]; then DEEP_ROW="$CAND_CAP"; DEEP_SOURCE="matrix, capped by scale and by $DEEP_CANDIDATES deep candidates"; fi
 fi
+# A fork PR keeps one block at least: its author is outside the team, so the consumer
+# trace of the top change is the review's job (crud in #12966 was such a consumer).
+if [ "$FORK" = "true" ] && [ "$DEEP_ROW" -lt 1 ]; then DEEP_ROW=1; DEEP_SOURCE="fork minimum"; fi
 if [ -n "$DEEP" ]; then DEEP_ROW="$DEEP"; DEEP_SOURCE="--deep flag"; fi
 
 # Per-pass effort ceiling from the scale tier — references/profiles.md, "Pass effort".
@@ -479,6 +520,32 @@ CONVENTIONS_WHOLE_MAX=400
 for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTIONS.md CLAUDE.md AGENTS.md; do
   if [ -f "$f" ]; then CONVENTIONS="$f"; break; fi
 done
+
+# ── Intake (pr mode) ──────────────────────────────────────────────────
+# What a maintainer must know before a review is worth it. The plan prints all of it. The
+# skeleton gets the facts that the passes need: the issue, the reach, the Flow counterpart,
+# the diff noise and the CSS unit assertions. The verdict hint and the flags stay with the
+# orchestrator, because the passes never learn the bar.
+INTAKE=""
+if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ -n "$BASE" ] && [ -n "$HEAD" ] && [ "$WANT_CONTEXT" = true ]; then
+  INTAKE_ARGS=(--pr "$PR" --base "$BASE" --head "$HEAD")
+  [ -n "$AS_OF" ] && INTAKE_ARGS+=(--as-of "$AS_OF")
+  INTAKE=$("$SCRIPT_DIR/pr-intake.sh" "${INTAKE_ARGS[@]}" 2>&1 | sed '/^=== INTAKE ===$/d') \
+    || INTAKE="error: pr-intake.sh failed — $(printf '%s' "$INTAKE" | tail -1)"
+fi
+INTAKE_FOR_PASSES=$(printf '%s\n' "$INTAKE" | grep -E '^(issue|reach|snapshot_packages|flow_counterpart|diff_noise|css_unit_assertions): ' || true)
+
+# ── Fork marker ───────────────────────────────────────────────────────
+if [ "$NO_WRITE" != true ]; then
+  # Only a pr-mode run replaces the marker. A self-review elsewhere must not lift the
+  # read-only hold of a fork review that still runs; the marker expires on its own.
+  if [ "$FORK" = "true" ] && [ "$GUARD" = "ok" ]; then
+    mkdir -p "$(dirname "$FORK_MARKER")"
+    printf 'repo=%s\npr=%s\nhead=%s\nsince=%s\n' "$REPO_ROOT" "${PR:-}" "$HEAD" "$(date +%s)" > "$FORK_MARKER"
+  elif [ "$MODE" = "pr" ]; then
+    rm -f "$FORK_MARKER"
+  fi
+fi
 
 # ── Report paths ──────────────────────────────────────────────────────
 SLUG=$(printf '%s' "${BRANCH:-detached}" | tr '/' '-')
@@ -905,7 +972,11 @@ if [ -n "$CONTEXT_PATH" ]; then
       --jq '[.number, .url, .author.login, .headRefName, .baseRefName, (.isDraft|tostring)] | @tsv' 2>/dev/null || true)
     if [ -n "$PR_TSV" ]; then
       IFS=$'\t' read -r PR_NUMBER PR_URL PR_AUTHOR PR_HEADREF PR_BASEREF PR_DRAFT <<< "$PR_TSV"
-      PR_BODY=$(gh pr view ${GH_ARGS[@]+"${GH_ARGS[@]}"} --json body --jq .body 2>/dev/null || true)
+      if [ -n "$AS_OF" ]; then
+        PR_BODY=$(pr_body_as_of "$(pr_slug ${GH_ARGS[@]+"${GH_ARGS[@]}"})" "$PR_NUMBER" "$AS_OF")
+      else
+        PR_BODY=$(gh pr view ${GH_ARGS[@]+"${GH_ARGS[@]}"} --json body --jq .body 2>/dev/null || true)
+      fi
     fi
   fi
 
@@ -1002,6 +1073,12 @@ if [ -n "$CONTEXT_PATH" ]; then
     fi
     echo "- base: \`$BASE\`"
     echo "- head: \`$HEAD\`"
+    if [ "$FORK" = "true" ]; then
+      echo "- fork: true (\`${HEAD_REPO:-unknown}\`) — run no code of this head: no tests, no scripts, no package manager"
+    elif [ "$FORK" = "false" ]; then
+      echo "- fork: false"
+    fi
+    [ -n "$AUDIT_LINE" ] && echo "- audit: $AUDIT_LINE${AS_OF:+, as of $AS_OF} — review this head as the maintainers first saw it"
     echo "- checked_out: $CHECKED_OUT — the working tree $( [ "$CHECKED_OUT" = yes ] && echo "is the head" || echo "is NOT the head (\`$HEAD0\`); read post-change content with \`git show $HEAD:<path>\`")"
     echo "- type: $TYPE (signal: $TYPE_SIGNAL; type_conflict: $TYPE_CONFLICT)"
     echo "- scale: $SCALE ($LINES production lines, $TOTAL_LINES with tests, $FILES files; $SCALE_REASON)"
@@ -1080,6 +1157,10 @@ if [ -n "$CONTEXT_PATH" ]; then
       printf '%s\n' "$CI_SECTION" | sed 's/^/    /'
     else
       echo "- CI: not gathered — lint and test state is unknown, not clean."
+    fi
+    if [ -n "$INTAKE_FOR_PASSES" ]; then
+      echo "- Intake (scripts/pr-intake.sh; \`reach\` counts the other packages whose sources import the module on the base):"
+      printf '%s\n' "$INTAKE_FOR_PASSES" | sed 's/^/    /'
     fi
     if [ -n "$NEW_UNIT" ]; then
       echo
@@ -1171,6 +1252,15 @@ echo "base: ${BASE:-unresolved}"
 echo "head: ${HEAD:-unresolved}"
 echo "base_branch: ${BASE_BRANCH:-unknown} (base from: $BASE_SOURCE)"
 echo "pr: ${PR:-none}"
+if [ "$MODE" = "pr" ]; then
+  echo "fork: ${FORK:-unknown}${HEAD_REPO:+ ($HEAD_REPO)}"
+  [ -n "$AUDIT_LINE" ] && echo "audit: $AUDIT_LINE${AS_OF:+, as of $AS_OF}"
+  if [ "$FORK" = "true" ]; then
+    echo "hint: fork PR — no revert check and no ab.sh: both run the code of the head"
+    echo "hint: fork PR — never run yarn, npm, npx, pnpm or node on this head; the Bash guard holds the passes to read-only commands (fork marker: $FORK_MARKER)"
+    echo "hint: fork PR — the code pass keeps reuse and maintainability"
+  fi
+fi
 if [ "$WANT_CONTEXT" = true ]; then
   CI_LINE=$(ci_summary)
   echo "ci: ${CI_LINE:-unavailable — the context script printed no CI_STATUS section}"
@@ -1180,6 +1270,10 @@ if [ "$WANT_CONTEXT" = true ]; then
 else
   echo "ci: not gathered (--no-context)"
   echo "existing_comments: not gathered (--no-context)"
+fi
+if [ -n "$INTAKE" ]; then
+  echo "intake:"
+  printf '%s\n' "$INTAKE" | grep -v '^fork: ' | sed 's/^/  /'
 fi
 echo "type: $TYPE"
 echo "type_signal: $TYPE_SIGNAL"
@@ -1327,7 +1421,7 @@ if [ -n "$PASS_TOKENS" ] && [ -n "$CONTEXT_PATH" ]; then
       code)
         echo "Your diff: $(lane_prod)."
         [ -n "$COMMENT_FILES" ] && echo "Comment-adjacent files for the \`comments\` category: $COMMENT_FILES"
-        [ "$MODE" = "pr" ] && echo "No reuse/maintainability nits."
+        [ "$MODE" = "pr" ] && [ "$FORK" != "true" ] && echo "No reuse/maintainability nits."
         ;;
       tests)
         echo "Your diff: $(lane_tests) — your subject. The production patch, for the coverage category: $(lane_prod)."
