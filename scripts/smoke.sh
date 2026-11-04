@@ -225,6 +225,7 @@ git init -q -b main "$INTAKE_REPO"
   mkdir -p packages/core/src packages/a/src packages/b/src packages/c/src packages/core/test
   printf 'export const M = 1;\n' > packages/core/src/vaadin-core-mixin.js
   printf ':host { color: red; }\n' > packages/core/src/vaadin-core-styles.css
+  mkdir -p guidelines && printf '# Testing\n\n- Prefer visual tests over unit tests for CSS.\n' > guidelines/testing.md
   for p in a b c; do
     printf "import { M } from '@vaadin/core/src/vaadin-core-mixin.js';\n" > "packages/$p/src/vaadin-$p.js"
   done
@@ -261,6 +262,10 @@ expect "pr-intake.sh counts a former employee as team" \
   "issue: #7 open labels=[Impact: Low, bug] author=team age=31d comments=0" "$(grep '^issue:' "$WORK/intake.log")"
 expect "pr-intake.sh flags CSS that a unit test asserts" \
   "css_unit_assertions: packages/core/test/core.test.js:2" "$(grep '^css_unit_assertions:' "$WORK/intake.log")"
+expect "pr-intake.sh names the rule behind the CSS hits" \
+  "css_rule: guidelines/testing.md:3" "$(grep '^css_rule:' "$WORK/intake.log")"
+expect "pr-intake.sh lists a new test file with its size" \
+  "new_test_files: packages/core/test/core.test.js (3 lines) for 4 changed production lines" "$(grep '^new_test_files:' "$WORK/intake.log")"
 expect "pr-intake.sh proposes a decision for a low-impact change with a wide reach" \
   "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/intake.log")"
 (cd "$INTAKE_REPO" && "$SCRIPTS/pr-intake.sh" --pr 1 --base "$INTAKE_BASE" --head "$INTAKE_HEAD" \
