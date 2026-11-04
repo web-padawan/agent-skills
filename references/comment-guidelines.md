@@ -5,9 +5,9 @@ you write any finding text.
 
 ## Shape
 
-Every comment is a [Conventional Comment](https://conventionalcomments.org). Render it from the
-label, decorations, claim and fix of the frozen list
-([`severity.md`](severity.md), *Rendering*):
+Every comment is a [Conventional Comment](https://conventionalcomments.org).
+[`severity.md`](severity.md) (*Rendering*) holds the labels, the decorations and the rules of
+each label. Render each comment from the frozen list in this shape:
 
 ```
 **<label> (<decorations>):** <subject — the frozen claim, one sentence>
@@ -16,20 +16,12 @@ label, decorations, claim and fix of the frozen list
 ```
 
 - The label line is bold, ends with a colon, and is the first line of the message.
-  `post-comment.sh` refuses a message that does not start this way.
 - The subject is the claim as triage froze it. Do not soften or expand it here.
 - The discussion is one short paragraph at most. It gives the fix, and the verification when a
   reader would otherwise have to trust you (`git show <base>` read, the suite searched, the
   browsers reproduced in). Leave no trace of how you found the finding.
-- Do not write `[A]` / `[B]` / `[C]` in a posted comment. The decoration already says `blocking`
-  or `non-blocking`. The letters are the vocabulary of the plugin.
-- A `question` has a subject that ends in a question mark. Its discussion says what you checked
-  and what you could not check. It never asserts the thing that you could not verify.
-- A routed `question (a11y|design|semver|flow)` names the owner or the test, for example the
-  AT × browser matrix, the theme, or the Flow API. It draws no conclusion.
-- Give `praise` once per review, on a decision that the author actually made. Examples: a clean
-  boundary with named consumers, or a regression test that fails without the fix. Never give
-  generic praise.
+- Give `praise` for a decision that the author actually made, for example a regression test
+  that fails without the fix. Never give generic praise.
 
 ## Rules
 
@@ -63,8 +55,8 @@ A `take` verdict gets the review of this file. The three other verdicts get one 
 - **redirect**: one review body. Name the aligned mechanism, cite a precedent `file:line`,
   sketch the change, and list the tests to add. Inline threads only for blocking defects.
 
-Show the draft in chat. Post it only after a yes, with `post-comment.sh --no-label` for decide
-and decline, and with `post-review.sh --body-only` for redirect.
+Show the draft in chat. Post decide and decline with `post-comment.sh --no-label`, and
+redirect with `post-review.sh --body-only`.
 
 Examples, from maintainer replies on web-components fork PRs:
 
@@ -91,7 +83,7 @@ Examples, from maintainer replies on web-components fork PRs:
 
 ## Posting a review with post-review.sh
 
-Post only after the user confirms. Post the findings that the user selected as one review.
+Post the findings that the user selected as one review.
 Then the author gets one notification, not one for each finding. Call
 `${CLAUDE_PLUGIN_ROOT}/scripts/post-review.sh`:
 
@@ -126,7 +118,7 @@ post-review.sh --pr <number> --head <head SHA of the review> \
 ## Posting with post-comment.sh
 
 Use `post-comment.sh` for a reply into an existing thread, and for a single comment outside
-a review run. Post only after the user confirms. Call the script by its full path,
+a review run. Call the script by its full path,
 `${CLAUDE_PLUGIN_ROOT}/scripts/post-comment.sh`. The examples below abbreviate the path.
 
 - The script puts `:robot: AI-generated` above every comment.
