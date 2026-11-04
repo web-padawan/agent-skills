@@ -4,7 +4,8 @@
 # Requires the `gh` CLI (authenticated) and `jq`. Fails loudly without them.
 #
 # Usage:
-#   post-review.sh [--pr <number-or-url>] --head <sha> --findings <file.json> [--summary <file.md>] [--dry-run]
+#   post-review.sh [--pr <number-or-url>] --head <sha> --findings <file.json> [--summary <file.md>]
+#                  [--body-only] [--dry-run]
 #
 # <file.json>:
 #   {"findings": [{"file": "path/in/diff", "line": 42, "message": "**issue (logic, blocking):** ...",
@@ -27,6 +28,10 @@
 # so the author gets one notification, not one per finding (the same flow as the
 # upstream vaadin/github-actions code-review action).
 #
+# --body-only puts every finding in the review body, blocking first, each under its
+# `file:line`. It is the one-comment rendering for a fork PR (skills/pr-review step 5):
+# the author gets one list to work through, and no thread is opened.
+#
 # A line finding within two lines of an existing thread root on the same file is
 # skipped and listed: reply into that thread with `post-comment.sh --reply <id>`,
 # or set "allow_nearby": true when the claim is genuinely different.
@@ -43,6 +48,7 @@ FINDINGS=""
 SUMMARY=""
 REVIEWED_HEAD=""
 DRY_RUN=false
+BODY_ONLY=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -51,6 +57,7 @@ while [[ $# -gt 0 ]]; do
     --findings) FINDINGS="${2:?--findings requires a value}"; shift 2 ;;
     --summary) SUMMARY="${2:?--summary requires a value}"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
+    --body-only) BODY_ONLY=true; shift ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -194,7 +201,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [ "$DRY_RUN" != true ] && [ "$N" -gt 0 ]; then
+if [ "$DRY_RUN" != true ] && [ "$N" -gt 0 ] && [ "$BODY_ONLY" != true ]; then
   STALE=$(gh api graphql -f query="$Q_PENDING" -f owner="${REPO_SLUG%%/*}" -f name="${REPO_SLUG##*/}" -F number="$PR_NUMBER" \
     --jq '.data.repository.pullRequest.reviews.nodes[].id' 2>/dev/null || true)
   # Pending reviews are visible to their author only, so each one is a leftover of ours.
@@ -212,7 +219,20 @@ UNANCHORED=""
 INLINE=0
 BODY_N=0
 SKIPPED=0
-for ((i = 0; i < N; i++)); do
+ORDER=""
+if [ "$BODY_ONLY" = true ]; then
+  # Blocking findings first, then the rest, each group in the order of the file.
+  for ((i = 0; i < N; i++)); do
+    first=$(field "$i" message | head -1)
+    [[ "$first" =~ $BLOCKING_RE ]] && ORDER="$ORDER $i"
+  done
+  for ((i = 0; i < N; i++)); do
+    case " $ORDER " in *" $i "*) ;; *) ORDER="$ORDER $i" ;; esac
+  done
+else
+  for ((i = 0; i < N; i++)); do ORDER="$ORDER $i"; done
+fi
+for i in $ORDER; do
   msg=$(field "$i" message)
   file=$(field "$i" file)
   line=$(field "$i" line)
@@ -221,7 +241,7 @@ for ((i = 0; i < N; i++)); do
   label=$(printf '%s' "$first" | sed -n 's/^\*\*\([^*]*\):\*\* .*/\1/p')
   where="${file:-}${line:+:$line}"
 
-  if [ -n "$file" ] && [ -n "$line" ] && [ "$allow" != true ]; then
+  if [ "$BODY_ONLY" != true ] && [ -n "$file" ] && [ -n "$line" ] && [ "$allow" != true ]; then
     near=$(nearby "$file" "$line")
     if [ -n "$near" ]; then
       echo "skipped: $where (existing thread ${near% } — reply into it with post-comment.sh --reply)"
@@ -237,6 +257,9 @@ $kind"
   thread_body="$PREFIX
 
 $msg"
+  if [ "$BODY_ONLY" = true ]; then
+    file=""; line=""
+  fi
   if [ "$DRY_RUN" = true ] && [ -n "$file" ]; then
     printf -- '--- thread %s ---\n%s\n\n' "$where" "$thread_body"
     INLINE=$((INLINE + 1))
@@ -256,7 +279,8 @@ $msg"
       echo "file: $where"; INLINE=$((INLINE + 1)); continue
     fi
   fi
-  echo "body: ${where:-(no anchor)}"
+  [ "$BODY_ONLY" = true ] || echo "body: ${where:-(no anchor)}"
+  [ "$BODY_ONLY" = true ] && echo "body: ${where:-(no anchor)} (--body-only)"
   BODY_N=$((BODY_N + 1))
   loc=""
   [ -n "$where" ] && loc="**\`$where\`**
@@ -277,7 +301,9 @@ if [ "$POSTED" -eq 0 ]; then
   OVERVIEW="Reviewed \`${REVIEWED_HEAD:0:7}\`. Nothing to flag."
 else
   OVERVIEW="Reviewed \`${REVIEWED_HEAD:0:7}\` and left $POSTED comment$([ "$POSTED" -eq 1 ] || echo s): $(census "$KINDS")."
-  if [ "$BODY_N" -eq 1 ]; then
+  if [ "$BODY_ONLY" = true ]; then
+    OVERVIEW="Reviewed \`${REVIEWED_HEAD:0:7}\`: $(census "$KINDS"). Each point is below, blocking first."
+  elif [ "$BODY_N" -eq 1 ]; then
     OVERVIEW="$OVERVIEW One of them is below, because it could not be attached to the diff."
   elif [ "$BODY_N" -gt 1 ]; then
     OVERVIEW="$OVERVIEW $BODY_N of them are below, because they could not be attached to the diff."
