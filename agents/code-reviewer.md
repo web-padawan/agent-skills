@@ -45,6 +45,7 @@ finding in a file is a reason to look harder at that file.
 
 - No new code that re-implements an existing helper that the sweep found. Name the helper to call instead
 - No imperative wiring where the component family has a declarative mechanism for it, for example a delegated property or a template binding. Name the mechanism and one use site
+- Each `shadow_reach` entry under *Settled facts* is added code that reads the shadow DOM of another element. Judge it under this rule: could the child receive the value through a delegated property and bind it in its template?
 - No duplication or copy-paste with slight variation
 - No unnecessary complexity or tight coupling
 - No unused or unreachable code, no obsolete checks
