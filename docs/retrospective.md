@@ -4,6 +4,42 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-04 — PR review 6: web-components #13354, a workflow-only chore
+
+One file, `.github/workflows/code-review.yml`, +33 −14: a `dismiss-stale-approval` job and
+the `github.token` fallback removed. Team PR, CI pending. Quick review at the gate, so no
+pass ran. Posted 2 threads (1 suggestion, 1 question) at head `337d844`. The author fixed
+both within the hour (`5b7465f`, `4213fb0`) and resolved the threads.
+
+- The CI override set `scale: full` and planned three opus passes, the tests pass included,
+  for 47 YAML lines with no test file and no testable code. The reviewer picked
+  `Quick review`. → the plan drops the tests pass when no test, code or binary file
+  changed, and prints `passes_dropped:`. The CI override still raises the scale (`a8213d0`, `7d60103`).
+- The facts that decided the review were outside the diff and outside the plan:
+  - the `uses:` target at its branch ref (`vaadin/github-actions/code-review@feat/risk-assessment`)
+  - its `action.yml` inputs and the `dismiss-stale-approval.mjs` script
+  - the repo default token (`actions/permissions/workflow`: `write`, may approve)
+  - Dependabot activity on the repo
+
+  Each took a manual `gh api` call. → `workflow-facts.sh` and a `workflow:` block in the plan
+  and in Settled facts: added `uses:` refs with their ref kind and an `action.yml` path, jobs
+  without `permissions:`, the repo default token, and bot authors in the last 30 days.
+  Re-run on `337d844`, it printed both posted findings as facts (`a8213d0`).
+- `understand.md` says not to read the diff in step 2. For a workflow PR the diff is the
+  explanation, and both leads came from it before the gate. → `understand.md` allows the
+  diff when `affected_packages` is none and the diff is inline, and reads each `uses:` action (`5440afd`).
+- The action source cleared one suspected finding before the gate: a review still running
+  during a push. `post-review.mjs` dismisses its own approval when the head moved. Without
+  the external read, it would have been a false `issue`. The CI bot posted that exact
+  finding, and a maintainer dismissed it: the action already handles the race.
+- One claim stayed unverified: whether the runner uses the input default `github.token`
+  when the caller passes an explicit empty secret. It posted as a `question`, as the
+  rendering table requires.
+- `post-review.sh` prints only the review URL. Step 7 asks for the link of each comment, so
+  one more `gh api .../reviews/<id>/comments` call was needed → `post-review.sh` prints the
+  URL on each `line:` and `file:` line (`9692b12`).
+- Cost: no subagents, about 15 tool calls in the main context.
+
 ## 2026-11-04 — Fork PR dry run: 11 web-components PRs from forks
 
 The bot skips forks, so the maintainers reviewed alone. Each PR ran at its pre-review head,
