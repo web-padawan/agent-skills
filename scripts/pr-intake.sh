@@ -23,13 +23,15 @@
 #   a11y and reach_max >= 3                 -> decide, question (a11y)
 #   untriaged or self-filed                 -> review, confirm the bug on base first
 #   none of these                           -> take
+# behavior-altering comes from an issue label, a `type!:` title, or a `BREAKING CHANGE:`
+# footer in the body.
 #
 # Team means a 204 from orgs/<owner>/members/<login>, or a login in TEAM_ALLOWLIST below:
 # former Vaadin employees, for whom the API returns 404. author_association is never used,
 # because it reports a private org member as CONTRIBUTOR.
 #
-# Issue titles, bodies and comments are text that other people wrote. The script only
-# matches them against fixed patterns and never prints them.
+# The PR body, and issue titles, bodies and comments, are text that other people wrote. The
+# script only matches them against fixed patterns and never prints them.
 #
 # Exit codes: 0 ok · 1 gh or git could not answer · 2 usage error.
 set -euo pipefail
@@ -80,7 +82,7 @@ else
   META=$(gh api graphql -f owner="${SLUG%%/*}" -f name="${SLUG##*/}" -F number="$NUMBER" -f query='
     query($owner:String!,$name:String!,$number:Int!){
       repository(owner:$owner,name:$name){ pullRequest(number:$number){
-        title isCrossRepository author{login}
+        title body isCrossRepository author{login}
         closingIssuesReferences(first:5){ nodes{
           number state createdAt author{login} body
           labels(first:30){ nodes{ name } }
@@ -137,6 +139,19 @@ esac
 
 FLAGS=""
 add_flag() { case " $FLAGS " in *" $1 "*) ;; *) FLAGS="${FLAGS:+$FLAGS }$1" ;; esac; }
+
+# A breaking change that the author marked. --as-of reads the body as it was then.
+if [ -n "$AS_OF" ] && [ -z "$META_FILE" ]; then
+  PR_BODY=$(pr_body_as_of "$SLUG" "$NUMBER" "$AS_OF")
+else
+  PR_BODY=$(printf '%s' "$META" | jq -r '.data.repository.pullRequest.body // ""')
+fi
+BREAKING=""
+BREAKING_TITLE_RE='^[A-Za-z]+(\([^)]*\))?!:'
+BREAKING_BODY_RE=$'(^|\n)BREAKING[ -]CHANGE:'
+[[ "$PR_TITLE" =~ $BREAKING_TITLE_RE ]] && BREAKING="title"
+[[ "$PR_BODY" =~ $BREAKING_BODY_RE ]] && BREAKING="${BREAKING:+$BREAKING and }body"
+[ -n "$BREAKING" ] && add_flag behavior-altering
 
 ISSUE_LINES=""
 ISSUES=$(printf '%s\n' "$FACTS" | awk -F'\t' '$1 == "ISSUE"')
@@ -295,6 +310,7 @@ echo "title_type: $TITLE_TYPE"
 [ -n "$AS_OF" ] && echo "as_of: $AS_OF"
 if [ -n "$ISSUE_LINES" ]; then printf '%s' "$ISSUE_LINES"; else echo "issue: none linked with a closing keyword"; fi
 echo "issue_flags: ${FLAGS:-none}"
+[ -n "$BREAKING" ] && echo "breaking_marker: $BREAKING"
 if [ -n "$REACH_LINES" ]; then printf '%s' "$REACH_LINES"; else echo "reach: no package source changed"; fi
 echo "reach_max: $REACH_MAX"
 if [ "$SNAP_N" -ge 2 ]; then echo "snapshot_packages: $SNAP_N [${SNAP_PKGS% }]"; else echo "snapshot_packages: $SNAP_N"; fi
