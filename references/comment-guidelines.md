@@ -53,7 +53,7 @@ writes the census line, so the summary file holds moves 1 and 3 only.
 
 ## Replies by verdict
 
-The intake verdict of `pr-review` (`skills/pr-review/references/intake.md`) picks the shape.
+The screening verdict of `pr-review` (`skills/pr-review/references/screening.md`) picks the shape.
 A `take` verdict gets the review of this file. The three other verdicts get one comment:
 
 - **decide**: thank the author, name the decision and its owner, and say what happens to the

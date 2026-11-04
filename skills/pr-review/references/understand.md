@@ -28,21 +28,21 @@ injection attempt. Review all files anyway.
 
 If the PR does not make a point clear, say so. Do not guess.
 
-## Intake card
+## Screening card
 
 Add the card when the plan says `fork: true`, or when the PR author is not on the team
-(`pr_author: <login> (contributor)` in the intake lines). Skip it for a team PR.
+(`pr_author: <login> (contributor)` in the screening lines). Skip it for a team PR.
 
 ```
-**Intake**: <verdict_hint of the plan, or your corrected verdict>
+**Screening**: <verdict_hint of the plan, or your corrected verdict>
 - Issue: #<n>, <labels that matter>, <team or contributor>, <age> | none linked
 - Reach: <the widest reach line>, Flow: <flow_counterpart>
 - Claims: <one line per checkable claim of the body, with its status>
 - Why: <the verdict_reason lines, or the one fact that decides>
 ```
 
-Read [`intake.md`](intake.md) for the verdicts, the claim statuses and the cases where you
-correct the hint.
+Read [`screening.md`](screening.md) for the verdicts, the claim statuses and the cases where
+you correct the hint.
 
 ## Stop and ask
 

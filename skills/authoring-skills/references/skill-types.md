@@ -15,7 +15,7 @@ you can open that skill and copy the shape.
 Reviews code against a rubric, a checklist, or a skeptical stance. May post
 findings. Produces a report. Mostly read-only.
 - In this repo: `self-review` (own branch, pre-PR, three checklist passes) and
-  `pr-review` (a PR from someone else: walkthrough, intake, review, posts only what
+  `pr-review` (a PR from someone else: walkthrough, screening, review, posts only what
   you select).
 - This is the crowded category. Every new skill here must carry a boundary
   clause against the existing two.

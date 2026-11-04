@@ -9,7 +9,7 @@
 # checks their exit codes and their effect on the tree. Runs dev-server.sh and `ab.sh --port`
 # against a fake web-dev-server (a python3 http.server) and checks that they return through a
 # pipe, restore on SIGTERM, and leave no shell behind. Checks the review-plan.sh report dir
-# and earlier-findings list, the post-review.sh --head refusal, the pr-intake.sh facts on a
+# and earlier-findings list, the post-review.sh --head refusal, the pr-screen.sh facts on a
 # fixture, and the bash-guard.py decisions. Also checks that every
 # script in this directory answers --help with exit 0.
 #
@@ -214,13 +214,13 @@ printf '{"findings": []}\n' > "$WORK/post.json"
 check "post-review.sh refuses a run without --head" 2 \
   "$SCRIPTS/post-review.sh" --findings "$WORK/post.json" --dry-run
 
-echo "== pr-intake.sh"
+echo "== pr-screen.sh"
 # Three packages import the changed module, and a unit test asserts CSS. The fixture
 # issue got `Impact: Low` before the review and `behavior altering change` after it.
-INTAKE_REPO="$WORK/intake"
-git init -q -b main "$INTAKE_REPO"
+SCREENING_REPO="$WORK/screening"
+git init -q -b main "$SCREENING_REPO"
 (
-  cd "$INTAKE_REPO" || exit 1
+  cd "$SCREENING_REPO" || exit 1
   git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
   mkdir -p packages/core/src packages/a/src packages/b/src packages/c/src packages/core/test
   printf 'export const M = 1;\n' > packages/core/src/vaadin-core-mixin.js
@@ -235,7 +235,7 @@ git init -q -b main "$INTAKE_REPO"
   printf "it('x', () => {\n  expect(getComputedStyle(el).color).to.equal('blue');\n});\n" > packages/core/test/core.test.js
   git add . && git commit -q -m change
 )
-cat > "$WORK/intake-meta.json" <<'EOF'
+cat > "$WORK/screening-meta.json" <<'EOF'
 {"slug": "owner/name", "data": {"repository": {"pullRequest": {
   "title": "fix: change the core mixin", "isCrossRepository": true, "author": {"login": "someone"},
   "closingIssuesReferences": {"nodes": [{
@@ -249,39 +249,39 @@ cat > "$WORK/intake-meta.json" <<'EOF'
       {"__typename": "LabeledEvent", "createdAt": "2026-03-01T00:00:00Z", "label": {"name": "behavior altering change"}}
     ]}}]}}}}}
 EOF
-INTAKE_BASE=$(git -C "$INTAKE_REPO" rev-parse HEAD~1)
-INTAKE_HEAD=$(git -C "$INTAKE_REPO" rev-parse HEAD)
-(cd "$INTAKE_REPO" && "$SCRIPTS/pr-intake.sh" --pr 1 --base "$INTAKE_BASE" --head "$INTAKE_HEAD" \
-  --meta "$WORK/intake-meta.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/intake.log" 2>&1
-expect "pr-intake.sh counts three importing packages" \
+SCREENING_BASE=$(git -C "$SCREENING_REPO" rev-parse HEAD~1)
+SCREENING_HEAD=$(git -C "$SCREENING_REPO" rev-parse HEAD)
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
+  --meta "$WORK/screening-meta.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/screening.log" 2>&1
+expect "pr-screen.sh counts three importing packages" \
   "reach: packages/core/src/vaadin-core-mixin.js -> 3 other packages [a b c]" \
-  "$(grep '^reach: packages/core/src/vaadin-core-mixin.js' "$WORK/intake.log")"
-expect "pr-intake.sh replays the labels to --as-of" \
-  "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/intake.log")"
-expect "pr-intake.sh counts a former employee as team" \
-  "issue: #7 open labels=[Impact: Low, bug] author=team age=31d comments=0" "$(grep '^issue:' "$WORK/intake.log")"
-expect "pr-intake.sh flags CSS that a unit test asserts" \
-  "css_unit_assertions: packages/core/test/core.test.js:2" "$(grep '^css_unit_assertions:' "$WORK/intake.log")"
-expect "pr-intake.sh names the rule behind the CSS hits" \
-  "css_rule: guidelines/testing.md:3" "$(grep '^css_rule:' "$WORK/intake.log")"
-expect "pr-intake.sh lists a new test file with its size" \
-  "new_test_files: packages/core/test/core.test.js (3 lines) for 5 changed production lines" "$(grep '^new_test_files:' "$WORK/intake.log")"
-expect "pr-intake.sh lists a read of the shadow DOM of another element" \
-  "shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" "$(grep '^shadow_reach:' "$WORK/intake.log")"
-expect "pr-intake.sh proposes a decision for a low-impact change with a wide reach" \
-  "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/intake.log")"
-(cd "$INTAKE_REPO" && "$SCRIPTS/pr-intake.sh" --pr 1 --base "$INTAKE_BASE" --head "$INTAKE_HEAD" \
-  --meta "$WORK/intake-meta.json" --flow-dir "$WORK/none") > "$WORK/intake-now.log" 2>&1
-expect "pr-intake.sh reads the current labels without --as-of" \
-  "verdict_reason: behavior-altering -> question (semver)" "$(grep -m1 '^verdict_reason:' "$WORK/intake-now.log")"
+  "$(grep '^reach: packages/core/src/vaadin-core-mixin.js' "$WORK/screening.log")"
+expect "pr-screen.sh replays the labels to --as-of" \
+  "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening.log")"
+expect "pr-screen.sh counts a former employee as team" \
+  "issue: #7 open labels=[Impact: Low, bug] author=team age=31d comments=0" "$(grep '^issue:' "$WORK/screening.log")"
+expect "pr-screen.sh flags CSS that a unit test asserts" \
+  "css_unit_assertions: packages/core/test/core.test.js:2" "$(grep '^css_unit_assertions:' "$WORK/screening.log")"
+expect "pr-screen.sh names the rule behind the CSS hits" \
+  "css_rule: guidelines/testing.md:3" "$(grep '^css_rule:' "$WORK/screening.log")"
+expect "pr-screen.sh lists a new test file with its size" \
+  "new_test_files: packages/core/test/core.test.js (3 lines) for 5 changed production lines" "$(grep '^new_test_files:' "$WORK/screening.log")"
+expect "pr-screen.sh lists a read of the shadow DOM of another element" \
+  "shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" "$(grep '^shadow_reach:' "$WORK/screening.log")"
+expect "pr-screen.sh proposes a decision for a low-impact change with a wide reach" \
+  "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/screening.log")"
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
+  --meta "$WORK/screening-meta.json" --flow-dir "$WORK/none") > "$WORK/screening-now.log" 2>&1
+expect "pr-screen.sh reads the current labels without --as-of" \
+  "verdict_reason: behavior-altering -> question (semver)" "$(grep -m1 '^verdict_reason:' "$WORK/screening-now.log")"
 jq '.data.repository.pullRequest.title = "fix!: change the core mixin"
-  | .data.repository.pullRequest.body = "Text\r\nBREAKING CHANGE: M is 2"' "$WORK/intake-meta.json" > "$WORK/intake-breaking.json"
-(cd "$INTAKE_REPO" && "$SCRIPTS/pr-intake.sh" --pr 1 --base "$INTAKE_BASE" --head "$INTAKE_HEAD" \
-  --meta "$WORK/intake-breaking.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/intake-breaking.log" 2>&1
-expect "pr-intake.sh reads a breaking change that the title and the body mark" \
-  "breaking_marker: title and body" "$(grep '^breaking_marker:' "$WORK/intake-breaking.log")"
-expect "pr-intake.sh sets behavior-altering for a marked breaking change" \
-  "issue_flags: behavior-altering low-impact" "$(grep '^issue_flags:' "$WORK/intake-breaking.log")"
+  | .data.repository.pullRequest.body = "Text\r\nBREAKING CHANGE: M is 2"' "$WORK/screening-meta.json" > "$WORK/screening-breaking.json"
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
+  --meta "$WORK/screening-breaking.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/screening-breaking.log" 2>&1
+expect "pr-screen.sh reads a breaking change that the title and the body mark" \
+  "breaking_marker: title and body" "$(grep '^breaking_marker:' "$WORK/screening-breaking.log")"
+expect "pr-screen.sh sets behavior-altering for a marked breaking change" \
+  "issue_flags: behavior-altering low-impact" "$(grep '^issue_flags:' "$WORK/screening-breaking.log")"
 
 echo "== bash-guard.py"
 GUARD="$SCRIPTS/hooks/bash-guard.py"

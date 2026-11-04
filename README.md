@@ -7,7 +7,7 @@ single-plugin marketplace. You install it from a local path. Nothing is publishe
 
 | Skill | Use it for |
 | --- | --- |
-| `pr-review` | A PR from someone else. Explains it, checks the intake facts, reviews it after you confirm with the agent passes or in one context, then posts only what you select. |
+| `pr-review` | A PR from someone else. Explains it, checks the screening facts, reviews it after you confirm with the agent passes or in one context, then posts only what you select. |
 | `self-review` | Your own branch before you open or update a PR. Three agent passes, A / B / C findings, a `FINDINGS.md` report. Never edits code. |
 | `refactor-component` | A structural refactor of web component sources without a behavior change. |
 | `comment-cleanup` | Deletes and shortens comments in a diff, a file or a package. Edits comment lines only. |
@@ -30,7 +30,7 @@ Restart the session so that the skills load.
 ## Use
 
 ```
-/agent-skills:pr-review 9042                    # walkthrough, intake, review, optional posting
+/agent-skills:pr-review 9042                    # walkthrough, screening, review, optional posting
 /agent-skills:pr-review 9042 --quick            # the same, with a single-context review
 /agent-skills:self-review                       # current branch, type detected
 /agent-skills:self-review --fix --no-coverage   # force type, skip the coverage check
@@ -66,7 +66,7 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `post-comment.sh` | One Conventional Comment on a PR, inline or general, or a reply |
 | `post-review.sh` | All selected findings as one PR review: line, then file, then body anchors |
 | `review-plan.sh` | The review plan and the context file of the pipeline |
-| `pr-intake.sh` | The intake facts of a PR: linked issue, labels, reach, Flow counterpart, verdict hint |
+| `pr-screen.sh` | The screening facts of a PR: linked issue, labels, reach, Flow counterpart, verdict hint |
 | `get-pr-context.sh` | PR metadata, anchor SHAs, CI state and diffs for `review-plan.sh` |
 | `dev-server.sh` | Start, check, restart or stop `web-dev-server` on one port |
 | `test-summary.sh` | One line per test suite, with the names of failing tests |
@@ -76,7 +76,7 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `fixup-into.sh` | Folds changes into an earlier branch commit |
 | `float-to-tip.sh` | Moves one branch commit to the tip |
 | `visual-diffstat.cjs` | Pixel metrics and a contact sheet for failed screenshots |
-| `smoke.sh` | Checks the scripts that rewrite a tree, the intake facts and the Bash guard |
+| `smoke.sh` | Checks the scripts that rewrite a tree, the screening facts and the Bash guard |
 
 ## Hooks
 

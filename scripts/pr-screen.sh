@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# pr-intake.sh — the intake facts of a PR: what a maintainer must know before a review is
+# pr-screen.sh — the screening facts of a PR: what a maintainer must know before a review is
 # worth it. The linked issue and its labels, the packages that import each changed module,
 # the Flow counterpart, the moved or reindented share of the diff, CSS that unit tests
 # assert, and a verdict hint from a fixed table.
 #
 # Usage:
-#   pr-intake.sh --pr <number-or-url> --base <sha> --head <sha> [--as-of <iso-time>]
+#   pr-screen.sh --pr <number-or-url> --base <sha> --head <sha> [--as-of <iso-time>]
 #                [--flow-dir <path>] [--meta <file.json>]
 #
 # Run it from inside the target repository. review-plan.sh calls it in pr mode.
@@ -16,7 +16,7 @@
 # --meta reads the GraphQL answer from a file instead of gh, and team membership from the
 #   allowlist only. The smoke test uses it.
 #
-# The verdict table (skills/pr-review/references/intake.md explains each row):
+# The verdict table (skills/pr-review/references/screening.md explains each row):
 #   behavior-altering                       -> decide, question (semver)
 #   feature-no-ac                           -> decide, question (design)
 #   low-impact and reach_max >= 3           -> decide, question (design)
@@ -302,7 +302,7 @@ if [ "$VERDICT" = take ] && { has untriaged || has self-filed; }; then
 fi
 
 # ── Print ─────────────────────────────────────────────────────────────
-echo "=== INTAKE ==="
+echo "=== SCREENING ==="
 echo "fork: ${IS_FORK:-unknown}"
 pa_team="contributor"; is_team "$PR_AUTHOR" && pa_team="team"
 echo "pr_author: ${PR_AUTHOR:-unknown} ($pa_team)"

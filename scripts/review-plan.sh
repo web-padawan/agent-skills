@@ -13,7 +13,7 @@
 #                  [--no-context] [--context-out <path>] [--no-write]
 #                  [--head <sha>] [--as-of <iso-time>]
 #
-# In pr mode it also prints the intake facts of scripts/pr-intake.sh, and `fork:`. A fork
+# In pr mode it also prints the screening facts of scripts/pr-screen.sh, and `fork:`. A fork
 # PR turns off the revert check and ab.sh (hints), keeps reuse and maintainability in the
 # code pass, and writes the fork marker that scripts/hooks/bash-guard.py reads. A pr-mode
 # run on a same-repo PR removes it, and it expires after 3 hours. A fork head that is the
@@ -521,19 +521,19 @@ for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTI
   if [ -f "$f" ]; then CONVENTIONS="$f"; break; fi
 done
 
-# ── Intake (pr mode) ──────────────────────────────────────────────────
+# ── Screening (pr mode) ───────────────────────────────────────────────
 # What a maintainer must know before a review is worth it. The plan prints all of it. The
 # skeleton gets the facts that the passes need: the issue, the reach, the Flow counterpart,
 # the diff noise and the CSS unit assertions. The verdict hint and the flags stay with the
 # orchestrator, because the passes never learn the bar.
-INTAKE=""
+SCREENING=""
 if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ -n "$BASE" ] && [ -n "$HEAD" ] && [ "$WANT_CONTEXT" = true ]; then
-  INTAKE_ARGS=(--pr "$PR" --base "$BASE" --head "$HEAD")
-  [ -n "$AS_OF" ] && INTAKE_ARGS+=(--as-of "$AS_OF")
-  INTAKE=$("$SCRIPT_DIR/pr-intake.sh" "${INTAKE_ARGS[@]}" 2>&1 | sed '/^=== INTAKE ===$/d') \
-    || INTAKE="error: pr-intake.sh failed — $(printf '%s' "$INTAKE" | tail -1)"
+  SCREENING_ARGS=(--pr "$PR" --base "$BASE" --head "$HEAD")
+  [ -n "$AS_OF" ] && SCREENING_ARGS+=(--as-of "$AS_OF")
+  SCREENING=$("$SCRIPT_DIR/pr-screen.sh" "${SCREENING_ARGS[@]}" 2>&1 | sed '/^=== SCREENING ===$/d') \
+    || SCREENING="error: pr-screen.sh failed — $(printf '%s' "$SCREENING" | tail -1)"
 fi
-INTAKE_FOR_PASSES=$(printf '%s\n' "$INTAKE" | grep -E '^(issue|reach|snapshot_packages|flow_counterpart|diff_noise|css_unit_assertions|css_rule|shadow_reach|new_test_files): ' || true)
+SCREENING_FOR_PASSES=$(printf '%s\n' "$SCREENING" | grep -E '^(issue|reach|snapshot_packages|flow_counterpart|diff_noise|css_unit_assertions|css_rule|shadow_reach|new_test_files): ' || true)
 
 # ── Fork marker ───────────────────────────────────────────────────────
 if [ "$NO_WRITE" != true ]; then
@@ -1158,9 +1158,9 @@ if [ -n "$CONTEXT_PATH" ]; then
     else
       echo "- CI: not gathered — lint and test state is unknown, not clean."
     fi
-    if [ -n "$INTAKE_FOR_PASSES" ]; then
-      echo "- Intake (scripts/pr-intake.sh; \`reach\` counts the other packages whose sources import the module on the base):"
-      printf '%s\n' "$INTAKE_FOR_PASSES" | sed 's/^/    /'
+    if [ -n "$SCREENING_FOR_PASSES" ]; then
+      echo "- Screening (scripts/pr-screen.sh; \`reach\` counts the other packages whose sources import the module on the base):"
+      printf '%s\n' "$SCREENING_FOR_PASSES" | sed 's/^/    /'
     fi
     if [ -n "$NEW_UNIT" ]; then
       echo
@@ -1271,9 +1271,9 @@ else
   echo "ci: not gathered (--no-context)"
   echo "existing_comments: not gathered (--no-context)"
 fi
-if [ -n "$INTAKE" ]; then
-  echo "intake:"
-  printf '%s\n' "$INTAKE" | grep -v '^fork: ' | sed 's/^/  /'
+if [ -n "$SCREENING" ]; then
+  echo "screening:"
+  printf '%s\n' "$SCREENING" | grep -v '^fork: ' | sed 's/^/  /'
 fi
 echo "type: $TYPE"
 echo "type_signal: $TYPE_SIGNAL"

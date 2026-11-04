@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a GitHub pull request from someone else. Explain its goal with a concrete example, check the intake facts (linked issue and labels, the packages that import the changed code, fork origin, the claims of the body) and whether the change is worth a review now, then, after you confirm, run the plugin's reviewer agents or a quick single-context review, and post only what you select as inline Conventional Comments, one summary review, or a drafted reply. Use when asked to review this PR, walk me through a PR, review a contribution, an external, community, fork or AI-generated PR, triage a PR before review, do a full review of a pull request, or review and post comments on a PR. Not for your own branch before it has a PR (self-review).
+description: Review a GitHub pull request from someone else. Explain its goal with a concrete example, check the screening facts (linked issue and labels, the packages that import the changed code, fork origin, the claims of the body) and whether the change is worth a review now, then, after you confirm, run the plugin's reviewer agents or a quick single-context review, and post only what you select as inline Conventional Comments, one summary review, or a drafted reply. Use when asked to review this PR, walk me through a PR, review a contribution, an external, community, fork or AI-generated PR, triage a PR before review, do a full review of a pull request, or review and post comments on a PR. Not for your own branch before it has a PR (self-review).
 argument-hint: "[PR number or URL, or blank to auto-detect from current branch] [--deep N] [--quick]"
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/gh-context.sh:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/post-review.sh:*), Bash(*/scripts/post-comment.sh:*)
 ---
@@ -16,8 +16,8 @@ only in the revert check of a same-repo PR (step 5).
 
 | Reference | Covers |
 | --- | --- |
-| [`references/understand.md`](references/understand.md) | Step 2: the explanation and the intake card |
-| [`references/intake.md`](references/intake.md) | Steps 2 and 3: the verdicts, the hint table, the claims of the body |
+| [`references/understand.md`](references/understand.md) | Step 2: the explanation and the screening card |
+| [`references/screening.md`](references/screening.md) | Steps 2 and 3: the verdicts, the hint table, the claims of the body |
 | [`references/quick.md`](references/quick.md) | Step 3: the quick review, also the fallback |
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1, 4 and 5: the plan, the context and notes files, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | Step 5: A / B / C, tiers by change type, the rendering table |
@@ -51,7 +51,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode pr [--pr <number-or-url>] [-
   --context-out <scratchpad>/pr-<number>-context.md
 ```
 
-Read `fork:`, `intake:`, `ci:` and `existing_comments:` first. Then read the rest of the plan
+Read `fork:`, `screening:`, `ci:` and `existing_comments:` first. Then read the rest of the plan
 and act on every `hint:`. Record `base` and `head` as literals.
 
 - A red check is an A finding on its own.
@@ -61,13 +61,13 @@ and act on every `hint:`. Record `base` and `head` as literals.
 ### 2. Understand
 
 Follow [`references/understand.md`](references/understand.md): problem, change, mechanism,
-example and scope. On a fork PR, or on a PR from an author outside the team, add the intake
-card.
+example and scope. On a fork PR, or on a PR from an author outside the team, add the
+screening card.
 
 ### 3. Gate
 
 Ask one `AskUserQuestion` with the header `Review`: "How should I continue?" List first the
-option that the verdict suggests (the verdict table in [`references/intake.md`](references/intake.md)):
+option that the verdict suggests (the verdict table in [`references/screening.md`](references/screening.md)):
 
 - `Full review`: steps 4 to 7.
 - `Quick review`: [`references/quick.md`](references/quick.md), then steps 6 and 7.

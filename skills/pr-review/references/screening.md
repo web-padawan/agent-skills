@@ -1,7 +1,7 @@
-# Intake verdicts
+# Screening verdicts
 
-`scripts/pr-intake.sh` prints the intake facts and a `verdict_hint` from a fixed table.
-The plan quotes them under `intake:`. The hint is a proposal, and the reviewer picks at the
+`scripts/pr-screen.sh` prints the screening facts and a `verdict_hint` from a fixed table.
+The plan quotes them under `screening:`. The hint is a proposal, and the reviewer picks at the
 gate. The skill never approves a PR, and it never closes one.
 
 ## The verdicts
@@ -29,7 +29,7 @@ Why each row:
 
 - A behavior change in a minor release is a semver call. #12974 changed the host `display`.
   An issue label, a `type!:` title or a `BREAKING CHANGE:` footer in the body sets the flag.
-  For a title or a footer, the intake also prints `breaking_marker:`.
+  For a title or a footer, pr-screen.sh also prints `breaking_marker:`.
 - The PR template of web-components asks the author to discuss a feature in an issue with
   acceptance criteria first. #12970 had no such issue.
 - A Low-impact issue rarely justifies a change to a module that many packages import.
