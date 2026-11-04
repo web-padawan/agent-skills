@@ -253,6 +253,26 @@ for f in $(git diff --name-only --diff-filter=A "$BASE..$HEAD" -- $TESTS 2>/dev/
   NEW_TESTS="${NEW_TESTS:+$NEW_TESTS, }$f ($n lines)"
 done
 
+# Added production code that reads the shadow DOM of another element (`other.$.id`). It
+# couples a parent to the internals of a child. The family usually has a declarative
+# path instead, for example a delegated property (#13327: `focusElement.$.button`).
+SHADOW_REACH=""
+SRC_JS=$(printf '%s\n' $PROD | grep -E '\.[cm]?[jt]s$' | grep -v '\.d\.ts$' || true)
+if [ -n "$SRC_JS" ]; then
+  SHADOW_REACH=$(git diff -U0 --no-color "$BASE..$HEAD" -- $SRC_JS | awk '
+    /^\+\+\+ b\// { f = substr($0, 7); next }
+    /^@@/ { split($3, a, ","); n = substr(a[1], 2) + 0; next }
+    /^\+/ {
+      line = substr($0, 2)
+      while (match(line, /[A-Za-z_][A-Za-z0-9_]*\.\$\.[A-Za-z_][A-Za-z0-9_]*/)) {
+        expr = substr(line, RSTART, RLENGTH)
+        if (expr !~ /^this\./) printf "%s:%d %s ", f, n, expr
+        line = substr(line, RSTART + RLENGTH)
+      }
+      n++
+    }' | cut -c1-400 | sed 's/ *$//')
+fi
+
 # ── Verdict hint ──────────────────────────────────────────────────────
 has() { case " $FLAGS " in *" $1 "*) return 0 ;; esac; return 1; }
 VERDICT="take"; REASONS=""
@@ -282,6 +302,7 @@ echo "flow_counterpart: $FLOW_LINE"
 echo "diff_noise: $NOISE_N of $NOISE_TOTAL changed production lines are moved or reindented (the same text on both sides)"
 echo "css_unit_assertions: ${CSS_HITS:-none}"
 [ -n "$CSS_RULE" ] && echo "css_rule: $CSS_RULE"
+echo "shadow_reach: ${SHADOW_REACH:-none}"
 echo "new_test_files: ${NEW_TESTS:-none}${NEW_TESTS:+ for $PROD_LINES changed production lines}"
 echo "verdict_hint: $VERDICT"
 printf '%s' "$REASONS"
