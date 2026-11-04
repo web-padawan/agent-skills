@@ -13,7 +13,7 @@ Every finding of this path is `self-run` in the roll call. Say so before the pos
 Read the production and test diff with the literal SHAs of the plan:
 `git diff <base>..<head> -- <prod_files> <test_files>`. For a dirty branch, first follow the
 `hint:` lines of `get-pr-context.sh`. On a fork PR, read the post-change files with
-`git show <head>:<path>`. Never check out the head.
+`git show <head>:<path>`.
 
 Apply the repo conventions. The plan names the doc in `conventions_doc:`. Read it before
 you flag a convention. Do not repeat a point that the context file shows as already made or
@@ -48,4 +48,5 @@ the line that proves it, the same as `src:` in pipeline.md §3.
 
 ## Triage and present
 
-Apply the filter of SKILL.md step 5 and the tiers of severity.md. Then present per step 6.
+Apply the filter of SKILL.md step 5 and the tiers of severity.md. Then continue with steps 6
+and 7.
