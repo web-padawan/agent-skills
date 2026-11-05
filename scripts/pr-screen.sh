@@ -18,13 +18,15 @@
 #
 # The verdict table (skills/pr-review/references/screening.md explains each row):
 #   behavior-altering                       -> decide, question (semver)
-#   feature-no-ac                           -> decide, question (design)
+#   feature-no-ac (contributor author)      -> decide, question (design)
 #   low-impact and reach_max >= 3           -> decide, question (design)
 #   a11y and reach_max >= 3                 -> decide, question (a11y)
-#   untriaged or self-filed                 -> review, confirm the bug on base first
+#   untriaged, or self-filed (contributor)  -> review, confirm the bug on base first
 #   none of these                           -> take
 # behavior-altering comes from an issue label, a `type!:` title, or a `BREAKING CHANGE:`
 # footer in the body.
+# feature-no-ac and self-filed hold an outside contributor to the process of the team. For
+# a team author the script skips them and prints `skipped_flags:` (retrospective, PR review 7).
 #
 # Team means a 204 from orgs/<owner>/members/<login>, or a login in TEAM_ALLOWLIST below:
 # former Vaadin employees, for whom the API returns 404. author_association is never used,
@@ -130,6 +132,7 @@ FACTS=$(printf '%s' "$META" | jq -r --arg asof "${AS_OF:-}" '
 
 PR_LINE=$(printf '%s\n' "$FACTS" | awk -F'\t' '$1 == "PR"' | head -1)
 IFS=$'\t' read -r _ PR_TITLE IS_FORK PR_AUTHOR <<< "$PR_LINE"
+PA_TEAM="contributor"; is_team "$PR_AUTHOR" && PA_TEAM="team"
 case "$PR_TITLE" in
   feat:*|feat\(*|feat!*) TITLE_TYPE=feature ;;
   fix:*|fix\(*|fix!*) TITLE_TYPE=fix ;;
@@ -137,8 +140,16 @@ case "$PR_TITLE" in
   *) TITLE_TYPE=other ;;
 esac
 
-FLAGS=""
+FLAGS=""; SKIPPED=""
 add_flag() { case " $FLAGS " in *" $1 "*) ;; *) FLAGS="${FLAGS:+$FLAGS }$1" ;; esac; }
+# A flag for the process of an outside contributor. A team author gets it as skipped.
+add_contributor_flag() {
+  if [ "$PA_TEAM" = team ]; then
+    case " $SKIPPED " in *" $1 "*) ;; *) SKIPPED="${SKIPPED:+$SKIPPED }$1" ;; esac
+  else
+    add_flag "$1"
+  fi
+}
 
 # A breaking change that the author marked. --as-of reads the body as it was then.
 if [ -n "$AS_OF" ] && [ -z "$META_FILE" ]; then
@@ -172,10 +183,10 @@ else
        && [ "$team" != "team" ]; then
       add_flag untriaged
     fi
-    [ -n "$PR_AUTHOR" ] && [ "$author" = "$PR_AUTHOR" ] && add_flag self-filed
+    [ -n "$PR_AUTHOR" ] && [ "$author" = "$PR_AUTHOR" ] && add_contributor_flag self-filed
   done <<< "$ISSUES"
 fi
-if [ "$TITLE_TYPE" = feature ] && [ "$HAS_AC" != true ]; then add_flag feature-no-ac; fi
+if [ "$TITLE_TYPE" = feature ] && [ "$HAS_AC" != true ]; then add_contributor_flag feature-no-ac; fi
 
 # ── Diff facts ────────────────────────────────────────────────────────
 # Same test-path rule as review-plan.sh, so both scripts split the lanes alike.
@@ -304,12 +315,12 @@ fi
 # ── Print ─────────────────────────────────────────────────────────────
 echo "=== SCREENING ==="
 echo "fork: ${IS_FORK:-unknown}"
-pa_team="contributor"; is_team "$PR_AUTHOR" && pa_team="team"
-echo "pr_author: ${PR_AUTHOR:-unknown} ($pa_team)"
+echo "pr_author: ${PR_AUTHOR:-unknown} ($PA_TEAM)"
 echo "title_type: $TITLE_TYPE"
 [ -n "$AS_OF" ] && echo "as_of: $AS_OF"
 if [ -n "$ISSUE_LINES" ]; then printf '%s' "$ISSUE_LINES"; else echo "issue: none linked with a closing keyword"; fi
 echo "issue_flags: ${FLAGS:-none}"
+[ -n "$SKIPPED" ] && echo "skipped_flags: $SKIPPED (team author)"
 [ -n "$BREAKING" ] && echo "breaking_marker: $BREAKING"
 if [ -n "$REACH_LINES" ]; then printf '%s' "$REACH_LINES"; else echo "reach: no package source changed"; fi
 echo "reach_max: $REACH_MAX"

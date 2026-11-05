@@ -289,6 +289,19 @@ expect "pr-screen.sh reads a breaking change that the title and the body mark" \
   "breaking_marker: title and body" "$(grep '^breaking_marker:' "$WORK/screening-breaking.log")"
 expect "pr-screen.sh sets behavior-altering for a marked breaking change" \
   "issue_flags: behavior-altering low-impact" "$(grep '^issue_flags:' "$WORK/screening-breaking.log")"
+# A feature without acceptance criteria: a contributor gets the flag, a team author skips it.
+jq '.data.repository.pullRequest.title = "feat: add a core option"' "$WORK/screening-meta.json" > "$WORK/screening-feat.json"
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
+  --meta "$WORK/screening-feat.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/screening-feat.log" 2>&1
+expect "pr-screen.sh flags a feature of a contributor without acceptance criteria" \
+  "issue_flags: low-impact feature-no-ac" "$(grep '^issue_flags:' "$WORK/screening-feat.log")"
+jq '.data.repository.pullRequest.author.login = "platosha"' "$WORK/screening-feat.json" > "$WORK/screening-feat-team.json"
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
+  --meta "$WORK/screening-feat-team.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/screening-feat-team.log" 2>&1
+expect "pr-screen.sh keeps only the team flags for a team author" \
+  "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening-feat-team.log")"
+expect "pr-screen.sh lists the contributor flags it skipped for a team author" \
+  "skipped_flags: self-filed feature-no-ac (team author)" "$(grep '^skipped_flags:' "$WORK/screening-feat-team.log")"
 
 echo "== workflow-facts.sh"
 # A workflow change only: a new job without permissions that calls an action on a branch.
