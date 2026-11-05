@@ -66,7 +66,8 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `post-comment.sh` | One Conventional Comment on a PR, inline or general, or a reply |
 | `post-review.sh` | All selected findings as one PR review: line, then file, then body anchors |
 | `review-plan.sh` | The review plan and the context file of the pipeline |
-| `pr-screen.sh` | The screening facts of a PR: linked issue, labels, reach, Flow counterpart, verdict hint |
+| `pr-screen.sh` | The screening facts of a PR: author, linked issue, labels, verdict hint |
+| `diff-facts.sh` | The git-only facts of a diff: reach, Flow counterpart, diff noise, CSS unit assertions, new test files, shadow DOM reads |
 | `get-pr-context.sh` | PR metadata, anchor SHAs, CI state and diffs for `review-plan.sh` |
 | `dev-server.sh` | Start, check, restart or stop `web-dev-server` on one port |
 | `test-summary.sh` | One line per test suite, with the names of failing tests |
@@ -76,7 +77,7 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `fixup-into.sh` | Folds changes into an earlier branch commit |
 | `float-to-tip.sh` | Moves one branch commit to the tip |
 | `visual-diffstat.cjs` | Pixel metrics and a contact sheet for failed screenshots |
-| `smoke.sh` | Checks the scripts that rewrite a tree, the screening facts and the Bash guard |
+| `smoke.sh` | Checks the scripts that rewrite a tree, the diff and screening facts and the Bash guard |
 
 ## Hooks
 

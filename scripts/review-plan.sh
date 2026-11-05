@@ -16,6 +16,7 @@
 # When a file under .github/workflows/ changed, it prints the `workflow:` facts of
 # scripts/workflow-facts.sh. When no test, code or binary file changed, it drops the tests pass.
 #
+# It prints the diff facts of scripts/diff-facts.sh in both modes.
 # In pr mode it also prints the screening facts of scripts/pr-screen.sh, and `fork:`. A fork
 # PR turns off the revert check and ab.sh (hints), keeps reuse and maintainability in the
 # code pass, and writes the fork marker that scripts/hooks/bash-guard.py reads. A pr-mode
@@ -535,19 +536,27 @@ for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTI
   if [ -f "$f" ]; then CONVENTIONS="$f"; break; fi
 done
 
+# ── Diff facts ────────────────────────────────────────────────────────
+# The facts of the diff that git alone answers (scripts/diff-facts.sh). The plan prints
+# them, and the skeleton quotes them whole under Settled facts, in both modes.
+DIFF_FACTS=""; REACH_MAX=0
+if [ -n "$BASE" ] && [ -n "$HEAD" ] && [ -n "$CHANGED" ]; then
+  DIFF_FACTS=$("$SCRIPT_DIR/diff-facts.sh" --base "$BASE" --head "$HEAD" 2>&1 | sed '/^=== DIFF_FACTS ===$/d') \
+    || DIFF_FACTS="error: diff-facts.sh failed — $(printf '%s' "$DIFF_FACTS" | tail -1)"
+  REACH_MAX=$(printf '%s\n' "$DIFF_FACTS" | sed -n 's/^reach_max: //p' | head -1)
+  REACH_MAX=${REACH_MAX:-0}
+fi
+
 # ── Screening (pr mode) ───────────────────────────────────────────────
-# What a maintainer must know before a review is worth it. The plan prints all of it. The
-# skeleton gets the facts that the passes need: the issue, the reach, the Flow counterpart,
-# the diff noise and the CSS unit assertions. The verdict hint and the flags stay with the
-# orchestrator, because the passes never learn the bar.
+# What a maintainer must know before a review is worth it: the author, the linked issue,
+# the flags and the verdict hint. Only the plan prints it. The passes never learn the bar.
 SCREENING=""
-if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ -n "$BASE" ] && [ -n "$HEAD" ] && [ "$WANT_CONTEXT" = true ]; then
-  SCREENING_ARGS=(--pr "$PR" --base "$BASE" --head "$HEAD")
+if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ "$WANT_CONTEXT" = true ]; then
+  SCREENING_ARGS=(--pr "$PR" --reach-max "$REACH_MAX")
   [ -n "$AS_OF" ] && SCREENING_ARGS+=(--as-of "$AS_OF")
   SCREENING=$("$SCRIPT_DIR/pr-screen.sh" "${SCREENING_ARGS[@]}" 2>&1 | sed '/^=== SCREENING ===$/d') \
     || SCREENING="error: pr-screen.sh failed — $(printf '%s' "$SCREENING" | tail -1)"
 fi
-SCREENING_FOR_PASSES=$(printf '%s\n' "$SCREENING" | grep -E '^(issue|reach|snapshot_packages|flow_counterpart|diff_noise|css_unit_assertions|css_rule|shadow_reach|new_test_files): ' || true)
 
 # ── Workflow facts ────────────────────────────────────────────────────
 # A workflow change depends on the actions it calls, the token of each job and who
@@ -1183,9 +1192,9 @@ if [ -n "$CONTEXT_PATH" ]; then
     else
       echo "- CI: not gathered — lint and test state is unknown, not clean."
     fi
-    if [ -n "$SCREENING_FOR_PASSES" ]; then
-      echo "- Screening (scripts/pr-screen.sh; \`reach\` counts the other packages whose sources import the module on the base):"
-      printf '%s\n' "$SCREENING_FOR_PASSES" | sed 's/^/    /'
+    if [ -n "$DIFF_FACTS" ]; then
+      echo "- Diff facts (scripts/diff-facts.sh; \`reach\` counts the other packages whose sources import the module on the base):"
+      printf '%s\n' "$DIFF_FACTS" | sed 's/^/    /'
     fi
     if [ -n "$WORKFLOW_FACTS" ]; then
       echo "- Workflow (scripts/workflow-facts.sh; read each \`uses:\` action at its ref before a claim about its inputs or behavior):"
@@ -1303,6 +1312,10 @@ fi
 if [ -n "$SCREENING" ]; then
   echo "screening:"
   printf '%s\n' "$SCREENING" | grep -v '^fork: ' | sed 's/^/  /'
+fi
+if [ -n "$DIFF_FACTS" ]; then
+  echo "diff_facts:"
+  printf '%s\n' "$DIFF_FACTS" | sed 's/^/  /'
 fi
 if [ -n "$WORKFLOW_FACTS" ]; then
   echo "workflow:"

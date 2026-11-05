@@ -9,8 +9,8 @@
 # checks their exit codes and their effect on the tree. Runs dev-server.sh and `ab.sh --port`
 # against a fake web-dev-server (a python3 http.server) and checks that they return through a
 # pipe, restore on SIGTERM, and leave no shell behind. Checks the review-plan.sh report dir
-# and earlier-findings list, the post-review.sh --head refusal, the pr-refresh.sh usage
-# refusals, the pr-screen.sh facts on a fixture, the workflow-facts.sh facts and the dropped
+# and earlier-findings list, the post-review.sh refusals, the pr-refresh.sh usage
+# refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the workflow-facts.sh facts and the dropped
 # tests pass on a workflow-only change, and the bash-guard.py decisions. Also checks that
 # every script in this directory answers --help with exit 0.
 #
@@ -261,6 +261,9 @@ git init -q -b main "$SCREENING_REPO"
     printf "import { M } from '@vaadin/core/src/vaadin-core-mixin.js';\n" > "packages/$p/src/vaadin-$p.js"
   done
   git add . && git commit -q -m base
+  git update-ref refs/remotes/origin/main HEAD
+  printf '.omc/\n' >> .git/info/exclude
+  git checkout -q -b feature
   printf 'export const M = 2;\nconst b = child.$.button;\n' > packages/core/src/vaadin-core-mixin.js
   printf ':host { color: blue; }\n' > packages/core/src/vaadin-core-styles.css
   printf "it('x', () => {\n  expect(getComputedStyle(el).color).to.equal('blue');\n});\n" > packages/core/test/core.test.js
@@ -282,46 +285,52 @@ cat > "$WORK/screening-meta.json" <<'EOF'
 EOF
 SCREENING_BASE=$(git -C "$SCREENING_REPO" rev-parse HEAD~1)
 SCREENING_HEAD=$(git -C "$SCREENING_REPO" rev-parse HEAD)
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
-  --meta "$WORK/screening-meta.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/screening.log" 2>&1
-expect "pr-screen.sh counts three importing packages" \
+(cd "$SCREENING_REPO" && "$SCRIPTS/diff-facts.sh" --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
+  --flow-dir "$WORK/none") > "$WORK/diff-facts.log" 2>&1
+expect "diff-facts.sh counts three importing packages" \
   "reach: packages/core/src/vaadin-core-mixin.js -> 3 other packages [a b c]" \
-  "$(grep '^reach: packages/core/src/vaadin-core-mixin.js' "$WORK/screening.log")"
+  "$(grep '^reach: packages/core/src/vaadin-core-mixin.js' "$WORK/diff-facts.log")"
+expect "diff-facts.sh flags CSS that a unit test asserts" \
+  "css_unit_assertions: packages/core/test/core.test.js:2" "$(grep '^css_unit_assertions:' "$WORK/diff-facts.log")"
+expect "diff-facts.sh names the rule behind the CSS hits" \
+  "css_rule: guidelines/testing.md:3" "$(grep '^css_rule:' "$WORK/diff-facts.log")"
+expect "diff-facts.sh lists a new test file with its size" \
+  "new_test_files: packages/core/test/core.test.js (3 lines) for 5 changed production lines" "$(grep '^new_test_files:' "$WORK/diff-facts.log")"
+expect "diff-facts.sh lists a read of the shadow DOM of another element" \
+  "shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" "$(grep '^shadow_reach:' "$WORK/diff-facts.log")"
+(cd "$SCREENING_REPO" && "$SCRIPTS/review-plan.sh" --mode self --no-context --type fix) > "$WORK/diff-facts-plan.log" 2>&1
+expect "review-plan.sh quotes the diff facts in the skeleton" \
+  "    shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" \
+  "$(grep '^    shadow_reach:' "$SCREENING_REPO/.omc/self-review/context.md" 2>/dev/null)"
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 \
+  --meta "$WORK/screening-meta.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening.log" 2>&1
 expect "pr-screen.sh replays the labels to --as-of" \
   "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening.log")"
 expect "pr-screen.sh counts a former employee as team" \
   "issue: #7 open labels=[Impact: Low, bug] author=team age=31d comments=0" "$(grep '^issue:' "$WORK/screening.log")"
-expect "pr-screen.sh flags CSS that a unit test asserts" \
-  "css_unit_assertions: packages/core/test/core.test.js:2" "$(grep '^css_unit_assertions:' "$WORK/screening.log")"
-expect "pr-screen.sh names the rule behind the CSS hits" \
-  "css_rule: guidelines/testing.md:3" "$(grep '^css_rule:' "$WORK/screening.log")"
-expect "pr-screen.sh lists a new test file with its size" \
-  "new_test_files: packages/core/test/core.test.js (3 lines) for 5 changed production lines" "$(grep '^new_test_files:' "$WORK/screening.log")"
-expect "pr-screen.sh lists a read of the shadow DOM of another element" \
-  "shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" "$(grep '^shadow_reach:' "$WORK/screening.log")"
 expect "pr-screen.sh proposes a decision for a low-impact change with a wide reach" \
   "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/screening.log")"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
-  --meta "$WORK/screening-meta.json" --flow-dir "$WORK/none") > "$WORK/screening-now.log" 2>&1
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 \
+  --meta "$WORK/screening-meta.json") > "$WORK/screening-now.log" 2>&1
 expect "pr-screen.sh reads the current labels without --as-of" \
   "verdict_reason: behavior-altering -> question (semver)" "$(grep -m1 '^verdict_reason:' "$WORK/screening-now.log")"
 jq '.data.repository.pullRequest.title = "fix!: change the core mixin"
   | .data.repository.pullRequest.body = "Text\r\nBREAKING CHANGE: M is 2"' "$WORK/screening-meta.json" > "$WORK/screening-breaking.json"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
-  --meta "$WORK/screening-breaking.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/screening-breaking.log" 2>&1
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 \
+  --meta "$WORK/screening-breaking.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-breaking.log" 2>&1
 expect "pr-screen.sh reads a breaking change that the title and the body mark" \
   "breaking_marker: title and body" "$(grep '^breaking_marker:' "$WORK/screening-breaking.log")"
 expect "pr-screen.sh sets behavior-altering for a marked breaking change" \
   "issue_flags: behavior-altering low-impact" "$(grep '^issue_flags:' "$WORK/screening-breaking.log")"
 # A feature without acceptance criteria: a contributor gets the flag, a team author skips it.
 jq '.data.repository.pullRequest.title = "feat: add a core option"' "$WORK/screening-meta.json" > "$WORK/screening-feat.json"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
-  --meta "$WORK/screening-feat.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/screening-feat.log" 2>&1
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 \
+  --meta "$WORK/screening-feat.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-feat.log" 2>&1
 expect "pr-screen.sh flags a feature of a contributor without acceptance criteria" \
   "issue_flags: low-impact feature-no-ac" "$(grep '^issue_flags:' "$WORK/screening-feat.log")"
 jq '.data.repository.pullRequest.author.login = "platosha"' "$WORK/screening-feat.json" > "$WORK/screening-feat-team.json"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
-  --meta "$WORK/screening-feat-team.json" --as-of 2026-02-01T00:00:00Z --flow-dir "$WORK/none") > "$WORK/screening-feat-team.log" 2>&1
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 \
+  --meta "$WORK/screening-feat-team.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-feat-team.log" 2>&1
 expect "pr-screen.sh keeps only the team flags for a team author" \
   "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening-feat-team.log")"
 expect "pr-screen.sh lists the contributor flags it skipped for a team author" \
