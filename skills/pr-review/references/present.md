@@ -68,13 +68,13 @@ when the only blocking finding is `already raised`.
 - **Q1, header `Post`**: "Post these as comments on the PR?" The options:
   - `Yes — post all`: one review, with a thread per finding and the summary of
     comment-guidelines.md in its body.
-  - `One summary review`: every finding in the review body, blocking first.
+  - `One summary review`: every finding in the review body, blocking first (`--body-only`).
   - `Only blocking issues`: the `issue (…, blocking)` and `chore (blocking)` lines, and nothing
-    else.
+    else (`--blocking-only`).
   - `No — chat only`.
 
-  `Yes — post all` and `One summary review` post the `contradicts` lines as replies in their
-  threads. Never post `confirms` lines, because agreement is not a comment.
+  With each option, the script posts a `contradicts` or `not fixed` finding as a reply into
+  its thread. It never posts a `confirms` finding, because agreement is not a comment.
 - **Q2, header `Report`**: "Write the full review report?" with the options `Yes — write it`
   and `No`. The report goes to `<scratchpad>/pr-<number>-REVIEW.md`. It holds the summary, the
   result, and every triaged finding with its tier, label and category. That includes the

@@ -101,8 +101,11 @@ Post it as a `question (design)`, or drop it.
 - Pre-existing bugs, generic observations and restatements of the code.
 - What you cannot confirm.
 
-**Never post a finding that is already on the PR** (pipeline.md §5.2). A reply into its thread
-posts as a `question` for `contradicts`, and as an `issue` for `not fixed`.
+**Write the frozen list** (pipeline.md §5.7) to `<scratchpad>/pr-<number>-findings.json`, in
+the format that `post-review.sh --help` prints: `file`, `line`, `message`, `status`, `dup`
+and `summary_only`. The script posts from that file. It never opens a new thread for a
+finding that is already on the PR (pipeline.md §5.2). Word a `contradicts` reply as a
+`question`, and a `not fixed` reply as an `issue`.
 
 **Redirect**: a finding can name a better location or mechanism with a precedent. When the rest
 of the PR depends on that choice, set the verdict to `redirect`.
@@ -122,5 +125,6 @@ Follow [`references/present.md`](references/present.md).
 
 ### Post
 
-Post as comment-guidelines.md describes. `One summary review` adds `--body-only`. Give the
-link of each posted comment or review.
+Post as comment-guidelines.md describes, from the findings file of Triage. `One summary
+review` adds `--body-only`. `Only blocking issues` adds `--blocking-only`. Give the link of
+each posted comment or review.
