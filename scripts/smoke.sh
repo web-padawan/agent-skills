@@ -220,6 +220,25 @@ check "the label check accepts a decorated issue" 0 \
 printf '{"findings": []}\n' > "$WORK/post.json"
 check "post-review.sh refuses a run without --head" 2 \
   "$SCRIPTS/post-review.sh" --findings "$WORK/post.json" --dry-run
+POST_HEAD=$(printf 'a%.0s' {1..40})
+post_json() {  # post_json <name> <findings JSON array>
+  printf '{"findings": %s}\n' "$2" > "$WORK/post-$1.json"
+}
+post_json status '[{"file": "a", "line": 1, "message": "**issue (logic, blocking):** x", "status": "maybe"}]'
+check "post-review.sh refuses a status outside the vocabulary" 2 \
+  "$SCRIPTS/post-review.sh" --head "$POST_HEAD" --findings "$WORK/post-status.json" --dry-run
+post_json nodup '[{"file": "a", "line": 1, "message": "**issue (logic, blocking):** x", "status": "already raised (bot, 5)"}]'
+check "post-review.sh refuses an already raised finding without a dup thread" 2 \
+  "$SCRIPTS/post-review.sh" --head "$POST_HEAD" --findings "$WORK/post-nodup.json" --dry-run
+post_json verdict '[{"file": "a", "line": 1, "message": "**issue (logic, blocking):** x", "dup": {"id": 5, "verdict": "agrees"}}]'
+check "post-review.sh refuses a dup verdict outside the vocabulary" 2 \
+  "$SCRIPTS/post-review.sh" --head "$POST_HEAD" --findings "$WORK/post-verdict.json" --dry-run
+post_json confirms '[{"file": "a", "line": 1, "message": "**issue (logic, blocking):** x", "dup": {"id": 5, "verdict": "confirms"}}]'
+check "post-review.sh refuses a run where every finding confirms a thread" 2 \
+  "$SCRIPTS/post-review.sh" --head "$POST_HEAD" --findings "$WORK/post-confirms.json" --dry-run
+post_json nonblocking '[{"file": "a", "line": 1, "message": "**suggestion (logic, non-blocking):** x"}]'
+check "post-review.sh refuses --blocking-only when no finding is blocking" 2 \
+  "$SCRIPTS/post-review.sh" --head "$POST_HEAD" --findings "$WORK/post-nonblocking.json" --dry-run --blocking-only
 printf '# Review context\n\n- mode: self\n- head: `%s`\n' "$(printf 'a%.0s' {1..40})" > "$WORK/self-context.md"
 check "pr-refresh.sh refuses a run without --at" 2 "$SCRIPTS/pr-refresh.sh" --context "$WORK/self-context.md"
 check "pr-refresh.sh refuses a run without --context" 2 "$SCRIPTS/pr-refresh.sh" --at gate
