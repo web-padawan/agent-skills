@@ -84,8 +84,8 @@ Post the findings that the user selected as one review.
 Then the author gets one notification, not one for each finding. Call
 `${CLAUDE_PLUGIN_ROOT}/scripts/post-review.sh`:
 
-1. Write the selected findings to a JSON file in the scratchpad. Give each finding its
-   `file`, its `line` and its `message`. Use `null` for a line or a file that does not apply.
+1. Pass the findings file that Triage wrote, whole. The script selects by `status`, `dup`
+   and the flags, and lists each finding that it does not post.
 2. If the user chose a summary comment, write its move 2 to a markdown file.
 3. Run the script once with `--dry-run`. Read the bodies that it prints.
 4. Run it again without `--dry-run`.
@@ -93,21 +93,31 @@ Then the author gets one notification, not one for each finding. Call
 ```bash
 post-review.sh --pr <number> --head <head SHA of the review> \
   --findings <scratchpad>/pr-<number>-post.json \
-  [--summary <scratchpad>/pr-<number>-summary.md] [--dry-run]
+  [--summary <scratchpad>/pr-<number>-summary.md] [--body-only | --blocking-only] [--dry-run]
 ```
 
 ```json
-{"findings": [{"file": "path/to/file.ext", "line": 42, "message": "**issue (logic, blocking):** <claim>\n\n<fix>"}]}
+{"findings": [
+  {"file": "path/to/file.ext", "line": 42, "message": "**issue (logic, blocking):** <claim>\n\n<fix>"},
+  {"file": "path/to/file.ext", "line": 60, "message": "**question (logic):** <what the review found instead>?\n\n<what was checked>",
+   "status": "already raised (bot, 123)", "dup": {"id": 123, "verdict": "contradicts"}}
+]}
 ```
 
-- The script refuses the whole batch when one message has no valid label.
+- The script refuses the whole batch when one message has no valid label, or when a
+  `status` or a `dup.verdict` is outside its vocabulary.
+- A `confirms` verdict never posts. A `contradicts` or `not fixed` verdict posts the message
+  as a reply into that thread, in the same review. A `dismissed`, `fixed` or `dropped`
+  status never posts.
+- `--blocking-only` posts the blocking findings only. `--body-only` puts every finding in
+  the review body. A reply still goes into its thread.
 - Pass the full head SHA that the review read as `--head`. The plan prints it as `head:`.
 - If the PR head moved after the review and a commented file changed, the script refuses.
   Then re-run the review on the new head.
 - Each finding goes on its line. When GitHub refuses the line, the finding goes on the file.
   When GitHub refuses the file, the finding goes in the review body.
-- A finding within two lines of an existing thread is skipped. Reply into that thread
-  with `post-comment.sh --reply <id>`. Set `"allow_nearby": true` only for a different claim.
+- A finding within two lines of an existing thread is skipped. Triage that thread, set
+  `dup` on the finding, and run again. Set `"allow_nearby": true` only for a different claim.
 - The review body holds a census line by label, the summary and a hidden marker with the
   reviewed head SHA. It also holds each finding that GitHub refused to anchor. It does not
   repeat a finding that has a thread.
