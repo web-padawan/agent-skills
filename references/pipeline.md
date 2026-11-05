@@ -173,8 +173,7 @@ markers and the escalation ladder.
    its hunk and carries no `src:` enters as `unverified`. Open that code before you confirm
    it. This applies to the categories `behavior`, `fix`, `api`, `impact`, `logic` and
    `reuse`. Example: "the crud dialog inherits the margin" needs the crud line that
-   inherits it. When `pr-refresh.sh` prints `tree_changed:`, verify each finding at the new
-   head. A finding that the new head fixes gets status `fixed at <sha>` and never posts.
+   inherits it.
 2. **Dedup**: the same file, line and claim from several agents is one finding. Keep the
    clearest wording. When agents filed the finding under different categories, it lives
    under the category of the owner pass, with a one-line pointer from the other. Two passes
@@ -182,8 +181,7 @@ markers and the escalation ladder.
    confidence, keep the verified wording. The declaration-line anchor (§3) is what lets this
    match on `file:line` instead of by hand.
 
-   Then dedup against `## Already on the PR` and the `new_threads:` of `pr-refresh.sh`. A
-   thread from either list counts the same. A finding whose file and claim match an
+   Then dedup against `## Already on the PR`. A finding whose file and claim match an
    existing thread gets status `already raised (<author>, <id>)`. The match comes from
    `dup:` on a pass finding or from your own comparison. The finding stays in the frozen
    list with your verdict on the thread, `confirms` or `contradicts`. Never post it as a new
