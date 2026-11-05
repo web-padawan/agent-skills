@@ -16,17 +16,10 @@
 # --meta reads the GraphQL answer from a file instead of gh, and team membership from the
 #   allowlist only. The smoke test uses it.
 #
-# The verdict table (skills/pr-review/references/screening.md explains each row):
-#   behavior-altering                       -> decide, question (semver)
-#   feature-no-ac (contributor author)      -> decide, question (design)
-#   low-impact and reach_max >= 3           -> decide, question (design)
-#   a11y and reach_max >= 3                 -> decide, question (a11y)
-#   untriaged, or self-filed (contributor)  -> review, confirm the bug on base first
-#   none of these                           -> take
-# behavior-altering comes from an issue label, a `type!:` title, or a `BREAKING CHANGE:`
-# footer in the body.
-# feature-no-ac and self-filed hold an outside contributor to the process of the team. For
-# a team author the script skips them and prints `skipped_flags:` (retrospective, PR review 7).
+# The verdict rules are the `Verdict hint` section below. Each rule that fires prints one
+# `verdict_reason:` line. skills/pr-review/references/screening.md says what each verdict
+# means at the gate. feature-no-ac and self-filed hold an outside contributor to the process
+# of the team. For a team author the script skips them and prints `skipped_flags:`.
 #
 # Team means a 204 from orgs/<owner>/members/<login>, or a login in TEAM_ALLOWLIST below:
 # former Vaadin employees, for whom the API returns 404. author_association is never used,
@@ -167,9 +160,7 @@ BREAKING_BODY_RE=$'(^|\n)BREAKING[ -]CHANGE:'
 ISSUE_LINES=""
 ISSUES=$(printf '%s\n' "$FACTS" | awk -F'\t' '$1 == "ISSUE"')
 HAS_AC=false
-if [ -z "$ISSUES" ]; then
-  add_flag no-issue
-else
+if [ -n "$ISSUES" ]; then
   while IFS=$'\t' read -r _ num state author labels age ncomments ac; do
     [ -n "$num" ] || continue
     team="contributor"; is_team "$author" && team="team"
