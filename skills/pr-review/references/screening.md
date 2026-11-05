@@ -25,17 +25,22 @@ gate.
 | `untriaged` or `self-filed` | review | `question` |
 | none of these | take | none |
 
+`feature-no-ac` and `self-filed` apply only to a contributor. For a team author, pr-screen.sh
+prints them in `skipped_flags:`, and they do not change the hint.
+
 Why each row:
 
 - A behavior change in a minor release is a semver call. #12974 changed the host `display`.
   An issue label, a `type!:` title or a `BREAKING CHANGE:` footer in the body sets the flag.
   For a title or a footer, pr-screen.sh also prints `breaking_marker:`.
 - The PR template of web-components asks the author to discuss a feature in an issue with
-  acceptance criteria first. #12970 had no such issue.
+  acceptance criteria first. #12970 had no such issue. A team author takes a feature from the
+  backlog. flow-components #10523 got a false `decide` before the flag was limited.
 - A Low-impact issue rarely justifies a change to a module that many packages import.
   #12976 changed the PositionMixin of 10 packages. #13316 changed the OverlayMixin of 17.
 - An a11y change in a shared module needs a test with a screen reader, which no pass runs.
-- An untriaged or self-filed issue has no team confirmation of the bug.
+- An untriaged or self-filed issue has no team confirmation of the bug. A team author who
+  files an issue is that confirmation.
 
 ## Correct the hint
 
