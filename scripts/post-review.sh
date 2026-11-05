@@ -32,8 +32,8 @@
 # the author gets one list to work through, and no thread is opened.
 #
 # A line finding within two lines of an existing thread root on the same file is
-# skipped and listed: reply into that thread with `post-comment.sh --reply <id>`,
-# or set "allow_nearby": true when the claim is genuinely different.
+# skipped and listed. Triage the thread first (pipeline.md §5.2), then reply into it with
+# `post-comment.sh --reply <id>`, or set "allow_nearby": true when the claim is genuinely different.
 #
 # The :robot: AI-generated prefix opens the body and every thread.
 #
@@ -246,7 +246,7 @@ for i in $ORDER; do
   if [ "$BODY_ONLY" != true ] && [ -n "$file" ] && [ -n "$line" ] && [ "$allow" != true ]; then
     near=$(nearby "$file" "$line")
     if [ -n "$near" ]; then
-      echo "skipped: $where (existing thread ${near% } — reply into it with post-comment.sh --reply)"
+      echo "skipped: $where (existing thread ${near% } — triage it first: verify its claim before a reply repeats it, pipeline.md §5.2)"
       SKIPPED=$((SKIPPED + 1))
       continue
     fi

@@ -9,10 +9,10 @@
 # checks their exit codes and their effect on the tree. Runs dev-server.sh and `ab.sh --port`
 # against a fake web-dev-server (a python3 http.server) and checks that they return through a
 # pipe, restore on SIGTERM, and leave no shell behind. Checks the review-plan.sh report dir
-# and earlier-findings list, the post-review.sh --head refusal, the pr-screen.sh facts on a
-# fixture, the workflow-facts.sh facts and the dropped tests pass on a workflow-only change,
-# and the bash-guard.py decisions. Also checks that every
-# script in this directory answers --help with exit 0.
+# and earlier-findings list, the post-review.sh --head refusal, the pr-refresh.sh usage
+# refusals, the pr-screen.sh facts on a fixture, the workflow-facts.sh facts and the dropped
+# tests pass on a workflow-only change, and the bash-guard.py decisions. Also checks that
+# every script in this directory answers --help with exit 0.
 #
 # Exit codes: 0 all checks passed · 1 a check failed.
 set -uo pipefail
@@ -220,6 +220,10 @@ check "the label check accepts a decorated issue" 0 \
 printf '{"findings": []}\n' > "$WORK/post.json"
 check "post-review.sh refuses a run without --head" 2 \
   "$SCRIPTS/post-review.sh" --findings "$WORK/post.json" --dry-run
+printf '# Review context\n\n- mode: self\n- head: `%s`\n' "$(printf 'a%.0s' {1..40})" > "$WORK/self-context.md"
+check "pr-refresh.sh refuses a run without --context" 2 "$SCRIPTS/pr-refresh.sh"
+check "pr-refresh.sh refuses a context file without a PR" 2 \
+  "$SCRIPTS/pr-refresh.sh" --context "$WORK/self-context.md"
 
 echo "== pr-screen.sh"
 # Three packages import the changed module, and a unit test asserts CSS. The fixture
@@ -302,6 +306,80 @@ expect "pr-screen.sh keeps only the team flags for a team author" \
   "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening-feat-team.log")"
 expect "pr-screen.sh lists the contributor flags it skipped for a team author" \
   "skipped_flags: self-filed feature-no-ac (team author)" "$(grep '^skipped_flags:' "$WORK/screening-feat-team.log")"
+
+echo "== pr-refresh.sh"
+# A PR commit, then a merge of main into the PR, then a real change. A stub
+# get-pr-context.sh next to a copy of the script prints the current state from a fixture.
+RF="$WORK/refresh"
+mkdir -p "$RF/bin"
+cp "$SCRIPTS/pr-refresh.sh" "$RF/bin/"
+printf '#!/usr/bin/env bash\ncat "$REFRESH_FIXTURE"\n' > "$RF/bin/get-pr-context.sh"
+chmod +x "$RF/bin/get-pr-context.sh"
+git init -q -b main "$RF/repo"
+(
+  cd "$RF/repo" || exit 1
+  git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
+  printf 'a\n' > a.txt && git add . && git commit -q -m base
+  git checkout -q -b pr && printf 'p\n' > p.txt && git add . && git commit -q -m pr
+  git checkout -q main && printf 'm\n' > m.txt && git add . && git commit -q -m main
+  git checkout -q pr && git merge -q --no-edit main
+  printf 'p2\n' > p.txt && git commit -q -am change
+)
+RF_OLD_BASE=$(git -C "$RF/repo" rev-parse main~1)
+RF_OLD=$(git -C "$RF/repo" rev-parse pr~1^1)
+RF_MERGE=$(git -C "$RF/repo" rev-parse pr~1)
+RF_CHANGE=$(git -C "$RF/repo" rev-parse pr)
+RF_NEW_BASE=$(git -C "$RF/repo" rev-parse main)
+cat > "$RF/context.md" <<EOF
+# Review context
+
+- pr: https://github.com/owner/name/pull/1
+- base: \`$RF_OLD_BASE\`
+- head: \`$RF_OLD\`
+
+## Already on the PR
+
+    threads:  # id | author | kind | state | path:line | first line
+      11 | bot | bot | open | p.txt:1 | old claim
+          reply 12 | a | human | old reply
+
+## Diff
+EOF
+refresh_fixture() {  # refresh_fixture <head>
+  cat <<EOF
+=== PR_METADATA ===
+{"headRefOid":"$1"}
+=== ANCHORS ===
+merge_base: $RF_NEW_BASE
+=== CI_STATUS ===
+summary: 1 checks — 1 pass, 0 fail, 0 pending, 0 skipped
+=== EXISTING_COMMENTS ===
+threads:  # id | author | kind | state | path:line | first line
+  11 | bot | bot | open | p.txt:1 | old claim
+      reply 12 | a | human | old reply
+      reply 13 | b | human | new reply
+  14 | c | human | open | p.txt:3 | new thread
+general:  # id | author | first line
+  21 | sonar[bot] | new general
+EOF
+}
+refresh_fixture "$RF_MERGE" > "$RF/merge.txt"
+(cd "$RF/repo" && REFRESH_FIXTURE="$RF/merge.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md") > "$RF/merge.log" 2>&1
+expect "pr-refresh.sh does not count a merge of the base branch as a change" \
+  "tree_changed: no" "$(grep '^tree_changed:' "$RF/merge.log")"
+expect "pr-refresh.sh lists a new reply under its known thread, and a new thread" \
+  "  11 | bot | bot | open | p.txt:1 | old claim (thread known)|      reply 13 | b | human | new reply|  14 | c | human | open | p.txt:3 | new thread" \
+  "$(sed -n '/^new_threads:$/,/^new_general/p' "$RF/merge.log" | sed '1d;$d' | paste -sd'|' -)"
+expect "pr-refresh.sh asks to read a new general comment" \
+  "action: read each new general comment: a bot can post its review summary there" \
+  "$(grep '^action: read each new general' "$RF/merge.log")"
+refresh_fixture "$RF_CHANGE" > "$RF/change.txt"
+(cd "$RF/repo" && REFRESH_FIXTURE="$RF/change.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md") > "$RF/change.log" 2>&1
+expect "pr-refresh.sh lists a file whose own PR diff changed" \
+  "tree_changed: 1 files: p.txt" "$(grep '^tree_changed:' "$RF/change.log")"
+printf '=== PR_METADATA ===\nerror: failed to resolve the PR\n' > "$RF/gh-error.txt"
+check "pr-refresh.sh exits 1 when gh cannot read the PR" 1 \
+  env REFRESH_FIXTURE="$RF/gh-error.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md"
 
 echo "== workflow-facts.sh"
 # A workflow change only: a new job without permissions that calls an action on a branch.
