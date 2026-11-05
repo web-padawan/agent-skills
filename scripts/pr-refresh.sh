@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # pr-refresh.sh — What changed on a PR since its review plan ran: the head, the tree, CI and
-# the comments. pr-review runs it before the gate question (step 3) and before triage
-# (step 5). A push or a bot review during a run otherwise goes unseen until post-review.sh
-# refuses or skips (retrospective, PR review 7).
+# the comments. pr-review runs it before the gate question and before triage. A push or a
+# bot review during a run otherwise goes unseen until post-review.sh refuses or skips
+# (retrospective, PR review 7).
 #
 # Usage:
 #   pr-refresh.sh --context <context file of review-plan.sh>

@@ -1,4 +1,4 @@
-# Understand the PR (step 2)
+# Understand the PR
 
 Learn what the PR is for and why, fast. The goal is to save review time, so be concise. Start with the facts that matter. Do not restate the diff line by line.
 

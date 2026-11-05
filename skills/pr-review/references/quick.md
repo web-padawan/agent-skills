@@ -48,5 +48,5 @@ the line that proves it, the same as `src:` in pipeline.md §3.
 
 ## Triage and present
 
-Apply the filter of SKILL.md step 5 and the tiers of severity.md. Then continue with steps 6
-and 7.
+Apply the Triage filter of SKILL.md and the tiers of severity.md. Then continue with Present
+and Post.

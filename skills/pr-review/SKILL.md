@@ -15,14 +15,14 @@ that a script writes.
 
 | Reference | Covers |
 | --- | --- |
-| [`references/understand.md`](references/understand.md) | Step 2: the explanation and the screening card |
-| [`references/screening.md`](references/screening.md) | Steps 2 and 3: the verdicts, the hint table, the claims of the body |
-| [`references/quick.md`](references/quick.md) | Step 3: the quick review, also the fallback |
-| [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1, 4 and 5: the plan, the context and notes files, the fan-out, the roll call, triage |
-| [`../../references/severity.md`](../../references/severity.md) | Step 5: A / B / C, tiers by change type, what CI settles, the rendering table |
-| [`../../references/delivery.md`](../../references/delivery.md) | Steps 4 and 5: launch rules, the delivery clause, the roll call, the escalation ladder |
-| [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Steps 6 and 7: comment tone, replies by verdict, posting |
-| [`references/present.md`](references/present.md) | Step 6: the chat template, the result rule, the post gate |
+| [`references/understand.md`](references/understand.md) | Understand: the explanation and the screening card |
+| [`references/screening.md`](references/screening.md) | Understand and Gate: the verdicts, the claims of the body |
+| [`references/quick.md`](references/quick.md) | Gate: the quick review, also the fallback |
+| [`../../references/pipeline.md`](../../references/pipeline.md) | Plan, Fan out and Triage: the plan, the context and notes files, the fan-out, the roll call, triage |
+| [`../../references/severity.md`](../../references/severity.md) | Triage: A / B / C, tiers by change type, what CI settles, the rendering table |
+| [`../../references/delivery.md`](../../references/delivery.md) | Fan out and Triage: launch rules, the delivery clause, the roll call, the escalation ladder |
+| [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Present and Post: comment tone, replies by verdict, posting |
+| [`references/present.md`](references/present.md) | Present: the chat template, the result rule, the post gate |
 
 Relative paths resolve from this file. If a read fails, put
 `${CLAUDE_PLUGIN_ROOT}/skills/pr-review/` before the relative path.
@@ -35,12 +35,14 @@ Relative paths resolve from this file. If a read fails, put
   `pnpm`, `node` or a script of the PR on it. The plan refuses a fork head that is checked
   out. While a fork review runs, the Bash guard of the plugin lets the passes run only read
   commands.
-- **Gate before fan-out.** Steps 1 and 2 are cheap. At step 3, the reviewer decides whether
-  the expensive steps run.
+- **Gate before fan-out.** Plan and Understand are cheap. At the Gate, the reviewer decides
+  whether the expensive steps run.
 
 ## Steps
 
-### 1. Plan
+Run the steps in this order. Every file of this skill names a step by its heading.
+
+### Plan
 
 Run the plan script once. Write the plugin root as a literal path. Write the context file to
 the scratchpad:
@@ -53,32 +55,32 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode pr [--pr <number-or-url>] [-
 Read `fork:`, `screening:`, `ci:`, `existing_comments:` and `workflow:` first. Then read the
 rest of the plan per pipeline.md §1, and act on every `hint:`.
 
-### 2. Understand
+### Understand
 
 Follow [`references/understand.md`](references/understand.md).
 
-### 3. Gate
+### Gate
 
 Before you ask, run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --context <context file>`.
-Act on each `action:` line. When `tree_changed:` lists files, re-run step 1 before the gate.
+Act on each `action:` line. When `tree_changed:` lists files, re-run Plan before the gate.
 
 Ask one `AskUserQuestion` with the header `Review`: "How should I continue?" List first the
 option that the verdict suggests (the verdict table in [`references/screening.md`](references/screening.md)):
 
-- `Full review`: steps 4 to 7.
+- `Full review`: Fan out, Triage, Present and Post.
 - `Quick review`: [`references/quick.md`](references/quick.md).
-- `Draft a reply`: the reply of *Replies by verdict* in comment-guidelines.md, then step 7.
+- `Draft a reply`: the reply of *Replies by verdict* in comment-guidelines.md, then Post.
 - `Stop`: nothing more.
 
 If the arguments include `--quick`, run the quick review and do not ask. If the reviewer asks
-about the goal first, stay in step 2.
+about the goal first, stay in Understand.
 
-### 4. Write the notes file, then fan out
+### Fan out
 
-Follow pipeline.md §2 and §3, and the launch rules of delivery.md. The deep blocks of the
-change pass are evidence for the report. Never post them.
+Write the notes file first. Follow pipeline.md §2 and §3, and the launch rules of
+delivery.md. The deep blocks of the change pass are evidence for the report. Never post them.
 
-### 5. Triage
+### Triage
 
 Run `pr-refresh.sh` again, then the roll call. Then triage per pipeline.md §4 and §5, and
 severity.md. One filter decides what reaches the PR.
@@ -114,11 +116,11 @@ change, run the tests of the package. Then restore the file with `git checkout -
 - A new test that still passes is a `question (tests)`.
 - When the tests of two parts pass without each other, the parts are a `scope` split.
 
-### 6. Present findings
+### Present
 
 Follow [`references/present.md`](references/present.md).
 
-### 7. Post
+### Post
 
 Post as comment-guidelines.md describes. `One summary review` adds `--body-only`. Give the
 link of each posted comment or review.

@@ -1,4 +1,4 @@
-# Present findings and gate (step 6)
+# Present findings and gate
 
 Read [`../../../references/comment-guidelines.md`](../../../references/comment-guidelines.md)
 first. Then give the review below. Render each finding of the frozen list (the findings that
@@ -78,5 +78,5 @@ when the only blocking finding is `already raised`.
 - **Q2, header `Report`**: "Write the full review report?" with the options `Yes — write it`
   and `No`. The report goes to `<scratchpad>/pr-<number>-REVIEW.md`. It holds the summary, the
   result, and every triaged finding with its tier, label and category. That includes the
-  findings that the filter of step 5 kept off the PR, marked `not posted`. The report is a
+  findings that the Triage filter kept off the PR, marked `not posted`. The report is a
   record for the reviewer only. Never commit or post it.
