@@ -9,7 +9,8 @@ file. The principles are in [`rationale.md`](rationale.md), one line each.
 One production file, `PdfViewer.java`, +110 −3, and two test files. The PR adds a read-only
 `page` and `pageCount` API: getters, read-only signals and a `PageChangeEvent`. Team PR, CI
 green, scale `lite`. Full review with three passes. Posted 4 threads (1 blocking issue,
-1 question, 2 suggestions) and 1 reply in a bot thread, at head `5f25ba2`.
+1 question, 2 suggestions) and 1 reply in a bot thread, at head `5f25ba2`. The author fixed
+the blocking finding in `fb9977d`.
 
 - The hint said `decide` because of `feature-no-ac`, although the plan printed
   `pr_author: vursen (team)`. The orchestrator corrected the hint at step 2:
@@ -18,63 +19,57 @@ green, scale `lite`. Full review with three passes. Posted 4 threads (1 blocking
 
   The row in `screening.md` cites the PR template of web-components. That template asks an
   outside contributor for an issue with acceptance criteria first. A team member takes a
-  feature from the backlog. → proposed: `pr-screen.sh` sets `feature-no-ac` only for an
-  author who is not on the team. It prints `feature-no-ac (team, ignored)` for an audit.
+  feature from the backlog. `self-filed` had the same fault: a team author who files an
+  issue confirms it. → `pr-screen.sh` sets both flags only for a contributor. For a team
+  author, it prints them in `skipped_flags:` (`d4a64c3`, `795facf`).
 - At the gate, the reviewer asked to check the latest commits first. The head had moved
   from `47b2eb4` to `5f25ba2`: a refactor and its revert. The orchestrator compared the
-  trees by hand (`git diff` was empty) and recorded the result in the notes file.
-  → proposed: `pr-refresh.sh <pr> <head>` prints `head_moved:`, `tree_changed:` with the
-  changed files, and the threads added since the plan. Step 3 runs it before the gate
-  question. Step 6 runs it before the post gate.
-- A `vaadin-review-bot` review arrived after the plan ran. Triage deduped against a stale
-  `## Already on the PR` list. The `post-review.sh` dry run found the new thread at
-  `PdfViewer.java:184` and skipped the finding at line 183. The orchestrator posted that
-  finding as a reply, because its fix covered both claims. → proposed: step 5 runs
-  `pr-refresh.sh` first, so triage dedups against the current threads.
+  trees by hand (`git diff` was empty). → `pr-refresh.sh --context <file>` prints
+  `head_moved:`, `tree_changed:`, `ci:`, `new_threads:` and one `action:` line for each
+  change. Step 3 runs it before the gate question, and step 5 runs it before triage
+  (`bc6653b`, `3c16b94`). On the context of this run, it listed 4 new commits, 6 new threads
+  and 3 new replies.
+- A `vaadin-review-bot` review arrived after the plan ran, so triage never saw its threads.
+  The `post-review.sh` dry run skipped the `pageCount` finding next to a bot thread, and
+  its skip line said to reply into that thread. The posted reply repeated the bot claim
+  without a check. → step 5 dedups against `new_threads:` too. `pipeline.md` §5.2 says that
+  a posted comment repeats the claim of another thread only after triage confirms it. The
+  skip line of `post-review.sh` asks to triage the thread first (`4fbae77`, `bc6653b`).
+- The bot claim was false. It said that `document-load` reaches the server before
+  `page-count-changed`, so a load listener reads the old `getPageCount()`. Flow applies all
+  property syncs of a request before it fires events (`ServerRpcHandler.handleInvocations`).
+  The author answered in the thread and added an integration test (`8256f3a`). No pass
+  reported the claim, which was correct. §5.2 already said to verify an open thread, but
+  the thread was not in the skeleton. → a checklist item on event order is not added.
 - `post-comment.sh` posted the reply outside the review. The census in the review body says
-  1 issue, but the run posted 2 issues. → proposed: `post-review.sh` accepts
-  `"reply_to": <id>` on a finding. It posts the reply in the same run and counts it in the
-  census.
+  1 issue, but the run posted 2 issues. → open: `post-review.sh` accepts `"reply_to": <id>`
+  on a finding, posts the reply in the same run and counts it in the census.
 - The blocking finding came from the change pass (opus, 15 tool calls, 3.5 minutes).
   `@Synchronize` stores the client `page` in the property map. On reattach,
   `NodeMap.generateChangesFromEmpty` sends it to the new element together with `src`. The
   web component then skips its reset to page 1. The orchestrator confirmed the chain by a
-  read of the code. No test ran for it.
+  read of the code. The pass found it without a checklist item, so none is added.
 - The orchestrator read the web component properties at the pinned `@NpmPackage` version by
   hand and wrote them as Settled facts. The plan printed `flow_counterpart: none`, a fact
-  that is always empty for a Flow PR. → proposed: in flow-components, the plan prints
-  `wc_properties:` for each property name in `@Synchronize`, `getProperty` or `setProperty`
-  on an added line. It reads them at the pinned tag in the web-components checkout.
-- The bot found one true finding that no pass found. `document-load` fires synchronously,
-  but `page-count-changed` fires in the next Lit update. A load listener thus reads the old
-  `getPageCount()`. The change pass reported the `pageCount` convention break, but not the
-  event order. → proposed: two checklist items in `agents/change-reviewer.md`, both text
-  because both need judgment:
-  - When the diff syncs a property and an existing event carries the same value, check
-    which one reaches the server first.
-  - When the diff adds `@Synchronize`, check what the replay of the value on reattach does
-    on the client.
+  that is always empty for a Flow PR. → open: the plan prints the definition of each
+  property that an added line syncs, read at the pinned version of the web component.
 - The tests pass returned 8 findings. Triage kept 1 and merged 1 into the blocking finding.
   Two B findings asked for rigor that the codebase does not use. One was an `Integer`
   against a `Double` client value, which `getProperty(String, int)` accepts. The other was
-  a test of `ValueSignal` notification, which is Flow behavior. → proposed: in
+  a test of `ValueSignal` notification, which is Flow behavior. → open: in
   `agents/test-reviewer.md`, a test of framework behavior or of a framework value
   conversion is C at most.
 - The tier of the blocking finding was a judgment call. The component is experimental
   behind a feature flag. A follow-up fix in `setSrc` needs no API change. The tie-breaker
   in `severity.md` does not cover an experimental component. The orchestrator chose A,
-  because the Javadoc of the PR promises page 1. → proposed: a line in `severity.md`. A
+  because the Javadoc of the PR promises page 1. → open: a line in `severity.md`. A
   contradiction of a promise that the PR adds to the Javadoc is A, also on an experimental
   component.
 - The plan printed `commands: lint=unknown test=unknown (source: package.json scripts)` and
   `reach: no package source changed`. Both lines use the npm model, and flow-components is
-  a Maven repo. They cost no call, but they are noise. → proposed: for a Maven repo, the
-  plan reads the commands from `CLAUDE.md` and prints the module reach from the POMs. If
-  it cannot, it omits both lines.
+  a Maven repo. They cost no call, but they are noise. → open: for a repo without a
+  `package.json`, the plan reads the commands from `CLAUDE.md` or omits both lines.
 - The revert check did not run, because the type is `feat`.
-- Order of the proposals by value: the `feature-no-ac` team filter, `pr-refresh.sh`, the
-  change-reviewer items, `reply_to` in `post-review.sh`, `wc_properties:`, the tier lines,
-  the Maven lines.
 - Cost: about 146k subagent tokens across three passes (change 65k, tests 44k, code 37k).
   The code pass used 3 tool calls.
 
