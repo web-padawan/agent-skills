@@ -61,8 +61,8 @@ Follow [`references/understand.md`](references/understand.md).
 
 ### Gate
 
-Before you ask, run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --context <context file>`.
-Act on each `action:` line. When `tree_changed:` lists files, re-run Plan before the gate.
+Before you ask, run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --at gate --context <context file>`.
+Act on each `action:` line.
 
 Ask one `AskUserQuestion` with the header `Review`: "How should I continue?" List first the
 option that the verdict suggests (the verdict table in [`references/screening.md`](references/screening.md)):
@@ -82,8 +82,8 @@ delivery.md. The deep blocks of the change pass are evidence for the report. Nev
 
 ### Triage
 
-Run `pr-refresh.sh` again, then the roll call. Then triage per pipeline.md §4 and §5, and
-severity.md. One filter decides what reaches the PR.
+Run `pr-refresh.sh --at triage`, then the roll call. Act on each `action:` line. Then triage
+per pipeline.md §4 and §5, and severity.md. One filter decides what reaches the PR.
 
 **Keep** a finding only when all of these are true:
 

@@ -221,9 +221,10 @@ printf '{"findings": []}\n' > "$WORK/post.json"
 check "post-review.sh refuses a run without --head" 2 \
   "$SCRIPTS/post-review.sh" --findings "$WORK/post.json" --dry-run
 printf '# Review context\n\n- mode: self\n- head: `%s`\n' "$(printf 'a%.0s' {1..40})" > "$WORK/self-context.md"
-check "pr-refresh.sh refuses a run without --context" 2 "$SCRIPTS/pr-refresh.sh"
+check "pr-refresh.sh refuses a run without --at" 2 "$SCRIPTS/pr-refresh.sh" --context "$WORK/self-context.md"
+check "pr-refresh.sh refuses a run without --context" 2 "$SCRIPTS/pr-refresh.sh" --at gate
 check "pr-refresh.sh refuses a context file without a PR" 2 \
-  "$SCRIPTS/pr-refresh.sh" --context "$WORK/self-context.md"
+  "$SCRIPTS/pr-refresh.sh" --at gate --context "$WORK/self-context.md"
 
 echo "== pr-screen.sh"
 # Three packages import the changed module, and a unit test asserts CSS. The fixture
@@ -364,7 +365,7 @@ general:  # id | author | first line
 EOF
 }
 refresh_fixture "$RF_MERGE" > "$RF/merge.txt"
-(cd "$RF/repo" && REFRESH_FIXTURE="$RF/merge.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md") > "$RF/merge.log" 2>&1
+(cd "$RF/repo" && REFRESH_FIXTURE="$RF/merge.txt" "$RF/bin/pr-refresh.sh" --at gate --context "$RF/context.md") > "$RF/merge.log" 2>&1
 expect "pr-refresh.sh does not count a merge of the base branch as a change" \
   "tree_changed: no" "$(grep '^tree_changed:' "$RF/merge.log")"
 expect "pr-refresh.sh lists a new reply under its known thread, and a new thread" \
@@ -374,12 +375,19 @@ expect "pr-refresh.sh asks to read a new general comment" \
   "action: read each new general comment: a bot can post its review summary there" \
   "$(grep '^action: read each new general' "$RF/merge.log")"
 refresh_fixture "$RF_CHANGE" > "$RF/change.txt"
-(cd "$RF/repo" && REFRESH_FIXTURE="$RF/change.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md") > "$RF/change.log" 2>&1
+(cd "$RF/repo" && REFRESH_FIXTURE="$RF/change.txt" "$RF/bin/pr-refresh.sh" --at gate --context "$RF/context.md") > "$RF/change.log" 2>&1
 expect "pr-refresh.sh lists a file whose own PR diff changed" \
   "tree_changed: 1 files: p.txt" "$(grep '^tree_changed:' "$RF/change.log")"
+expect "pr-refresh.sh asks to re-run the plan at the gate" \
+  "action: the plan read another diff: re-run review-plan.sh before the gate question" \
+  "$(grep '^action: the plan' "$RF/change.log")"
+(cd "$RF/repo" && REFRESH_FIXTURE="$RF/change.txt" "$RF/bin/pr-refresh.sh" --at triage --context "$RF/context.md") > "$RF/triage.log" 2>&1
+expect "pr-refresh.sh asks to verify each finding at triage" \
+  "action: the plan read another diff: verify each finding at ${RF_CHANGE:0:7}; a finding that this head fixes gets status \`fixed at ${RF_CHANGE:0:7}\` and never posts" \
+  "$(grep '^action: the plan' "$RF/triage.log")"
 printf '=== PR_METADATA ===\nerror: failed to resolve the PR\n' > "$RF/gh-error.txt"
 check "pr-refresh.sh exits 1 when gh cannot read the PR" 1 \
-  env REFRESH_FIXTURE="$RF/gh-error.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md"
+  env REFRESH_FIXTURE="$RF/gh-error.txt" "$RF/bin/pr-refresh.sh" --at gate --context "$RF/context.md"
 
 echo "== workflow-facts.sh"
 # A workflow change only: a new job without permissions that calls an action on a branch.

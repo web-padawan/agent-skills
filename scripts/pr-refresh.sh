@@ -5,12 +5,13 @@
 # (retrospective, PR review 7).
 #
 # Usage:
-#   pr-refresh.sh --context <context file of review-plan.sh>
+#   pr-refresh.sh --at gate|triage --context <context file of review-plan.sh>
 #
 # The context file gives the PR (`- pr:`), the head that the plan read (`- head:`) and the
 # ids of the comments under `## Already on the PR`. The script reads the current state with
 # get-pr-context.sh --no-diff. It fetches the new head into the object store and never
-# checks it out, so it is safe on a fork head.
+# checks it out, so it is safe on a fork head. --at names the step that runs it, so each
+# `action:` line says the one thing to do there.
 #
 # Prints:
 #   head: <current head SHA>
@@ -21,20 +22,22 @@
 #   ci: <the summary line of the current CI>
 #   new_threads: none | the new threads and replies, in the format of the context file
 #   new_general: none | the new general comments
-#   action: <the next step for each change>
+#   action: <the one thing to do at this step for each change>
 #
 # Exit codes: 0 ok · 1 gh or git could not answer · 2 usage error.
 set -euo pipefail
 
-CONTEXT=""
+CONTEXT=""; AT=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --at) AT="${2:?--at requires a value}"; shift 2 ;;
     --context) CONTEXT="${2:?--context requires a value}"; shift 2 ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
 
+case "$AT" in gate|triage) ;; *) echo "error: --at gate|triage is required" >&2; exit 2 ;; esac
 [ -n "$CONTEXT" ] || { echo "error: --context is required" >&2; exit 2; }
 [ -f "$CONTEXT" ] || { echo "error: no context file at $CONTEXT" >&2; exit 2; }
 command -v gh >/dev/null 2>&1 || { echo "error: gh CLI not found" >&2; exit 1; }
@@ -83,7 +86,11 @@ own_diff_changes() {
 }
 
 ACTIONS=()
-RERUN="the plan read another diff: before the fan-out, re-run review-plan.sh; after it, verify each finding at ${NEW:0:7} (pipeline.md §5.1)"
+if [ "$AT" = gate ]; then
+  RERUN="the plan read another diff: re-run review-plan.sh before the gate question"
+else
+  RERUN="the plan read another diff: verify each finding at ${NEW:0:7}; a finding that this head fixes gets status \`fixed at ${NEW:0:7}\` and never posts"
+fi
 echo "=== REFRESH ==="
 echo "head: $NEW"
 if [ "$NEW" = "$OLD" ]; then
@@ -139,7 +146,11 @@ NEW_GENERAL=$(printf '%s\n' "$COMMENTS" | awk -v known="$(printf '%s\n' "$KNOWN"
 if [ -n "$NEW_THREADS" ]; then
   echo "new_threads:"
   printf '%s\n' "$NEW_THREADS"
-  ACTIONS+=("dedup against the new threads too, and read each new reply before a finding repeats or answers its thread (pipeline.md §5.2)")
+  if [ "$AT" = gate ]; then
+    ACTIONS+=("read each new thread and reply: they are part of the PR that the gate decides on")
+  else
+    ACTIONS+=("count each new thread as a thread of \`## Already on the PR\`: dedup against it, and read each new reply before a finding repeats or answers its thread (pipeline.md §5.2)")
+  fi
 else
   echo "new_threads: none"
 fi
