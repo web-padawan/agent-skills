@@ -118,8 +118,8 @@ post-review.sh --pr <number> --head <head SHA of the review> \
   When GitHub refuses the file, the finding goes in the review body.
 - A finding within two lines of an existing thread is skipped. Triage that thread, set
   `dup` on the finding, and run again. Set `"allow_nearby": true` only for a different claim.
-- The review body holds a census line by label, the summary and a hidden marker with the
-  reviewed head SHA. It also holds each finding that GitHub refused to anchor. It does not
+- The review body holds the reviewed head SHA, a census line by label and the summary. It
+  also holds each finding that GitHub refused to anchor. It does not
   repeat a finding that has a thread.
 
 ## Posting with post-comment.sh
