@@ -651,6 +651,9 @@ LINT_CMD=""; TEST_CMD=""; SRC_GLOB=""; CMD_SOURCE=""
 if [ -d packages ] && ls packages/*/src >/dev/null 2>&1; then
   LINT_CMD="yarn lint"; TEST_CMD="yarn test --group <package>"; SRC_GLOB="packages/*/src/**/*.{js,ts}"
   CMD_SOURCE="monorepo layout (packages/*/src)"
+elif [ -f pom.xml ]; then
+  LINT_CMD="mvn spotless:check checkstyle:check -pl <module>"; TEST_CMD="mvn test -pl <module>"; SRC_GLOB="*/src/main/**"
+  CMD_SOURCE="Maven layout (root pom.xml)"
 elif [ -f package.json ]; then
   grep -q '"lint"' package.json && LINT_CMD="yarn lint"
   grep -q '"test"' package.json && TEST_CMD="yarn test"
