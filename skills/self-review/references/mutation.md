@@ -80,12 +80,11 @@ changes only where the budget goes:
    remove only the effect of the condition (for example, disable the early return). Apply one
    mutant at a time.
 2. Run the tests (the `commands:` from the plan) for the mutated package **and every other
-   package in `affected_packages` from the plan**. A mutant in a shared package
-   (`component-base`, `field-base`, `a11y-base`, and so on) often only breaks its consumers.
-   That narrow run is what keeps the step affordable. Note it in the report. Run the commands
-   through `${CLAUDE_PLUGIN_ROOT}/scripts/test-summary.sh --cmd '<command>'`, one `--cmd` per
-   package. It prints one line per command plus the failing test names, and keeps the log
-   out of your context.
+   package in `affected_packages` from the plan**. A mutant in a shared base or utility
+   package often only breaks its consumers. That narrow run is what keeps the step
+   affordable. Note it in the report. Redirect the output of each command to a log file in
+   the report directory. Read the exit code, and on a failure the last lines of the log only.
+   That keeps the log out of your context.
 3. **Expected: failure** (non-zero exit in at least one group).
 4. Restore with `git checkout -- <file>`. Then confirm that `git diff --name-only` is empty
    before the next mutant.
