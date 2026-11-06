@@ -590,7 +590,8 @@ if [ -z "$REPORT_DIR" ]; then
   case "$MODE" in
     # The git directory is never tracked and belongs to one worktree, so the report of
     # each branch survives between runs without a .gitignore entry.
-    self) REPORT_DIR=$(git rev-parse --path-format=absolute --git-path self-review) ;;
+    self) REPORT_DIR=$(git rev-parse --path-format=absolute --git-path self-review 2>/dev/null) \
+            || { echo "error: the self-review report dir needs git 2.31 or later" >&2; exit 1; } ;;
     # pr mode never writes into the repo: the review record is the reviewer's own,
     # never committed or posted (the Present step of pr-review).
     pr) REPORT_DIR="SCRATCHPAD" ;;
@@ -1410,17 +1411,18 @@ elif [ -n "$BASE" ]; then
   echo "commits: none"
 fi
 
-if [ -n "$REPORT_DIR" ]; then
-  echo "report_dir: $REPORT_DIR"
+if [ "$MODE" = "pr" ]; then
+  # The findings file sits beside the context file, which pr-review writes to its scratchpad.
   REPORT_PR="${PR_NUMBER:-}"
   [ -z "$REPORT_PR" ] && REPORT_PR=$(printf '%s' "${PR:-}" | sed 's#.*/##')
-  if [ "$MODE" = "pr" ] && [ -n "$REPORT_PR" ]; then
-    # The findings file sits beside the context file, which pr-review writes to its scratchpad.
-    FINDINGS_DIR="$REPORT_DIR"; [ -n "$CONTEXT_PATH" ] && FINDINGS_DIR=$(dirname "$CONTEXT_PATH")
-    echo "findings: $FINDINGS_DIR/pr-$REPORT_PR-findings.json"
+  if [ -n "$CONTEXT_PATH" ] && [ -n "$REPORT_PR" ]; then
+    echo "findings: $(dirname "$CONTEXT_PATH")/pr-$REPORT_PR-findings.json"
   else
-    echo "report: $REPORT_DIR/$SLUG-FINDINGS.md"
+    echo "findings: not set — the plan wrote no context file (pass --context-out)"
   fi
+elif [ -n "$REPORT_DIR" ]; then
+  echo "report_dir: $REPORT_DIR"
+  echo "report: $REPORT_DIR/$SLUG-FINDINGS.md"
 fi
 if [ -n "$CONTEXT_PATH" ]; then
   echo "context: $CONTEXT_PATH (written, $CONTEXT_LINES lines — never Edit it; every pass reads it first)"
