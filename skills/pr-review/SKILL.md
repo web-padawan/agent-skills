@@ -17,7 +17,7 @@ that a script writes.
 | --- | --- |
 | [`references/understand.md`](references/understand.md) | Understand: the explanation of the PR |
 | [`references/screening.md`](references/screening.md) | Understand, only for a fork or contributor PR: the screening card, the verdicts, the claims of the body |
-| [`references/quick.md`](references/quick.md) | Gate: the quick review, also the fallback |
+| [`references/quick.md`](references/quick.md) | Quick review: chosen at the Gate, also the fallback |
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Plan, Fan out and Triage: the plan, the context and notes files, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | Triage: A / B / C, tiers by change type, what CI settles, the rendering table |
 | [`../../references/delivery.md`](../../references/delivery.md) | Fan out and Triage: launch rules, the delivery clause, the roll call, the escalation ladder |
