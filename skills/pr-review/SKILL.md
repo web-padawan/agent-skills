@@ -100,13 +100,11 @@ Post it as a `question (design)`, or drop it.
 - Rigor demands that the codebase does not follow.
 - Pre-existing bugs, generic observations and restatements of the code.
 
-**Write the frozen list** (pipeline.md §5.7) to `<scratchpad>/pr-<number>-findings.json`, in
-the format that `post-review.sh --help` prints: `file`, `line`, `message`, `status`, `dup`
-and `summary_only`. Also write each finding that the filter drops, with the status
-`dropped <reason>`. The script posts from that file, and the file is the record of the review.
-Never commit it. It never opens a new thread for a
-finding that is already on the PR (pipeline.md §5.2). Word a `contradicts` reply as a
-`question`, and a `not fixed` reply as an `issue`.
+**Write the frozen list** (pipeline.md §5.7) to the `findings:` path of the plan, in the
+format that `post-review.sh --help` prints. Also write each finding that the filter drops,
+with the status `dropped <reason>`. The script posts from that file, and the file is the
+record of the review. Never commit it. Word a `contradicts` reply as a `question`, and a
+`not fixed` reply as an `issue`.
 
 **Redirect**: a finding can name a better location or mechanism with a precedent. When the rest
 of the PR depends on that choice, set the verdict to `redirect`.
