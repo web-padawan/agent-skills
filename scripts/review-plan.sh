@@ -651,20 +651,22 @@ fi
 
 # ── Command map ───────────────────────────────────────────────────────
 LINT_CMD=""; TEST_CMD=""; SRC_GLOB=""; CMD_SOURCE=""
-if [ -d packages ] && ls packages/*/src >/dev/null 2>&1; then
-  LINT_CMD="yarn lint"; TEST_CMD="yarn test --group <package>"; SRC_GLOB="packages/*/src/**/*.{js,ts}"
-  CMD_SOURCE="monorepo layout (packages/*/src)"
-elif [ -f pom.xml ]; then
-  LINT_CMD="mvn spotless:check checkstyle:check -pl <module>"; TEST_CMD="mvn test -pl <module>"; SRC_GLOB="*/src/main/**"
+# Only the root manifest decides. The conventions doc names a per-package or a lint command.
+if [ -f pom.xml ]; then
+  TEST_CMD="mvn test"; SRC_GLOB="**/src/main/**"
   CMD_SOURCE="Maven layout (root pom.xml)"
 elif [ -f package.json ]; then
-  grep -q '"lint"' package.json && LINT_CMD="yarn lint"
-  grep -q '"test"' package.json && TEST_CMD="yarn test"
+  PM=npm; [ -f yarn.lock ] && PM=yarn; [ -f pnpm-lock.yaml ] && PM=pnpm
+  RUN="$PM"; [ "$PM" = npm ] && RUN="npm run"
+  jq -e '.scripts.lint' package.json >/dev/null 2>&1 && LINT_CMD="$RUN lint"
+  jq -e '.scripts.test' package.json >/dev/null 2>&1 && TEST_CMD="$PM test"
   SRC_GLOB="src/**"
-  CMD_SOURCE="package.json scripts — confirm against CLAUDE.md / AGENTS.md"
+  ls -d packages/*/src >/dev/null 2>&1 && SRC_GLOB="packages/*/src/**"
+  CMD_SOURCE="package.json scripts ($PM)"
 else
-  CMD_SOURCE="unknown — take lint/test commands from CLAUDE.md / AGENTS.md"
+  CMD_SOURCE="no root manifest"
 fi
+CMD_SOURCE="$CMD_SOURCE; take a per-package or a missing command from ${CONVENTIONS:-CLAUDE.md or AGENTS.md}"
 
 AFFECTED=""
 if [ -n "$CHANGED" ]; then
