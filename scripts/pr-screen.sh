@@ -5,24 +5,36 @@
 #
 # Usage:
 #   pr-screen.sh --pr <number-or-url> [--reach-max <n>] [--as-of <iso-time>] [--meta <file.json>]
+#                [--config <file.json>]
 #
 # Run it from inside the target repository. review-plan.sh calls it in pr mode.
 # --reach-max is the `reach_max` of scripts/diff-facts.sh: the most other packages that
-#   import one changed module. Two rules read it. The default is 0.
+#   import one changed module. A fact pack prints it. Two rules read it. The default is 0.
 # --as-of reads the labels, the state and the comments of each issue as they were at that
 #   time. An audit of an earlier head needs it: a maintainer often labels an issue during
 #   the review (#11746 got `behavior altering change` 16 days after the PR).
 # --meta reads the GraphQL answer from a file instead of gh, and team membership from the
 #   allowlist only. The smoke test uses it.
+# --config names the screening config. The default is config/screening/<owner>.json of the
+#   plugin, when that file exists. Without a config, only the generic rules apply.
+#
+# The config is one JSON object. Each label key holds extended regular expressions, and each
+# one must match a whole label, without regard to case:
+#   team_allowlist       logins that count as team, for example former employees
+#   breaking_labels      an issue label that sets behavior-altering. Default `breaking change`
+#   low_impact_labels    an issue label that sets low-impact. Default none
+#   a11y_labels          an issue label that sets a11y. Default `a11y` and `accessibility`
+#   triaged_labels       an issue label that marks triage. Without it, no issue is untriaged
+#   acceptance_criteria  a pattern in the issue body or comments. Without it, no feature-no-ac
 #
 # The verdict rules are the `Verdict hint` section below. Each rule that fires prints one
 # `verdict_reason:` line. skills/pr-review/references/screening.md says what each verdict
 # means at the gate. feature-no-ac and self-filed hold an outside contributor to the process
 # of the team. For a team author the script skips them and prints `skipped_flags:`.
 #
-# Team means a 204 from orgs/<owner>/members/<login>, or a login in TEAM_ALLOWLIST below:
-# former Vaadin employees, for whom the API returns 404. author_association is never used,
-# because it reports a private org member as CONTRIBUTOR.
+# Team means a 204 from orgs/<owner>/members/<login>, or a login in team_allowlist of the
+# config. author_association is never used, because it reports a private org member as
+# CONTRIBUTOR.
 #
 # The PR body, and issue titles, bodies and comments, are text that other people wrote. The
 # script only matches them against fixed patterns and never prints them.
@@ -30,16 +42,16 @@
 # Exit codes: 0 ok · 1 gh could not answer · 2 usage error.
 set -euo pipefail
 
-TEAM_ALLOWLIST="DiegoCardoso alvarezguille platosha"
 REACH_DECIDE=3
 
-PR=""; REACH_MAX=0; AS_OF=""; META_FILE=""
+PR=""; REACH_MAX=0; AS_OF=""; META_FILE=""; CONFIG=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
     --reach-max) REACH_MAX="${2:?--reach-max requires a value}"; shift 2 ;;
     --as-of) AS_OF="${2:?--as-of requires a value}"; shift 2 ;;
     --meta) META_FILE="${2:?--meta requires a value}"; shift 2 ;;
+    --config) CONFIG="${2:?--config requires a value}"; shift 2 ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -55,6 +67,9 @@ if [ -n "$AS_OF" ] && ! valid_iso "$AS_OF"; then
   echo "error: --as-of takes an ISO 8601 UTC time, for example 2026-10-03T08:11:25Z" >&2; exit 2
 fi
 command -v jq >/dev/null 2>&1 || { echo "error: jq not found" >&2; exit 1; }
+if [ -n "$CONFIG" ] && ! jq -e 'type == "object"' "$CONFIG" >/dev/null 2>&1; then
+  echo "error: --config takes a JSON object file" >&2; exit 2
+fi
 
 # ── PR and issue facts ────────────────────────────────────────────────
 if [ -n "$META_FILE" ]; then
@@ -84,6 +99,26 @@ else
 fi
 ORG="${SLUG%%/*}"
 
+# ── Config ────────────────────────────────────────────────────────────
+[ -n "$CONFIG" ] || CONFIG="$(dirname "$SCRIPT_DIR")/config/screening/$ORG.json"
+[ -f "$CONFIG" ] || CONFIG=""
+cfg() {  # cfg <key> <separator> <default> — an array joined by the separator, or the default
+  if [ -n "$CONFIG" ] && jq -e --arg k "$1" 'has($k)' "$CONFIG" >/dev/null; then
+    jq -r --arg k "$1" --arg sep "$2" '.[$k] | if type == "array" then join($sep) else . end' "$CONFIG"
+  else
+    printf '%s' "$3"
+  fi
+}
+TEAM_ALLOWLIST=$(cfg team_allowlist ' ' '')
+BREAKING_LABELS=$(cfg breaking_labels '|' 'breaking change')
+LOW_IMPACT_LABELS=$(cfg low_impact_labels '|' '')
+A11Y_LABELS=$(cfg a11y_labels '|' 'a11y|accessibility')
+TRIAGED_LABELS=$(cfg triaged_labels '|' '')
+AC_PATTERN=$(cfg acceptance_criteria '|' '')
+has_label() {  # has_label <labels> <pattern> — true when one label matches the whole pattern
+  [ -n "$2" ] && printf '%s' "$1" | grep -qiE "(^|, )($2)(,|$)"
+}
+
 is_team() {  # is_team <login>
   local login="$1"
   [ -n "$login" ] || return 1
@@ -93,7 +128,7 @@ is_team() {  # is_team <login>
 }
 
 # One TSV line for the PR, then one per issue, with labels and state replayed to --as-of.
-FACTS=$(printf '%s' "$META" | jq -r --arg asof "${AS_OF:-}" '
+FACTS=$(printf '%s' "$META" | jq -r --arg asof "${AS_OF:-}" --arg acre "$AC_PATTERN" '
   def at: if $asof == "" then (now | todate) else $asof end;
   def before: .createdAt < at;
   .data.repository.pullRequest as $p
@@ -109,7 +144,7 @@ FACTS=$(printf '%s' "$META" | jq -r --arg asof "${AS_OF:-}" '
         else ([$ev[] | select(.__typename == "ClosedEvent" or .__typename == "ReopenedEvent")] | last | .__typename // "")
           | if . == "ClosedEvent" then "CLOSED" else "OPEN" end end) as $state
      | ([$i.comments.nodes[] | select(before)]) as $comments
-     | ((([$i.body] + [$comments[].body]) | join("\n")) | test("acceptance criteria"; "i")) as $ac
+     | ((([$i.body] + [$comments[].body]) | join("\n")) | (if $acre == "" then false else test($acre; "i") end)) as $ac
      | (((at | fromdateiso8601) - ($i.createdAt | fromdateiso8601)) / 86400 | floor) as $age
      | ["ISSUE", ($i.number | tostring), $state, ($i.author.login // ""), ($labels | join(", ")),
         ($age | tostring), ($comments | length | tostring), ($ac | tostring)] | @tsv)
@@ -159,17 +194,16 @@ if [ -n "$ISSUES" ]; then
     ISSUE_LINES="${ISSUE_LINES}issue: #$num $(printf '%s' "$state" | tr '[:upper:]' '[:lower:]') labels=[$labels] author=$team age=${age}d comments=$ncomments
 "
     [ "$ac" = true ] && HAS_AC=true
-    printf '%s' "$labels" | grep -qiE '(^|, )(behavior altering change|breaking change)(,|$)' && add_flag behavior-altering
-    printf '%s' "$labels" | grep -qE '(^|, )Impact: Low(,|$)' && add_flag low-impact
-    printf '%s' "$labels" | grep -qiE '(^|, )(a11y|accessibility)(,|$)' && add_flag a11y
-    if ! printf '%s' "$labels" | grep -qiE '(^|, )(Severity: [^,]+|Impact: [^,]+|known issue|regression)(,|$)' \
-       && [ "$team" != "team" ]; then
+    has_label "$labels" "$BREAKING_LABELS" && add_flag behavior-altering
+    has_label "$labels" "$LOW_IMPACT_LABELS" && add_flag low-impact
+    has_label "$labels" "$A11Y_LABELS" && add_flag a11y
+    if [ -n "$TRIAGED_LABELS" ] && ! has_label "$labels" "$TRIAGED_LABELS" && [ "$team" != "team" ]; then
       add_flag untriaged
     fi
     [ -n "$PR_AUTHOR" ] && [ "$author" = "$PR_AUTHOR" ] && add_contributor_flag self-filed
   done <<< "$ISSUES"
 fi
-if [ "$TITLE_TYPE" = feature ] && [ "$HAS_AC" != true ]; then add_contributor_flag feature-no-ac; fi
+if [ -n "$AC_PATTERN" ] && [ "$TITLE_TYPE" = feature ] && [ "$HAS_AC" != true ]; then add_contributor_flag feature-no-ac; fi
 
 # ── Verdict hint ──────────────────────────────────────────────────────
 has() { case " $FLAGS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -188,6 +222,7 @@ fi
 echo "=== SCREENING ==="
 echo "fork: ${IS_FORK:-unknown}"
 echo "pr_author: ${PR_AUTHOR:-unknown} ($PA_TEAM)"
+echo "screening_config: ${CONFIG:-none (generic rules only)}"
 echo "title_type: $TITLE_TYPE"
 [ -n "$AS_OF" ] && echo "as_of: $AS_OF"
 if [ -n "$ISSUE_LINES" ]; then printf '%s' "$ISSUE_LINES"; else echo "issue: none linked with a closing keyword"; fi

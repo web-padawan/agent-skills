@@ -1,0 +1,8 @@
+{
+  "team_allowlist": ["DiegoCardoso", "alvarezguille", "platosha"],
+  "breaking_labels": ["behavior altering change", "breaking change"],
+  "low_impact_labels": ["Impact: Low"],
+  "a11y_labels": ["a11y", "accessibility"],
+  "triaged_labels": ["Severity: [^,]+", "Impact: [^,]+", "known issue", "regression"],
+  "acceptance_criteria": "acceptance criteria"
+}

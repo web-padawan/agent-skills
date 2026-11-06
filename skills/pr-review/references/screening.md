@@ -15,7 +15,8 @@ is a proposal, and the reviewer picks at the gate.
 | decline | the PR duplicates or conflicts with team work | `Draft a reply` |
 | redirect | a better location or mechanism exists | set at Triage |
 
-A rule reads a label, a marker or a count. A `type!:` title or a `BREAKING CHANGE:` footer
+A rule reads a label, a marker or a count. The label rules and the team allowlist come from
+the config that `screening_config:` names. Without a config, only the generic rules apply. A `type!:` title or a `BREAKING CHANGE:` footer
 sets `behavior-altering`, and the script prints `breaking_marker:`. For a team author, the
 script prints the contributor rules in `skipped_flags:`, and they do not change the hint.
 The evidence behind each rule is in `docs/rationale.md`.

@@ -81,6 +81,12 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `visual-diffstat.cjs` | Pixel metrics and a contact sheet for failed screenshots |
 | `smoke.sh` | Checks the scripts that rewrite a tree, the diff and screening facts and the Bash guard |
 
+## Config
+
+`config/screening/<owner>.json` holds the screening labels and the team allowlist of one
+GitHub owner. `pr-screen.sh --help` lists the keys. Without a config for the owner, only the
+generic screening rules apply.
+
 ## Hooks
 
 `hooks/hooks.json` registers `scripts/hooks/bash-guard.py` before every Bash call. The guard
