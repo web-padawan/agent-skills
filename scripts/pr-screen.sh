@@ -28,7 +28,7 @@
 #   acceptance_criteria  a pattern in the issue body or comments. Without it, no feature-no-ac
 #
 # The verdict rules are the `Verdict hint` section below. Each rule that fires prints one
-# `verdict_reason:` line. skills/pr-review/references/screening.md says what each verdict
+# `verdict_reason:` line. skills/pr-review/references/understand.md says what each verdict
 # means at the gate. feature-no-ac and self-filed hold an outside contributor to the process
 # of the team. For a team author the script skips them and prints `skipped_flags:`.
 #

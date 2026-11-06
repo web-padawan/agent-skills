@@ -15,8 +15,7 @@ that a script writes.
 
 | Reference | Covers |
 | --- | --- |
-| [`references/understand.md`](references/understand.md) | Understand: the explanation and the screening card |
-| [`references/screening.md`](references/screening.md) | Understand and Gate: the verdicts, the claims of the body |
+| [`references/understand.md`](references/understand.md) | Understand and Gate: the explanation, the screening card and verdicts, the claims of the body |
 | [`references/quick.md`](references/quick.md) | Gate: the quick review, also the fallback |
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Plan, Fan out and Triage: the plan, the context and notes files, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | Triage: A / B / C, tiers by change type, what CI settles, the rendering table |
@@ -65,7 +64,7 @@ Before you ask, run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --at gate --con
 Act on each `action:` line.
 
 Ask one `AskUserQuestion` with the header `Review`: "How should I continue?" List first the
-option that the verdict suggests (the verdict table in [`references/screening.md`](references/screening.md)):
+option that the verdict suggests (*Screening verdicts* in [`references/understand.md`](references/understand.md)):
 
 - `Full review`: Fan out, Triage, Present and Post.
 - `Quick review`: [`references/quick.md`](references/quick.md).
