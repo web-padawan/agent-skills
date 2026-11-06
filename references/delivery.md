@@ -53,7 +53,7 @@ turns, emit at most one line, in the vocabulary of the roll call:
 
 Spend the wait only on leads that the passes cannot reach:
 
-- a consumer in another repository (a Flow connector, a downstream app)
+- a consumer in another repository (a wrapper, a downstream app)
 - a parent issue
 - a release note
 - a browser check
