@@ -914,7 +914,7 @@ conventions_excerpt() {  # conventions_excerpt <doc> "<signals>" — chapters se
   # "when you add X, also update Y" rule is a missed finding (the upstream Vaadin CI review
   # reads the whole doc for the same reason).
   if [ "$(wc -l < "$doc")" -le "$CONVENTIONS_WHOLE_MAX" ]; then
-    awk '/^# / { next } { print }' "$doc" | sed 's/^#/##/'
+    awk '/^# / { next } /^#/ || /^[[:space:]]*$/ { print; next } { printf "%d| %s\n", NR, $0 }' "$doc" | sed 's/^#/##/'
     return
   fi
   nhead=$(grep -c '^## ' "$doc" 2>/dev/null || true)
@@ -947,7 +947,9 @@ conventions_excerpt() {  # conventions_excerpt <doc> "<signals>" — chapters se
   awk -v re="$re" '
     /^## / { keep = (tolower($0) ~ re) }
     /^# / { next }
-    keep' "$doc" | sed 's/^#/##/'
+    !keep { next }
+    /^#/ || /^[[:space:]]*$/ { print; next }
+    { printf "%d| %s\n", NR, $0 }' "$doc" | sed 's/^#/##/'
 }
 
 # Signals for the conventions excerpt: the kinds of file touched, plus what the added
