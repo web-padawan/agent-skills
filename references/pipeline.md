@@ -82,7 +82,7 @@ have something to add. The notes file has three sections, in this order:
 
 - **Settled facts**: facts that you verified and that a pass would otherwise derive. For
   example, what a shared helper does, pre-change behavior, a consumer in another repo, the
-  call of a Flow connector. Write one line per claim with its evidence (`file:line`, a SHA,
+  call of a wrapper in another repository. Write one line per claim with its evidence (`file:line`, a SHA,
   the command). Record only what took you a call or two. The passes carry the budget for the
   rest.
 - **Open leads**: suspicions that you deliberately have not resolved. Every lead names exactly
@@ -195,7 +195,7 @@ markers and the escalation ladder.
    An **open** thread that no pass reproduced is an `[orchestrator]` lead. Verify it within
    the triage ceiling and record `confirmed by review` or `not reproduced`. A posted comment
    repeats the claim of another thread only when you confirmed it. Example: a reply on
-   flow-components #10523 repeated a bot claim about event order, and the author showed
+   vaadin/flow-components#10523 repeated a bot claim about event order, and the author showed
    that the claim was false.
 
    Then dedup against `## Earlier findings`, when the skeleton has it. A finding whose file
