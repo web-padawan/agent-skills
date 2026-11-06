@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Code review pass of the self-review and pr-review pipelines — reviews how the production diff is written, against a checklist: logic and edge cases, registration, conventions, reuse, maintainability, the comments the diff touches and the API docs it owes. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Code review pass of the self-review and pr-review pipelines — reviews how the production diff is written, against a checklist: logic and edge cases, registration, conventions, reuse, maintainability, the comments the diff touches and the API docs it owes. Used exclusively by the self-review and pr-review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
@@ -36,7 +36,7 @@ finding in a file is a reason to look harder at that file.
 ### Conventions — category `conventions`
 
 - No violation of the `## Conventions excerpt` in the context file. Quote the exact rule and the exact line that breaks it
-- Naming consistent with sibling components or mixins for the same concepts
+- Naming consistent with sibling modules for the same concepts
 - Code follows design patterns established across the existing codebase
 - Method and property ordering that matches the surrounding file and similar files
 - Correct abstractions, clear separation of concerns, readable code
@@ -44,8 +44,7 @@ finding in a file is a reason to look harder at that file.
 ### Reuse and cost — category `reuse`
 
 - No new code that re-implements an existing helper that the sweep found. Name the helper to call instead
-- No imperative wiring where the component family has a declarative mechanism for it, for example a delegated property or a template binding. Name the mechanism and one use site
-- Each `shadow_reach` entry under *Settled facts* is added code that reads the shadow DOM of another element. Judge it under this rule: could the child receive the value through a delegated property and bind it in its template?
+- No imperative wiring where the codebase has a declarative mechanism for it, for example a binding. Name the mechanism and one use site
 - No duplication or copy-paste with slight variation
 - No unnecessary complexity or tight coupling
 - No unused or unreachable code, no obsolete checks
@@ -58,7 +57,7 @@ finding in a file is a reason to look harder at that file.
 - No near-copy that will fork the next time either side changes
 - No private flags unless absolutely necessary
 - No workarounds or TODOs without follow-up
-- No legacy syntax (Polymer style observers, computed properties)
+- No legacy syntax that the conventions excerpt names as legacy
 
 ### Comments — category `comments`
 
@@ -92,8 +91,8 @@ Three questions share this category. Answer all three.
 - **Source.** When the proof of a claim lies outside the anchored hunk, append
   ` | src:<file>:<line>`: the helper to call, the sibling that shows the pattern, the
   convention, or the pre-change line as `src:<BASE>:<path>:<line>`. A claim about code outside
-  the hunk without `src:` counts as unverified. Example: "use `delegateProps`" cites the line
-  that delegates `opened`.
+  the hunk without `src:` counts as unverified. Example: "use the existing binding" cites the line
+  where a sibling binds the same value.
 - **Owned leads.** Every Open lead in the notes file tagged with your pass ends in your
   output. It ends as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
   after the findings. A lead that ends in neither counts as not worked, and triage treats it
