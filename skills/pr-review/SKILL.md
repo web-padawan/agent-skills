@@ -112,13 +112,6 @@ of the PR depends on that choice, set the verdict to `redirect`.
 
 Rank first the A findings that affect released behavior or security.
 
-**Revert check**: run it only when the plan says `fork: false`, the type is `fix`, `HEAD` is
-the plan `head`, and the tree is clean. Disable one part of the fix at a time. After each
-change, run the tests of the package. Then restore the file with `git checkout -- <path>`.
-
-- A new test that still passes is a `question (tests)`.
-- When the tests of two parts pass without each other, the parts are a `scope` split.
-
 ### Present
 
 Follow [`references/present.md`](references/present.md).

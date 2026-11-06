@@ -18,8 +18,7 @@
 #
 # It prints the diff facts of scripts/diff-facts.sh and its fact packs in both modes.
 # In pr mode it also prints the screening facts of scripts/pr-screen.sh, and `fork:`. A fork
-# PR turns off the revert check and ab.sh (hints), keeps reuse and maintainability in the
-# code pass, and writes the fork marker that scripts/hooks/bash-guard.py reads. A pr-mode
+# PR keeps reuse and maintainability in the code pass, and writes the fork marker that scripts/hooks/bash-guard.py reads. A pr-mode
 # run on a same-repo PR removes it, and it expires after 3 hours. A fork head that is the
 # working tree refuses: its project settings loaded at session start.
 # --head and --as-of audit an earlier head of the PR (get-pr-context.sh --help).
@@ -1300,7 +1299,6 @@ if [ "$MODE" = "pr" ]; then
   echo "fork: ${FORK:-unknown}${HEAD_REPO:+ ($HEAD_REPO)}"
   [ -n "$AUDIT_LINE" ] && echo "audit: $AUDIT_LINE${AS_OF:+, as of $AS_OF}"
   if [ "$FORK" = "true" ]; then
-    echo "hint: fork PR — no revert check and no ab.sh: both run the code of the head"
     echo "hint: fork PR — never run yarn, npm, npx, pnpm or node on this head; the Bash guard holds the passes to read-only commands (fork marker: $FORK_MARKER)"
     echo "hint: fork PR — the code pass keeps reuse and maintainability"
   fi
