@@ -15,7 +15,8 @@ that a script writes.
 
 | Reference | Covers |
 | --- | --- |
-| [`references/understand.md`](references/understand.md) | Understand and Gate: the explanation, the screening card and verdicts, the claims of the body |
+| [`references/understand.md`](references/understand.md) | Understand: the explanation of the PR |
+| [`references/screening.md`](references/screening.md) | Understand and Gate, for a fork or contributor PR: the screening card, the verdicts, the claims of the body |
 | [`references/quick.md`](references/quick.md) | Gate: the quick review, also the fallback |
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Plan, Fan out and Triage: the plan, the context and notes files, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | Triage: A / B / C, tiers by change type, what CI settles, the rendering table |
@@ -56,7 +57,8 @@ rest of the plan per pipeline.md §1, and act on every `hint:`.
 
 ### Understand
 
-Follow [`references/understand.md`](references/understand.md).
+Follow [`references/understand.md`](references/understand.md). When the plan says `fork: true`
+or `pr_author: <login> (contributor)`, also follow [`references/screening.md`](references/screening.md).
 
 ### Gate
 
@@ -64,15 +66,17 @@ Before you ask, run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --at gate --con
 Act on each `action:` line.
 
 Ask one `AskUserQuestion` with the header `Review`: "How should I continue?" List first the
-option that the verdict suggests (*Screening verdicts* in [`references/understand.md`](references/understand.md)):
+`gate_default:` option of the plan. When you corrected the verdict, list first its option in
+the verdict table of screening.md.
 
 - `Full review`: Fan out, Triage, Present and Post.
 - `Quick review`: [`references/quick.md`](references/quick.md).
 - `Draft a reply`: the reply of *Replies by verdict* in comment-guidelines.md, then Post.
 - `Stop`: nothing more.
 
-If the arguments include `--quick`, run the quick review and do not ask. If the reviewer asks
-about the goal first, stay in Understand.
+If the arguments include `--quick` and the first option is `Full review` or `Quick review`,
+run the quick review and do not ask. Otherwise ask, because a `decide` or `decline` verdict
+makes a code comment premature. If the reviewer asks about the goal first, stay in Understand.
 
 ### Fan out
 
