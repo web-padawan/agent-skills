@@ -55,7 +55,7 @@ A `take` verdict gets the review of this file. The three other verdicts get one 
 Show the draft in chat. Post decide and decline with `post-comment.sh --no-label`, and
 redirect with `post-review.sh --body-only`.
 
-Examples, from maintainer replies on web-components fork PRs:
+Examples, from maintainer replies on vaadin/web-components fork PRs:
 
 - decide (#12974): `Thanks for the PR. We will discuss with the team whether this change is ok to do in a minor release before proceeding.`
 - decline (#12976): `Closing per above comment. Proper solution would require implementing #4565: an offset API on PositionMixin which would allow to simplify existing margin CSS in tooltip, popover, Aura and Lumo. Thanks for the regression tests, they can be reused if we agree to proceed with the offset API.`
