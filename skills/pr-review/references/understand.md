@@ -39,7 +39,7 @@ Add the card when the plan says `fork: true`, or when the PR author is not on th
 ```
 **Verdict**: <verdict_hint of the plan, or your corrected verdict>
 - Issue: #<n>, <labels that matter>, <team or contributor>, <age> | none linked
-- Reach: <the widest reach line>, Flow: <flow_counterpart> | in a Flow repo: <the wc_property lines>
+- Reach: <the consumers that the diff_facts lines name, the widest first> | none named
 - Claims: <one line per checkable claim of the body, with its status>
 - Why: <the verdict_reason lines, or the one fact that decides>
 ```

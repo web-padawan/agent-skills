@@ -29,7 +29,7 @@ Report real issues only. Rank the most serious first:
 - **Correctness**: wrong logic, edge cases, null or undefined values, races, off-by-one.
 - **Regressions and safety**: behavior changes, security holes, missing error handling,
   performance cliffs.
-- **Consumers**: the packages in the `reach` lines of the plan, and the Flow counterpart.
+- **Consumers**: the consumers that the `diff_facts` lines of the plan name.
 - **Coverage gaps**: untested branches, or new behavior with no test.
 - **Fit**: does the PR follow the established patterns, at the right layer? Flag a touched
   layer that the fix does not need.
