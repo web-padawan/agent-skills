@@ -1,6 +1,6 @@
 ---
 name: change-reviewer
-description: Change review pass of the self-review and pr-review pipelines — reviews what the production diff does and promises, against a checklist: scope, behavior and compatibility, fix correctness, then the boundary/promise and change-impact analysis of the top significant changes. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Change review pass of the self-review and pr-review pipelines — reviews what the production diff does and promises, against a checklist: scope, behavior and compatibility, fix correctness, then the boundary/promise and change-impact analysis of the top significant changes. Used exclusively by the self-review and pr-review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
@@ -112,12 +112,7 @@ Severity: <A|B|C, the highest tier of the finding lines that this block backs | 
   claim to verify.
 - `Consumers` are named: find them with `grep -rn` across the touched packages and their
   siblings. Never guess them. An unnamed consumer list makes the severity unjustifiable in
-  either direction. On a PR, the `reach` lines under *Settled facts* list the packages that
-  import each changed module on the base. Start there. A `flow_counterpart` line names the
-  Flow wrapper, which is a consumer of every changed default, event and data path. In a Flow
-  repository, a `wc_property` line gives the web component declaration of a synced property.
-  With `notify=true` and a default, the first update syncs the default to the server. Check
-  whether a listener of the diff fires an event for that sync (flow-components #10596).
+  either direction. When the diff facts under *Settled facts* name consumers, start there.
 - Write `Promise` from the side of the consumer: "the `opened` property can be set before the
   element is attached", not "we moved the listener". A promise that nobody could state in one
   sentence is usually an accidental one. That accident is itself the finding.
