@@ -129,5 +129,6 @@ nits after the passes report them.
 > This is the conventions doc of the repository. A long doc is cut to the chapters that the
 > kinds of touched file and the added lines select. Do not open the conventions doc unless
 > a finding of yours needs a rule that this file does not quote. If you had to open it, say
-> so in the finding.
+> so in the finding. Each quoted line starts with its line number in the doc. Cite a rule as
+> `src:<doc>:<that number>`, not as a line of this file.
 <!-- /block -->
