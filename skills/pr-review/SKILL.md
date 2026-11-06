@@ -85,18 +85,20 @@ delivery.md. The deep blocks of the change pass are evidence for the report. Nev
 Run `pr-refresh.sh --at triage`, then the roll call. Act on each `action:` line. Then triage
 per pipeline.md §4 and §5, and severity.md. One filter decides what reaches the PR.
 
-**Keep** a finding only when all of these are true:
+**Keep** an A or B finding only when all of these are true:
 
 - It affects correctness, performance, security or maintainability.
 - It is discrete and actionable, and this PR introduced it.
 - Its impact is provable, and it is clearly not intentional.
+
+**Keep** a C finding when it is discrete and actionable, this PR introduced it, and you
+confirmed it. It posts as a `nitpick`.
 
 A finding that reverts a commit of this branch is intentional by default (the `commits:` list).
 Post it as a `question (design)`, or drop it.
 
 **Drop** these findings. An inaccurate comment is more harmful than a missed issue.
 
-- Style nits, unless they obscure meaning or break a quoted convention.
 - Rigor demands that the codebase does not follow.
 - Pre-existing bugs, generic observations and restatements of the code.
 - What you cannot confirm.
