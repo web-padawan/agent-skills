@@ -8,16 +8,24 @@ Use this path in these cases:
 
 Every finding of this path is `self-run` in the roll call. Say so before the post gate.
 
-## Read the diff
+## Read the context file
 
-Read the production and test diff with the literal SHAs of the plan:
+In this path you are the reviewer, so read the file that the passes read. Read the context
+file of the plan once. It holds these parts:
+
+- the diff, inline or as the patch files that it names
+- the conventions excerpt, each line with its number in the doc
+- the diff facts, with their `rule:` lines
+- the comments already on the PR
+
+Do not run `git diff` and do not open the conventions doc again. Cite a convention as
+`src:<doc>:<line>`. Apply each `rule:` line. Do not repeat a point that `## Already on the PR`
+shows as already made or addressed.
+
+If the plan wrote no context file, read the diff with the literal SHAs of the plan:
 `git diff <base>..<head> -- <prod_files> <test_files>`. For a dirty branch, first follow the
 `hint:` lines of `get-pr-context.sh`. On a fork PR, read the post-change files with
-`git show <head>:<path>`.
-
-Apply the repo conventions. The plan names the doc in `conventions_doc:`. Read it before
-you flag a convention. Do not repeat a point that the context file shows as already made or
-addressed.
+`git show <head>:<path>`. Read the `conventions_doc:` of the plan before you flag a convention.
 
 ## Review
 
