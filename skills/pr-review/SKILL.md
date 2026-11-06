@@ -78,7 +78,7 @@ about the goal first, stay in Understand.
 ### Fan out
 
 Write the notes file first. Follow pipeline.md §2 and §3, and the launch rules of
-delivery.md. The deep blocks of the change pass are evidence for the report. Never post them.
+delivery.md. The deep blocks of the change pass are evidence for Triage. Never post them.
 
 ### Triage
 
@@ -103,7 +103,9 @@ Post it as a `question (design)`, or drop it.
 
 **Write the frozen list** (pipeline.md §5.7) to `<scratchpad>/pr-<number>-findings.json`, in
 the format that `post-review.sh --help` prints: `file`, `line`, `message`, `status`, `dup`
-and `summary_only`. The script posts from that file. It never opens a new thread for a
+and `summary_only`. Also write each finding that the filter drops, with the status
+`dropped <reason>`. The script posts from that file, and the file is the record of the review.
+Never commit it. It never opens a new thread for a
 finding that is already on the PR (pipeline.md §5.2). Word a `contradicts` reply as a
 `question`, and a `not fixed` reply as an `issue`.
 

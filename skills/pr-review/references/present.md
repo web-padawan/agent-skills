@@ -43,10 +43,11 @@ Every finding carries its decoration. Example: a confirmed B that shows wrong be
 `issue (<category>, non-blocking)`, not a bare `issue (<category>)`. The rendering table in
 severity.md gives the full set.
 
-The report of Q2 gives the detail of each dropped finding. A list of them in the chat makes
-that report redundant.
+The findings file of Triage holds the detail of each dropped finding. Do not list them in
+the chat.
 
-The census line under the result counts only findings that are not `already raised`. If
+The census line under the result counts only findings that are not `already raised` and not
+`dropped`. If
 the plan said `existing_comments: none`, omit the **Already on the PR** block.
 
 Give `Needs attention` whenever any `issue` exists, blocking or not. An `issue` says that wrong
@@ -62,21 +63,16 @@ only when their decoration is `blocking`.
 On a fork PR, or on a `redirect` verdict, put `One summary review` first. The author then gets
 one list of changes, as in *Replies by verdict* of comment-guidelines.md.
 
-Then ask one `AskUserQuestion` with two questions. Drop an option that would post nothing. Example: drop `Only blocking issues`
-when the only blocking finding is `already raised`.
+Then ask one `AskUserQuestion` with the header `Post`: "Post these as comments on the PR?"
+Drop an option that would post nothing. Example: drop `Only blocking issues` when the only
+blocking finding is `already raised`. The options:
 
-- **Q1, header `Post`**: "Post these as comments on the PR?" The options:
-  - `Yes — post all`: one review, with a thread per finding and the summary of
-    comment-guidelines.md in its body.
-  - `One summary review`: every finding in the review body, blocking first (`--body-only`).
-  - `Only blocking issues`: the `issue (…, blocking)` and `chore (blocking)` lines, and nothing
-    else (`--blocking-only`).
-  - `No — chat only`.
+- `Yes — post all`: one review, with a thread per finding and the summary of
+  comment-guidelines.md in its body.
+- `One summary review`: every finding in the review body, blocking first (`--body-only`).
+- `Only blocking issues`: the `issue (…, blocking)` and `chore (blocking)` lines, and nothing
+  else (`--blocking-only`).
+- `No — chat only`.
 
-  With each option, the script posts a `contradicts` or `not fixed` finding as a reply into
-  its thread. It never posts a `confirms` finding, because agreement is not a comment.
-- **Q2, header `Report`**: "Write the full review report?" with the options `Yes — write it`
-  and `No`. The report goes to `<scratchpad>/pr-<number>-REVIEW.md`. It holds the summary, the
-  result, and every triaged finding with its tier, label and category. That includes the
-  findings that the Triage filter kept off the PR, marked `not posted`. The report is a
-  record for the reviewer only. Never commit or post it.
+With each option, the script posts a `contradicts` or `not fixed` finding as a reply into its
+thread. It never posts a `confirms` finding, because agreement is not a comment.

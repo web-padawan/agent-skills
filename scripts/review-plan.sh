@@ -1415,7 +1415,7 @@ if [ -n "$REPORT_DIR" ]; then
   REPORT_PR="${PR_NUMBER:-}"
   [ -z "$REPORT_PR" ] && REPORT_PR=$(printf '%s' "${PR:-}" | sed 's#.*/##')
   if [ "$MODE" = "pr" ] && [ -n "$REPORT_PR" ]; then
-    echo "report: $REPORT_DIR/pr-$REPORT_PR-REVIEW.md"
+    echo "findings: $REPORT_DIR/pr-$REPORT_PR-findings.json"
   else
     echo "report: $REPORT_DIR/$SLUG-FINDINGS.md"
   fi
