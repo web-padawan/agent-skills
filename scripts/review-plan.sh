@@ -1195,6 +1195,9 @@ if [ -n "$CONTEXT_PATH" ]; then
     if [ -n "$DIFF_FACTS" ]; then
       echo "- Diff facts (scripts/diff-facts.sh; \`reach\` counts the other packages whose sources import the module on the base):"
       printf '%s\n' "$DIFF_FACTS" | sed 's/^/    /'
+      if printf '%s\n' "$DIFF_FACTS" | grep -q '^wc_property: .*notify=true'; then
+        echo "- A \`wc_property\` with \`notify=true\` and a default fires \`<prop>-changed\` on the first update of the web component. The Flow client syncs that default while the server holds no value, so a server property listener runs once on attach with no user action. Check whether a listener of this diff fires an event or sets state for that first sync (flow-components #10596)."
+      fi
     fi
     if [ -n "$WORKFLOW_FACTS" ]; then
       echo "- Workflow (scripts/workflow-facts.sh; read each \`uses:\` action at its ref before a claim about its inputs or behavior):"

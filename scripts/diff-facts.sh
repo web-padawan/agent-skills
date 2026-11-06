@@ -2,24 +2,30 @@
 # diff-facts.sh — the facts of a diff that git alone can answer, for the passes: the
 # packages that import each changed module, the snapshots of other packages, the Flow
 # counterpart, the moved or reindented share of the diff, CSS that unit tests assert, new
-# test files, and reads of the shadow DOM of another element.
+# test files, and reads of the shadow DOM of another element. In a Flow repository (a root
+# pom.xml and no packages/ directory), it prints the web component declaration of each
+# property that the added Java lines sync, read at the pinned @NpmPackage version, instead
+# of the reach, snapshot and Flow counterpart lines.
 #
 # Usage:
-#   diff-facts.sh --base <sha> --head <sha> [--flow-dir <path>]
+#   diff-facts.sh --base <sha> --head <sha> [--flow-dir <path>] [--wc-dir <path>]
 #
 # Run it from inside the target repository. review-plan.sh calls it in both modes and
 # quotes the lines under Settled facts. pr-screen.sh takes `reach_max` for its verdict.
 # --flow-dir names the flow-components checkout. The default is ../flow-components.
+# --wc-dir names the web-components checkout. The default is ../web-components. The script
+# reads the tag v<version> there and never fetches.
 #
 # Exit codes: 0 ok · 1 git could not answer · 2 usage error.
 set -euo pipefail
 
-BASE=""; HEAD=""; FLOW_DIR=""
+BASE=""; HEAD=""; FLOW_DIR=""; WC_DIR=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --base) BASE="${2:?--base requires a value}"; shift 2 ;;
     --head) HEAD="${2:?--head requires a value}"; shift 2 ;;
     --flow-dir) FLOW_DIR="${2:?--flow-dir requires a value}"; shift 2 ;;
+    --wc-dir) WC_DIR="${2:?--wc-dir requires a value}"; shift 2 ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -30,6 +36,11 @@ done
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "error: not a git repository" >&2; exit 1; }
 cd "$REPO_ROOT"
 [ -n "$FLOW_DIR" ] || FLOW_DIR="$REPO_ROOT/../flow-components"
+[ -n "$WC_DIR" ] || WC_DIR="$REPO_ROOT/../web-components"
+# A Flow repository has no packages/*/src, so the reach, snapshot and counterpart facts
+# do not apply. It gets the web component property facts instead.
+FLOW_REPO=false
+[ -f pom.xml ] && [ ! -d packages ] && FLOW_REPO=true
 
 # ── Lanes ─────────────────────────────────────────────────────────────
 # Same test-path rule as review-plan.sh, so both scripts split the lanes alike.
@@ -142,12 +153,70 @@ if [ -n "$SRC_JS" ]; then
     }' | cut -c1-400 | sed 's/ *$//')
 fi
 
+# Web component properties that the added Java lines sync, read at the pinned version.
+# A `notify: true` property with a default fires `<prop>-changed` on its first update, and
+# the Flow client syncs the default while the server holds no value. A server listener of
+# that property then runs once with no user action (flow-components #10596, #10523).
+WC_PROPS=""; WC_SEEN=" "
+if [ "$FLOW_REPO" = true ]; then
+  for f in $(printf '%s\n' $PROD | grep '\.java$' || true); do
+    props=$(git diff -U0 --no-color "$BASE..$HEAD" -- "$f" | grep '^+' | grep -v '^+++' \
+      | grep -oE '(property *= *|[sg]etProperty(Raw)?\(|PropertyChangeListener\()"[A-Za-z][A-Za-z0-9]*"' \
+      | grep -oE '"[^"]+"' | tr -d '"' | sort -u || true)
+    [ -n "$props" ] || continue
+    npm=$(git grep -h -oE '@NpmPackage\(value *= *"@vaadin/[a-z0-9-]+", *version *= *"[^"]+"' \
+      "$HEAD" -- "$(dirname "$f")" 2>/dev/null | head -1 || true)
+    pkg=$(printf '%s' "$npm" | sed -nE 's#.*"@vaadin/([a-z0-9-]+)".*#\1#p')
+    ver=$(printf '%s' "$npm" | sed -nE 's#.*version *= *"([^"]+)".*#\1#p')
+    # A file without an @NpmPackage next to it (a TestBench element) reads the property
+    # from a test, not through a Flow sync.
+    [ -n "$pkg" ] || continue
+    for prop in $props; do
+      case "$WC_SEEN" in *" $prop "*) continue ;; esac
+      WC_SEEN="$WC_SEEN$prop "
+      tag="v$ver"
+      if ! git -C "$WC_DIR" rev-parse -q --verify "refs/tags/$tag" >/dev/null 2>&1; then
+        WC_PROPS="${WC_PROPS}wc_property: $prop -> unknown (no tag $tag in $WC_DIR)
+"; continue
+      fi
+      hit=$(git -C "$WC_DIR" grep -n -E "^[[:space:]]+$prop: \{" "$tag" -- "packages/$pkg/src/*.js" 2>/dev/null | head -1 || true)
+      [ -n "$hit" ] || hit=$(git -C "$WC_DIR" grep -n -E "^[[:space:]]+$prop: \{" "$tag" -- 'packages/*/src/*.js' 2>/dev/null | head -1 || true)
+      if [ -z "$hit" ]; then
+        WC_PROPS="${WC_PROPS}wc_property: $prop -> not declared in @vaadin/$pkg@$ver (a native, inherited or connector property)
+"; continue
+      fi
+      path=$(printf '%s' "$hit" | cut -d: -f2)
+      line=$(printf '%s' "$hit" | cut -d: -f3)
+      # The block ends at the first closing brace with the indent of the declaration.
+      attrs=$(git -C "$WC_DIR" show "$tag:$path" | awk -v s="$line" '
+        NR == s { match($0, /^[ \t]*/); ind = substr($0, 1, RLENGTH); next }
+        NR > s {
+          if (index($0, ind "}") == 1) exit
+          t = $0; gsub(/^[ \t]+|,[ \t]*$/, "", t)
+          if (t ~ /^value:/ && !v) { v = 1; sub(/^value:[ \t]*/, "", t); printf "value=%s ", substr(t, 1, 40) }
+          else if (t ~ /^type:/ && !ty) { ty = 1; sub(/^type:[ \t]*/, "", t); printf "type=%s ", t }
+          else if (t ~ /^notify: *true/) printf "notify=true "
+          else if (t ~ /^reflectToAttribute: *true/) printf "reflect=true "
+          else if (t ~ /^sync: *true/) printf "sync=true "
+        }' | sed 's/ *$//')
+      WC_PROPS="${WC_PROPS}wc_property: $prop -> @vaadin/$pkg@$ver $path:$line${attrs:+ $attrs}
+"
+    done
+  done
+fi
+
 # ── Print ─────────────────────────────────────────────────────────────
 echo "=== DIFF_FACTS ==="
-if [ -n "$REACH_LINES" ]; then printf '%s' "$REACH_LINES"; else echo "reach: no package source changed"; fi
+if [ "$FLOW_REPO" = true ]; then
+  printf '%s' "$WC_PROPS"
+else
+  if [ -n "$REACH_LINES" ]; then printf '%s' "$REACH_LINES"; else echo "reach: no package source changed"; fi
+fi
 echo "reach_max: $REACH_MAX"
-if [ "$SNAP_N" -ge 2 ]; then echo "snapshot_packages: $SNAP_N [${SNAP_PKGS% }]"; else echo "snapshot_packages: $SNAP_N"; fi
-echo "flow_counterpart: $FLOW_LINE"
+if [ "$FLOW_REPO" = false ]; then
+  if [ "$SNAP_N" -ge 2 ]; then echo "snapshot_packages: $SNAP_N [${SNAP_PKGS% }]"; else echo "snapshot_packages: $SNAP_N"; fi
+  echo "flow_counterpart: $FLOW_LINE"
+fi
 echo "diff_noise: $NOISE_N of $NOISE_TOTAL changed production lines are moved or reindented (the same text on both sides)"
 echo "css_unit_assertions: ${CSS_HITS:-none}"
 [ -n "$CSS_RULE" ] && echo "css_rule: $CSS_RULE"

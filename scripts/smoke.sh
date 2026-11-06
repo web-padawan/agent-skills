@@ -10,7 +10,8 @@
 # against a fake web-dev-server (a python3 http.server) and checks that they return through a
 # pipe, restore on SIGTERM, and leave no shell behind. Checks the review-plan.sh report dir
 # and earlier-findings list, the post-review.sh refusals, the pr-refresh.sh usage
-# refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the workflow-facts.sh facts and the dropped
+# refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the web component property
+# facts of diff-facts.sh in a Flow fixture, the workflow-facts.sh facts and the dropped
 # tests pass on a workflow-only change, and the bash-guard.py decisions. Also checks that
 # every script in this directory answers --help with exit 0.
 #
@@ -298,6 +299,36 @@ expect "diff-facts.sh lists a new test file with its size" \
   "new_test_files: packages/core/test/core.test.js (3 lines) for 5 changed production lines" "$(grep '^new_test_files:' "$WORK/diff-facts.log")"
 expect "diff-facts.sh lists a read of the shadow DOM of another element" \
   "shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" "$(grep '^shadow_reach:' "$WORK/diff-facts.log")"
+
+# A Flow repository: the diff syncs a property, and the web component checkout declares it
+# with notify and a default at the pinned tag.
+FLOWFX="$WORK/flowfx"; WCFX="$WORK/wcfx"
+git init -q -b main "$WCFX"
+(
+  cd "$WCFX" || exit 1
+  git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
+  mkdir -p packages/x/src
+  printf 'static get properties() {\n  return {\n    zoom: {\n      type: String,\n      value: %s,\n      notify: true,\n    },\n  };\n}\n' "'a'" > packages/x/src/vaadin-x.js
+  git add . && git commit -q -m wc && git tag v1.0.0
+)
+git init -q -b main "$FLOWFX"
+(
+  cd "$FLOWFX" || exit 1
+  git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
+  mkdir -p x-flow/src/main/java
+  printf '<project/>\n' > pom.xml
+  printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {}\n' > x-flow/src/main/java/X.java
+  git add . && git commit -q -m base
+  printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {\n  @Synchronize(property = "zoom", value = "zoom-changed")\n  String getZoom() { return null; }\n}\n' > x-flow/src/main/java/X.java
+  git add . && git commit -q -m change
+)
+(cd "$FLOWFX" && "$SCRIPTS/diff-facts.sh" --base "$(git rev-parse HEAD~1)" --head "$(git rev-parse HEAD)" \
+  --wc-dir "$WCFX") > "$WORK/diff-facts-flow.log" 2>&1
+expect "diff-facts.sh prints the web component declaration of a synced property" \
+  "wc_property: zoom -> @vaadin/x@1.0.0 packages/x/src/vaadin-x.js:3 type=String value='a' notify=true" \
+  "$(grep '^wc_property:' "$WORK/diff-facts-flow.log")"
+expect "diff-facts.sh prints no reach line in a Flow repository" \
+  "" "$(grep -E '^(reach|flow_counterpart):' "$WORK/diff-facts-flow.log")"
 (cd "$SCREENING_REPO" && "$SCRIPTS/review-plan.sh" --mode self --no-context --type fix) > "$WORK/diff-facts-plan.log" 2>&1
 expect "review-plan.sh quotes the diff facts in the skeleton" \
   "    shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" \
