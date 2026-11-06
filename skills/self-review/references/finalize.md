@@ -159,7 +159,7 @@ Fix the A findings, then re-run. Coverage gaps: write the test that each survivo
   on purpose leads the report. That finding questions the diff, not a line of it.
 - **Earlier findings** lists every finding of the findings file that the plan read, with
   the status that triage applied. A finding that stays open also appears under its category.
-- Never commit the report. It lives in the git-ignored path that the plan named.
+- Never commit the report. It lives in the git directory, at the path that the plan named.
 
 ## Findings file — at the plan's `findings_file:` path
 

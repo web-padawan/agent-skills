@@ -588,17 +588,13 @@ fi
 SLUG=$(printf '%s' "${BRANCH:-detached}" | tr '/' '-')
 if [ -z "$REPORT_DIR" ]; then
   case "$MODE" in
-    self) REPORT_DIR=".omc/self-review" ;;
+    # The git directory is never tracked and belongs to one worktree, so the report of
+    # each branch survives between runs without a .gitignore entry.
+    self) REPORT_DIR=$(git rev-parse --path-format=absolute --git-path self-review) ;;
     # pr mode never writes into the repo: the review record is the reviewer's own,
     # never committed or posted (the Present step of pr-review).
     pr) REPORT_DIR="SCRATCHPAD" ;;
   esac
-  # The trailing slash marks the path as a directory, so a directory-only pattern such
-  # as `.omc/` matches before the directory exists (a fresh clone or worktree).
-  if [ -n "$REPORT_DIR" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] \
-     && ! git check-ignore -q "${REPORT_DIR%%/*}/" 2>/dev/null; then
-    REPORT_DIR="SCRATCHPAD"
-  fi
 fi
 
 # ── Earlier findings ──────────────────────────────────────────────────

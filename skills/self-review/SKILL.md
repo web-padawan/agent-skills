@@ -19,7 +19,7 @@ Three rules outrank everything else:
   `git add`, `stash`, `reset --hard`, or `git clean`.
 - **This skill creates only the context file, its notes file, the patch files for a diff too
   large to inline, the findings file and the report.** The plan script writes the skeleton
-  and the patches in the git-ignored report directory that the plan names. You write the
+  and the patches in the report directory that the plan names, inside the git directory. You write the
   notes file before fan-out. You write the report only after the gate in step 6 approves it.
 
 Every finding goes in the report as `confirmed` or `accepted`.
@@ -51,11 +51,7 @@ resolve from this file. If a read fails, use
 
    The script writes the context skeleton at the `context:` path from the plan. For a large
    diff, the script also writes the patch files that `diff_prod:` and `diff_tests:` name.
-   **Never redirect a `git diff` yourself.** The diff must not pass through your context. When
-   the plan prints `report_dir: SCRATCHPAD`, the script does not write the skeleton, because
-   the default `.omc/` is not git-ignored here. In that case, re-run with
-   `--report-dir <scratchpad>/self-review` so that the context, patches and report all land
-   there.
+   **Never redirect a `git diff` yourself.** The diff must not pass through your context.
 2. **Write the notes file.** Write it with Write at the `notes:` path from the plan, per
    pipeline.md §2. It holds:
    - Settled facts that you verified beyond the skeleton, at a call or two each. Examples are
@@ -74,8 +70,7 @@ resolve from this file. If a read fails, use
    Delete the files that the pass created, by path. Keep only the output of the pass as
    findings.
 
-   The context, notes and patch files live in the git-ignored report directory, so they
-   never appear here. Leave every pre-existing untracked file alone.
+   The context, notes and patch files live in the git directory, so they never appear here. Leave every pre-existing untracked file alone.
 5. **Roll call, triage, then the next round.** Do the roll call and triage per pipeline.md,
    in that order. Then read the `round: <k> of <n>` line of the plan:
    - When k is less than n and this round added a confirmed A or B finding, write the

@@ -196,20 +196,20 @@ check "float-to-tip.sh refuses a dirty tree" 2 \
 git checkout -q -- a.txt
 
 echo "== review-plan.sh"
-printf '.omc/\n' >> .git/info/exclude
 git remote add origin "$REPO" && git fetch -q origin main
-expect "review-plan.sh keeps an ignored report dir that does not exist yet" \
-  "report_dir: .omc/self-review" \
+SELF_DIR=$(git rev-parse --path-format=absolute --git-path self-review)
+expect "review-plan.sh puts the self-review report dir in the git directory" \
+  "report_dir: $SELF_DIR" \
   "$("$SCRIPTS/review-plan.sh" --mode self --no-context --no-write 2>/dev/null | grep '^report_dir:')"
-mkdir -p .omc/self-review
+mkdir -p "$SELF_DIR"
 jq -n --arg head "$(git rev-parse HEAD)" '{branch: "feature", head: $head, round: 1, findings: [
   {id: "F1", round: 1, category: "logic", tier: "B", status: "open", file: "a.txt", line: 2,
    claim: "kept claim", merged: [{file: "a.txt", line: 3, claim: "merged claim"}]}]}' \
-  > .omc/self-review/feature-findings.json
+  > "$SELF_DIR/feature-findings.json"
 "$SCRIPTS/review-plan.sh" --mode self --no-context > "$WORK/plan.log" 2>&1
 expect "review-plan.sh lists a merged finding with the finding that kept it" \
   "- F1 | open | logic | a.txt:2 | B | kept claim Merged: a.txt:3 merged claim" \
-  "$(grep '^- F1 ' .omc/self-review/context.md 2>/dev/null)"
+  "$(grep '^- F1 ' "$SELF_DIR/context.md" 2>/dev/null)"
 
 echo "== post-review.sh"
 # shellcheck source=lib/conventional-label.sh
@@ -264,7 +264,6 @@ git init -q -b main "$SCREENING_REPO"
   done
   git add . && git commit -q -m base
   git update-ref refs/remotes/origin/main HEAD
-  printf '.omc/\n' >> .git/info/exclude
   git checkout -q -b feature
   printf 'export const M = 2;\nconst b = child.$.button;\n' > packages/core/src/vaadin-core-mixin.js
   printf ':host { color: blue; }\n' > packages/core/src/vaadin-core-styles.css
@@ -337,7 +336,7 @@ expect "diff-facts.sh prints the first-sync rule of a notify property" 1 \
 (cd "$SCREENING_REPO" && "$SCRIPTS/review-plan.sh" --mode self --no-context --type fix) > "$WORK/diff-facts-plan.log" 2>&1
 expect "review-plan.sh quotes the diff facts in the skeleton" \
   "    shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" \
-  "$(grep '^    shadow_reach:' "$SCREENING_REPO/.omc/self-review/context.md" 2>/dev/null)"
+  "$(grep '^    shadow_reach:' "$SCREENING_REPO/.git/self-review/context.md" 2>/dev/null)"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
   --meta "$WORK/screening-meta.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening.log" 2>&1
 expect "pr-screen.sh replays the labels to --as-of" \
