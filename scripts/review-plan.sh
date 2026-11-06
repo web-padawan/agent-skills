@@ -1415,7 +1415,9 @@ if [ -n "$REPORT_DIR" ]; then
   REPORT_PR="${PR_NUMBER:-}"
   [ -z "$REPORT_PR" ] && REPORT_PR=$(printf '%s' "${PR:-}" | sed 's#.*/##')
   if [ "$MODE" = "pr" ] && [ -n "$REPORT_PR" ]; then
-    echo "findings: $REPORT_DIR/pr-$REPORT_PR-findings.json"
+    # The findings file sits beside the context file, which pr-review writes to its scratchpad.
+    FINDINGS_DIR="$REPORT_DIR"; [ -n "$CONTEXT_PATH" ] && FINDINGS_DIR=$(dirname "$CONTEXT_PATH")
+    echo "findings: $FINDINGS_DIR/pr-$REPORT_PR-findings.json"
   else
     echo "report: $REPORT_DIR/$SLUG-FINDINGS.md"
   fi
