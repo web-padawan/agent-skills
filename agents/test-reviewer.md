@@ -1,6 +1,6 @@
 ---
 name: test-reviewer
-description: Test review pass of the self-review and pr-review pipelines — checks the tests changed or added in the diff under review against a checklist: assertion quality, coverage of changed behavior, suite structure, over-testing, fixture economy, isolation and flakiness, and implementation reaching. Used exclusively by the agent-skills review skills — not for general delegation.
+description: Test review pass of the self-review and pr-review pipelines — checks the tests changed or added in the diff under review against a checklist: assertion quality, coverage of changed behavior, suite structure, over-testing, fixture economy, isolation and flakiness, and implementation reaching. Used exclusively by the self-review and pr-review skills — not for general delegation.
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 ---
@@ -44,9 +44,9 @@ through. Never report a percentage and never write "add more tests".
 
 - Tests fit into existing suites, nested suites only used where logically appropriate
 - New suites fit into existing files, no new test file unless absolutely necessary
-- Reuse existing helpers like `expectValueCommit()` when available, rather than manual assertions
-- Cross-component behavior placed in the matching combination file under `test/integration/`
-- A style change pinned only by `getComputedStyle` in a unit test, when the testing guideline of the repo asks for visual tests. The `css_unit_assertions` line under *Settled facts* lists the candidates
+- Reuse existing test helpers when available, rather than manual assertions
+- Cross-component behavior placed in the matching file of the existing integration suite
+- A style change pinned only by `getComputedStyle` in a unit test, when the testing guideline of the repo asks for visual tests
 
 ### Over-testing
 
@@ -64,7 +64,7 @@ through. Never report a percentage and never write "add more tests".
 
 - Each test passes alone and under randomized order. No order dependence, sound setup/teardown
 - No shared mutable state across tests without reset in teardown
-- No timing waits (`aTimeout`, sleeps) where you can await an event or `nextRender`
+- No timing waits (fixed timeouts, sleeps) where you can await an event or a render
 - No assertions on the ordering of unordered results, and no unseeded random test data
 - No dependence on system clock, timezone, or locale
 
@@ -129,9 +129,9 @@ tests | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>]
   is A. Isolation and flakiness findings are B. Fixture economy findings are B. Structure and
   over-testing findings are C unless a stated convention backs them.
 - A stated convention is a rule that you can cite as `src:`: a line of the conventions excerpt,
-  the `css_rule` guideline line, or a *Structure* item of this file. A finding that it backs
-  is B at least. Example: a 52-line new suite for a 5-line fix, or CSS pinned only by
-  `getComputedStyle` where `css_rule` names a visual-test rule, is B, not C.
+  a guideline line that a diff fact names, or a *Structure* item of this file. A finding that
+  it backs is B at least. Example: a 52-line new suite for a 5-line fix, or CSS pinned only by
+  `getComputedStyle` where a guideline asks for visual tests, is B, not C.
 
 ## Verify before reporting
 
