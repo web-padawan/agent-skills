@@ -70,7 +70,7 @@ mkdir -p "$WORK"
 echo "work: $WORK"
 
 echo "== help"
-for f in "$SCRIPTS"/*.sh; do
+for f in "$SCRIPTS"/*.sh "$SCRIPTS"/facts/*.sh; do
   case "$(basename "$f")" in smoke.sh) continue ;; esac
   check "$(basename "$f") --help" 0 "$f" --help
 done
@@ -286,8 +286,8 @@ cat > "$WORK/screening-meta.json" <<'EOF'
 EOF
 SCREENING_BASE=$(git -C "$SCREENING_REPO" rev-parse HEAD~1)
 SCREENING_HEAD=$(git -C "$SCREENING_REPO" rev-parse HEAD)
-(cd "$SCREENING_REPO" && "$SCRIPTS/diff-facts.sh" --base "$SCREENING_BASE" --head "$SCREENING_HEAD" \
-  --flow-dir "$WORK/none") > "$WORK/diff-facts.log" 2>&1
+(cd "$SCREENING_REPO" && REVIEW_FLOW_DIR="$WORK/none" "$SCRIPTS/diff-facts.sh" --base "$SCREENING_BASE" \
+  --head "$SCREENING_HEAD") > "$WORK/diff-facts.log" 2>&1
 expect "diff-facts.sh counts three importing packages" \
   "reach: packages/core/src/vaadin-core-mixin.js -> 3 other packages [a b c]" \
   "$(grep '^reach: packages/core/src/vaadin-core-mixin.js' "$WORK/diff-facts.log")"
@@ -299,6 +299,8 @@ expect "diff-facts.sh lists a new test file with its size" \
   "new_test_files: packages/core/test/core.test.js (3 lines) for 5 changed production lines" "$(grep '^new_test_files:' "$WORK/diff-facts.log")"
 expect "diff-facts.sh lists a read of the shadow DOM of another element" \
   "shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" "$(grep '^shadow_reach:' "$WORK/diff-facts.log")"
+expect "diff-facts.sh prints the rule of the shadow DOM read" 1 \
+  "$(grep -c '^rule: Each `shadow_reach` entry' "$WORK/diff-facts.log")"
 
 # A Flow repository: the diff syncs a property, and the web component checkout declares it
 # with notify and a default at the pinned tag.
@@ -322,13 +324,15 @@ git init -q -b main "$FLOWFX"
   printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {\n  @Synchronize(property = "zoom", value = "zoom-changed")\n  String getZoom() { return null; }\n}\n' > x-flow/src/main/java/X.java
   git add . && git commit -q -m change
 )
-(cd "$FLOWFX" && "$SCRIPTS/diff-facts.sh" --base "$(git rev-parse HEAD~1)" --head "$(git rev-parse HEAD)" \
-  --wc-dir "$WCFX") > "$WORK/diff-facts-flow.log" 2>&1
+(cd "$FLOWFX" && REVIEW_WC_DIR="$WCFX" "$SCRIPTS/diff-facts.sh" --base "$(git rev-parse HEAD~1)" \
+  --head "$(git rev-parse HEAD)") > "$WORK/diff-facts-flow.log" 2>&1
 expect "diff-facts.sh prints the web component declaration of a synced property" \
   "wc_property: zoom -> @vaadin/x@1.0.0 packages/x/src/vaadin-x.js:3 type=String value='a' notify=true" \
   "$(grep '^wc_property:' "$WORK/diff-facts-flow.log")"
 expect "diff-facts.sh prints no reach line in a Flow repository" \
   "" "$(grep -E '^(reach|flow_counterpart):' "$WORK/diff-facts-flow.log")"
+expect "diff-facts.sh prints the first-sync rule of a notify property" 1 \
+  "$(grep -c '^rule: A `wc_property` with `notify=true`' "$WORK/diff-facts-flow.log")"
 (cd "$SCREENING_REPO" && "$SCRIPTS/review-plan.sh" --mode self --no-context --type fix) > "$WORK/diff-facts-plan.log" 2>&1
 expect "review-plan.sh quotes the diff facts in the skeleton" \
   "    shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" \

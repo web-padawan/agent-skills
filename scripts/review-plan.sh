@@ -16,7 +16,7 @@
 # When a file under .github/workflows/ changed, it prints the `workflow:` facts of
 # scripts/workflow-facts.sh. When no test, code or binary file changed, it drops the tests pass.
 #
-# It prints the diff facts of scripts/diff-facts.sh in both modes.
+# It prints the diff facts of scripts/diff-facts.sh and its fact packs in both modes.
 # In pr mode it also prints the screening facts of scripts/pr-screen.sh, and `fork:`. A fork
 # PR turns off the revert check and ab.sh (hints), keeps reuse and maintainability in the
 # code pass, and writes the fork marker that scripts/hooks/bash-guard.py reads. A pr-mode
@@ -1201,11 +1201,8 @@ if [ -n "$CONTEXT_PATH" ]; then
       echo "- CI: not gathered — lint and test state is unknown, not clean."
     fi
     if [ -n "$DIFF_FACTS" ]; then
-      echo "- Diff facts (scripts/diff-facts.sh; \`reach\` counts the other packages whose sources import the module on the base):"
+      echo "- Diff facts (scripts/diff-facts.sh and its fact packs; a \`rule:\` line tells you how to judge the fact lines above it):"
       printf '%s\n' "$DIFF_FACTS" | sed 's/^/    /'
-      if printf '%s\n' "$DIFF_FACTS" | grep -q '^wc_property: .*notify=true'; then
-        echo "- A \`wc_property\` with \`notify=true\` and a default fires \`<prop>-changed\` on the first update of the web component. The Flow client syncs that default while the server holds no value, so a server property listener runs once on attach with no user action. Check whether a listener of this diff fires an event or sets state for that first sync (flow-components #10596)."
-      fi
     fi
     if [ -n "$WORKFLOW_FACTS" ]; then
       echo "- Workflow (scripts/workflow-facts.sh; read each \`uses:\` action at its ref before a claim about its inputs or behavior):"

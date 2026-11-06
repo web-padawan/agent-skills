@@ -67,7 +67,9 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `post-review.sh` | All selected findings as one PR review: line, then file, then body anchors |
 | `review-plan.sh` | The review plan and the context file of the pipeline |
 | `pr-screen.sh` | The screening facts of a PR: author, linked issue, labels, verdict hint |
-| `diff-facts.sh` | The git-only facts of a diff: reach, Flow counterpart, diff noise, CSS unit assertions, new test files, shadow DOM reads |
+| `diff-facts.sh` | The git-only facts of a diff: diff noise, new test files, and the facts of each fact pack |
+| `facts/web-components.sh` | Fact pack of a web component monorepo: reach, Flow counterpart, CSS unit assertions, shadow DOM reads |
+| `facts/flow-components.sh` | Fact pack of a Flow repository: the web component declaration of each synced property |
 | `get-pr-context.sh` | PR metadata, anchor SHAs, CI state and diffs for `review-plan.sh` |
 | `dev-server.sh` | Start, check, restart or stop `web-dev-server` on one port |
 | `test-summary.sh` | One line per test suite, with the names of failing tests |
