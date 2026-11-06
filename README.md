@@ -55,6 +55,28 @@ Restart the session so that the skills load.
 
 `docs/` holds the design history. No skill loads it.
 
+The two review skills need only these files. Copy them together to move the skills to
+another plugin:
+
+- `skills/pr-review/`, `skills/self-review/`
+- `agents/change-reviewer.md`, `agents/code-reviewer.md`, `agents/test-reviewer.md`
+- `references/`, `docs/rationale.md`
+- `hooks/hooks.json`, `scripts/hooks/bash-guard.py`
+- `scripts/review-plan.sh`, `scripts/get-pr-context.sh`, `scripts/gh-context.sh`,
+  `scripts/diff-facts.sh`, `scripts/workflow-facts.sh`, `scripts/pr-screen.sh`,
+  `scripts/pr-refresh.sh`, `scripts/post-review.sh`, `scripts/post-comment.sh`,
+  `scripts/ab.sh`, `scripts/dev-server.sh`, `scripts/lib/`
+- the review sections of `scripts/smoke.sh`
+
+These files are optional. Copy them only to review a Vaadin repository:
+
+- `scripts/facts/web-components.sh`, `scripts/facts/flow-components.sh`
+- `config/screening/vaadin.json`
+
+Other skills share three of these files. `comment-cleanup` reads `references/comments.md`,
+`work-summary` calls `gh-context.sh`, and `refactor-component` calls `ab.sh`. Keep a copy of
+each one in this plugin.
+
 ## Scripts
 
 Run each script from inside the target repository. Each one prints its usage with `--help`.
