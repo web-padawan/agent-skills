@@ -45,7 +45,9 @@ The change type shifts where the A line sits. Apply these rules on top of the ru
 
 - **feature**: anything in the new public surface that a later fix could not correct without a
   breaking change is A. That includes naming, defaults, event or data shape, and missing a11y
-  wiring. A stated requirement with no implementation is A. Internal debt stays B.
+  wiring. A stated requirement with no implementation is A. Internal debt stays B. Code that
+  contradicts a promise that the PR adds to the Javadoc is A, also on an experimental
+  component.
 - **fix**: a symptom-only fix is A. A missing or non-failing regression test is A. The same
   bug left in place elsewhere (blast radius) is A when the sibling is released. It is B when
   the sibling is not reachable yet. A fix that reverses a behavior that an existing test
