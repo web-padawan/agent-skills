@@ -69,7 +69,8 @@ nits after the passes report them.
 <!-- block:settled-header -->
 > Each entry is authoritative. Do not open the file that it came from. If a finding of yours
 > requires an entry to be wrong, report that as a finding with your reasoning. Use one line
-> and no re-investigation.
+> and no re-investigation. A `rule:` line tells you how to judge the fact lines above it.
+> Apply each rule that bears on your checklist.
 <!-- /block -->
 
 <!-- block:existing-comments-header -->
