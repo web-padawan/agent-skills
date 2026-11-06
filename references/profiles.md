@@ -20,14 +20,17 @@ The `reads` column is the **whole diff input** of the pass. `prod` is the prepar
 production patch. `tests` is the prepared test patch. `both` is both patches.
 `prod+comments` is the production patch plus the plan's `comment_files`, diffed directly.
 
+The `agent` column holds the bare agent name. The plan script reads the plugin name from
+`.claude-plugin/plugin.json` and prints `<plugin name>:<agent>` as the `subagent_type`.
+
 A pass never reads a patch outside its lane. A pass never regenerates a patch with
 `git diff` (pipeline.md §2, *Read discipline*).
 
 | id | agent | reads | prompt adds |
 | --- | --- | --- | --- |
-| change | agent-skills:change-reviewer | prod | the change type; the plan's `type_conflict` line, when it is not `none`; the plan's `deep` budget (`deep budget N`) |
-| code | agent-skills:code-reviewer | prod+comments | in `pr` mode on a same-repo PR, `no reuse/maintainability nits`. Both need the author's judgment and a local checkout, so they stay in `self`. A fork PR keeps both: its author is outside the team, so the review gives the team judgment |
-| tests | agent-skills:test-reviewer | both | — |
+| change | change-reviewer | prod | the change type; the plan's `type_conflict` line, when it is not `none`; the plan's `deep` budget (`deep budget N`) |
+| code | code-reviewer | prod+comments | in `pr` mode on a same-repo PR, `no reuse/maintainability nits`. Both need the author's judgment and a local checkout, so they stay in `self`. A fork PR keeps both: its author is outside the team, so the review gives the team judgment |
+| tests | test-reviewer | both | — |
 
 ## Matrix
 

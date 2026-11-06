@@ -92,11 +92,14 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
 PROFILES="$PLUGIN_ROOT/references/profiles.md"
 [ -f "$PROFILES" ] || { echo "error: profile matrix not found at $PROFILES" >&2; exit 1; }
+# The plugin name prefixes each agent in profiles.md and names the fork marker directory.
+PLUGIN_NAME=$(jq -r '.name // empty' "$PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null || true)
+[ -n "$PLUGIN_NAME" ] || { echo "error: no plugin name in $PLUGIN_ROOT/.claude-plugin/plugin.json" >&2; exit 1; }
 # shellcheck source=lib/pr-history.sh
 . "$SCRIPT_DIR/lib/pr-history.sh"
 # The fork marker: scripts/hooks/bash-guard.py reads it and holds the reviewer passes to
 # read-only commands while a fork review runs. It expires on its own (bash-guard.py).
-FORK_MARKER="${XDG_CACHE_HOME:-$HOME/.cache}/agent-skills/fork-review"
+FORK_MARKER="${XDG_CACHE_HOME:-$HOME/.cache}/$PLUGIN_NAME/fork-review"
 
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "error: not a git repository" >&2; exit 1; }
 cd "$REPO_ROOT"
@@ -415,14 +418,14 @@ matrix_row() {
   ' "$PROFILES"
 }
 
-pass_agent() {
-  awk -F'|' -v id="$1" '
+pass_agent() {  # pass_agent <id> — the agent with the plugin prefix, the reads, the prompt adds
+  awk -F'|' -v id="$1" -v plugin="$PLUGIN_NAME" '
     /^## Passes/ { in_passes = 1; next }
     /^## / { in_passes = 0 }
     !in_passes || NF < 6 { next }
     {
       for (i = 2; i <= 5; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
-      if ($2 == id) { print $3 "\t" $4 "\t" $5; exit }
+      if ($2 == id) { print plugin ":" $3 "\t" $4 "\t" $5; exit }
     }
   ' "$PROFILES"
 }

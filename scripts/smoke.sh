@@ -486,7 +486,8 @@ guard() {  # guard <agent> <mode> <command> — prints deny or allow
   jq -cn --arg a "$1" --arg c "$3" '{tool_name: "Bash", agent_type: $a, tool_input: {command: $c}}' \
     | python3 -I "$GUARD" --mode "$2" | grep -q '"permissionDecision": "deny"' && echo deny || echo allow
 }
-R=agent-skills:change-reviewer
+PLUGIN_NAME=$(jq -r .name "$SCRIPTS/../.claude-plugin/plugin.json")
+R="$PLUGIN_NAME:change-reviewer"
 expect "bash-guard.py allows git show in a fork review" allow "$(guard $R fork 'git show abc123:a.js | head -5')"
 expect "bash-guard.py denies a redirect to a file" deny "$(guard $R same 'grep -rn x src > out.txt')"
 expect "bash-guard.py denies git checkout" deny "$(guard $R same 'git checkout -- a.js')"
@@ -495,6 +496,11 @@ expect "bash-guard.py allows a test run on an own branch" allow "$(guard $R same
 expect "bash-guard.py denies a test run in a fork review" deny "$(guard $R fork 'yarn test --group core')"
 expect "bash-guard.py denies command substitution in a fork review" deny "$(guard $R fork 'echo $(id)')"
 expect "bash-guard.py leaves other agents alone" allow "$(guard general-purpose fork 'rm -rf x')"
+expect "bash-guard.py leaves a reviewer of another plugin alone" allow "$(guard other-plugin:code-reviewer same 'rm -rf x')"
+(cd "$SCREENING_REPO" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type fix) > "$WORK/prefix-plan.log" 2>&1
+expect "review-plan.sh prefixes each agent with the plugin name" \
+  "$R" \
+  "$(awk '$1 == "change" && /reads:/ { print $2 }' "$WORK/prefix-plan.log")"
 
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"

@@ -3,7 +3,8 @@
 
 Registered in hooks/hooks.json. Claude Code sends the hook payload on stdin. The payload
 names the calling subagent in `agent_type`. The guard acts only on the three reviewer
-agents of this plugin and returns no decision for every other caller.
+agents of this plugin, `<plugin name>:<pass>-reviewer`, and returns no decision for every
+other caller. The plugin name comes from .claude-plugin/plugin.json.
 
 Two modes:
   same  the default. Deny commands that write: file writes, redirects to a file, write
@@ -26,9 +27,22 @@ import shlex
 import sys
 import time
 
-AGENTS = re.compile(r"^agent-skills:(change|code|test)-reviewer$")
+def plugin_name():
+    """The name in .claude-plugin/plugin.json, or None when the file cannot be read."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",
+                        ".claude-plugin", "plugin.json")
+    try:
+        with open(path) as f:
+            return json.load(f).get("name") or None
+    except (OSError, ValueError):
+        return None
+
+
+PLUGIN = plugin_name()
+# Without a plugin name, the guard acts on a reviewer agent of any plugin. It never fails open.
+AGENTS = re.compile("^" + (re.escape(PLUGIN) if PLUGIN else "[^:]+") + ":(change|code|test)-reviewer$")
 MARKER = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"),
-                      "agent-skills", "fork-review")
+                      PLUGIN or "review-pipeline", "fork-review")
 MARKER_TTL = 3 * 3600
 
 READ = {
