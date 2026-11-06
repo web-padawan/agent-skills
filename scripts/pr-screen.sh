@@ -5,11 +5,13 @@
 #
 # Usage:
 #   pr-screen.sh --pr <number-or-url> [--reach-max <n>] [--as-of <iso-time>] [--meta <file.json>]
-#                [--config <file.json>]
+#                [--config <file.json>] [--scale trivial|lite|full]
 #
 # Run it from inside the target repository. review-plan.sh calls it in pr mode.
 # --reach-max is the `reach_max` of scripts/diff-facts.sh: the most other packages that
 #   import one changed module. A fact pack prints it. Two rules read it. The default is 0.
+# --scale is the scale tier of the plan. It picks the `gate_default:` option of a `take`
+#   verdict. The default is full.
 # --as-of reads the labels, the state and the comments of each issue as they were at that
 #   time. An audit of an earlier head needs it: a maintainer often labels an issue during
 #   the review (#11746 got `behavior altering change` 16 days after the PR).
@@ -44,7 +46,7 @@ set -euo pipefail
 
 REACH_DECIDE=3
 
-PR=""; REACH_MAX=0; AS_OF=""; META_FILE=""; CONFIG=""
+PR=""; REACH_MAX=0; AS_OF=""; META_FILE=""; CONFIG=""; SCALE="full"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
@@ -52,6 +54,7 @@ while [[ $# -gt 0 ]]; do
     --as-of) AS_OF="${2:?--as-of requires a value}"; shift 2 ;;
     --meta) META_FILE="${2:?--meta requires a value}"; shift 2 ;;
     --config) CONFIG="${2:?--config requires a value}"; shift 2 ;;
+    --scale) SCALE="${2:?--scale requires a value}"; shift 2 ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -63,6 +66,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 [ -n "$PR" ] || { echo "error: --pr is required" >&2; exit 2; }
 [[ "$REACH_MAX" =~ ^[0-9]+$ ]] || { echo "error: --reach-max takes a number" >&2; exit 2; }
+case "$SCALE" in trivial|lite|full) ;; *) echo "error: --scale takes trivial, lite or full" >&2; exit 2 ;; esac
 if [ -n "$AS_OF" ] && ! valid_iso "$AS_OF"; then
   echo "error: --as-of takes an ISO 8601 UTC time, for example 2026-10-03T08:11:25Z" >&2; exit 2
 fi
@@ -230,4 +234,11 @@ echo "issue_flags: ${FLAGS:-none}"
 [ -n "$SKIPPED" ] && echo "skipped_flags: $SKIPPED (team author)"
 [ -n "$BREAKING" ] && echo "breaking_marker: $BREAKING"
 echo "verdict_hint: $VERDICT"
+# The first option of the pr-review Gate for the hint (skills/pr-review/SKILL.md, Gate).
+case "$VERDICT" in
+  take) if [ "$SCALE" = trivial ]; then GATE="Quick review"; else GATE="Full review"; fi ;;
+  review) GATE="Full review" ;;
+  *) GATE="Draft a reply" ;;
+esac
+echo "gate_default: $GATE"
 printf '%s' "$REASONS"

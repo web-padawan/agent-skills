@@ -345,6 +345,8 @@ expect "pr-screen.sh counts a former employee as team" \
   "issue: #7 open labels=[Impact: Low, bug] author=team age=31d comments=0" "$(grep '^issue:' "$WORK/screening.log")"
 expect "pr-screen.sh proposes a decision for a low-impact change with a wide reach" \
   "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/screening.log")"
+expect "pr-screen.sh proposes a reply at the gate for a decide verdict" \
+  "gate_default: Draft a reply" "$(grep '^gate_default:' "$WORK/screening.log")"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
   --meta "$WORK/screening-meta.json") > "$WORK/screening-now.log" 2>&1
 expect "pr-screen.sh reads the current labels without --as-of" \
@@ -372,6 +374,10 @@ expect "pr-screen.sh lists the contributor flags it skipped for a team author" \
   "skipped_flags: self-filed feature-no-ac (team author)" "$(grep '^skipped_flags:' "$WORK/screening-feat-team.log")"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 \
   --meta "$WORK/screening-feat.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-generic.log" 2>&1
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --scale trivial \
+  --meta "$WORK/screening-feat.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-trivial.log" 2>&1
+expect "pr-screen.sh proposes a quick review for a trivial take verdict" \
+  "gate_default: Quick review" "$(grep '^gate_default:' "$WORK/screening-trivial.log")"
 expect "pr-screen.sh applies only the generic rules without a config" \
   "issue_flags: none|verdict_hint: take" \
   "$(grep '^issue_flags:' "$WORK/screening-generic.log")|$(grep '^verdict_hint:' "$WORK/screening-generic.log")"

@@ -555,7 +555,7 @@ fi
 # the flags and the verdict hint. Only the plan prints it. The passes never learn the bar.
 SCREENING=""
 if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ "$WANT_CONTEXT" = true ]; then
-  SCREENING_ARGS=(--pr "$PR" --reach-max "$REACH_MAX")
+  SCREENING_ARGS=(--pr "$PR" --reach-max "$REACH_MAX" --scale "$SCALE")
   [ -n "$AS_OF" ] && SCREENING_ARGS+=(--as-of "$AS_OF")
   SCREENING=$("$SCRIPT_DIR/pr-screen.sh" "${SCREENING_ARGS[@]}" 2>&1 | sed '/^=== SCREENING ===$/d') \
     || SCREENING="error: pr-screen.sh failed — $(printf '%s' "$SCREENING" | tail -1)"
