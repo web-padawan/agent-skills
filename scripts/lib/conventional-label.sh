@@ -9,7 +9,7 @@
 
 CC_LABELS='nitpick|suggestion|issue|todo|question|thought|chore|note'
 CC_CATEGORIES='scope|behavior|fix|boundary|api|impact|logic|conventions|reuse|maintainability|comments|tests'
-CC_ROUTES='a11y|design|semver|flow'
+CC_ROUTES='a11y|design|semver|parity'
 CC_MODIFIERS='blocking|non-blocking|if-minor'
 
 check_conventional_label() {
@@ -20,7 +20,7 @@ check_conventional_label() {
     return 0
   fi
   echo "error: the message must open with a bold Conventional Comments label, e.g. '**issue (behavior, blocking):** <claim>'" >&2
-  echo "hint: labels: ${CC_LABELS//|/ } · decorations: a pipeline category, a11y/design/semver/flow, blocking/non-blocking/if-minor (at most two) · pass --no-label for a reply or the summary comment" >&2
+  echo "hint: labels: ${CC_LABELS//|/ } · decorations: a pipeline category, a11y/design/semver/parity, blocking/non-blocking/if-minor (at most two) · pass --no-label for a reply or the summary comment" >&2
   echo "got: $first" >&2
   return 1
 }

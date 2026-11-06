@@ -46,8 +46,7 @@ The change type shifts where the A line sits. Apply these rules on top of the ru
 - **feature**: anything in the new public surface that a later fix could not correct without a
   breaking change is A. That includes naming, defaults, event or data shape, and missing a11y
   wiring. A stated requirement with no implementation is A. Internal debt stays B. Code that
-  contradicts a promise that the PR adds to the Javadoc is A, also on an experimental
-  component.
+  contradicts a promise that the PR adds to the API doc is A, also on an experimental API.
 - **fix**: a symptom-only fix is A. A missing or non-failing regression test is A. The same
   bug left in place elsewhere (blast radius) is A when the sibling is released. It is B when
   the sibling is not reachable yet. A fix that reverses a behavior that an existing test
@@ -108,14 +107,14 @@ the tier and category. Nothing downstream picks a label from the tier again.
 | confirmed B or C, the one-line fix is the whole change | `todo` | `(<category>)` |
 | confirmed C | `nitpick` | none, non-blocking by nature |
 | any tier, key claim `unverified` | `question` | `(<category>)` |
-| routed to a human: AT verdict, design intent, semver call, Flow parity | `question` | `(a11y)` · `(design)` · `(semver)` · `(flow)` |
+| routed to a human: AT verdict, design intent, semver call, parity with a wrapper or binding | `question` | `(a11y)` · `(design)` · `(semver)` · `(parity)` |
 | a process step, not a code change: a `.d.ts` entry, a dev page, a companion PR | `chore` | `(blocking)` when merge depends on it |
 | a concern that pre-dates the diff, worth a follow-up issue | `thought` | none |
 
 Rules that accompany the table:
 
 - **Closed vocabulary.** The labels above. The twelve pipeline categories as the first
-  decoration. `a11y` / `design` / `semver` / `flow` on a routed question. `blocking`,
+  decoration. `a11y` / `design` / `semver` / `parity` on a routed question. `blocking`,
   `non-blocking`, `if-minor`. Nothing else, and never more than two decorations.
 - **`issue` versus `suggestion` versus `nitpick` on a B or C** is the cascade test: does the
   finding change what a downstream consumer gets, or is it only how you prefer to write it?
@@ -123,14 +122,14 @@ Rules that accompany the table:
 - **A `question` is worded as one.** The subject asks. The discussion says what you checked and
   what you could not check. An unverified claim never posts as an assertion.
 - **A routed `question` names the owner or the test**: the AT × browser matrix, the theme to
-  check, the Flow API that it must match. It concludes nothing.
+  check, the wrapper API that it must match. It concludes nothing.
 - **`if-minor`** only on a B `suggestion` whose fix could balloon past its one-line
   description. Otherwise `non-blocking`.
 - **Every `issue` pairs with its fix**: the one-line fix from the frozen list is the discussion.
 - **An `issue` needs a source that contradicts the diff**: a test, a convention, an API doc,
   the pre-change code, or a measurement. Without one, the finding renders as a `question` or
   a `nitpick`. The review verifies, and the maintainer decides.
-- **No `praise`.** The team found it noise, and praise has its own channel at Vaadin. When an
+- **No `praise`.** The team found it noise, and praise has its own channel in the team. When an
   external PR looks good, the reviewer may write a praise comment by hand.
 - The tier letters stay in chat, the findings report and the review record. A PR reader sees
   the label and decoration. Those say the same thing in words that the reader already knows.
