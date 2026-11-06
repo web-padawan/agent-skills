@@ -114,7 +114,10 @@ Severity: <A|B|C, the highest tier of the finding lines that this block backs | 
   siblings. Never guess them. An unnamed consumer list makes the severity unjustifiable in
   either direction. On a PR, the `reach` lines under *Settled facts* list the packages that
   import each changed module on the base. Start there. A `flow_counterpart` line names the
-  Flow wrapper, which is a consumer of every changed default, event and data path.
+  Flow wrapper, which is a consumer of every changed default, event and data path. In a Flow
+  repository, a `wc_property` line gives the web component declaration of a synced property.
+  With `notify=true` and a default, the first update syncs the default to the server. Check
+  whether a listener of the diff fires an event for that sync (flow-components #10596).
 - Write `Promise` from the side of the consumer: "the `opened` property can be set before the
   element is attached", not "we moved the listener". A promise that nobody could state in one
   sentence is usually an accidental one. That accident is itself the finding.
