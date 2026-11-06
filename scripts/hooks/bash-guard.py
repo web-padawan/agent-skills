@@ -33,9 +33,10 @@ def plugin_name():
                         ".claude-plugin", "plugin.json")
     try:
         with open(path) as f:
-            return json.load(f).get("name") or None
-    except (OSError, ValueError):
+            name = json.load(f).get("name")
+    except (OSError, ValueError, AttributeError):
         return None
+    return name if isinstance(name, str) and name else None
 
 
 PLUGIN = plugin_name()
@@ -268,7 +269,7 @@ def main():
         payload = json.load(sys.stdin)
     except ValueError:
         return
-    if payload.get("tool_name") != "Bash":
+    if not isinstance(payload, dict) or payload.get("tool_name") != "Bash":
         return
     if not AGENTS.match(payload.get("agent_type") or ""):
         return
