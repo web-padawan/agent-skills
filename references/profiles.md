@@ -51,7 +51,7 @@ uncapped**. Deep blocks: **trivial 1, lite 2, full uncapped**. Rounds: **trivial
 full uncapped**. `--rounds N` overrides the rounds budget outright.
 
 A **round** is one fan-out of the passes. One round does not find everything in a large
-feature. On four pdf-viewer feature branches, a second round on the same head found 61 new
+feature. On four feature branches of vaadin/web-components, a second round on the same head found 61 new
 findings after 92 in the first, 19 of them B. A further round lists the findings of the
 earlier rounds as reported, so the passes look for what they missed (self-review step 5).
 
@@ -69,7 +69,7 @@ config or doc change gives that pass no subject. The plan prints `passes_dropped
 override still raises the scale of the other passes.
 
 A fork PR (`fork: true` in the plan) keeps a deep budget of at least 1. Its author is outside
-the team, so the consumer trace of the top change belongs to the review. On #12966 the
+the team, so the consumer trace of the top change belongs to the review. On vaadin/web-components#12966 the
 consumer that broke was crud, a package that the PR did not touch.
 
 **Production lines** size the scale tier, not the whole branch. Tests never enter the mutant
