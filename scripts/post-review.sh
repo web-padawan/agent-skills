@@ -29,8 +29,7 @@
 # anchor (a line outside the diff, a deleted or binary file), so any failure
 # demotes and nothing breaks the review. The body holds one census line by label,
 # the summary, and only the findings that no thread could hold — the threads carry
-# the rest, so the body never repeats them. It ends with a hidden marker that
-# records the reviewed head SHA. The review is built pending and submitted once,
+# the rest, so the body never repeats them. The review is built pending and submitted once,
 # so the author gets one notification, not one per finding (the same flow as the
 # upstream vaadin/github-actions code-review action).
 #
@@ -420,9 +419,6 @@ $OVERVIEW"
 
 $(cat "$SUMMARY")"
 [ -n "$UNANCHORED" ] && BODY="$BODY$UNANCHORED"
-BODY="$BODY
-
-<!-- agent-skills:reviewed-head $REVIEWED_HEAD -->"
 
 if [ "$DRY_RUN" = true ]; then
   printf -- '--- review body ---\n%s\n' "$BODY"
