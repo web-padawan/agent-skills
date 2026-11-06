@@ -4,6 +4,78 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-06 — PR review 9: flow-components #10594, PDF viewer toolbar actions
+
+One production file, `PdfViewer.java`, +42, and one new unit test file. The PR adds
+`getToolbarActions()`, a `HasComponents` container in the `toolbar-actions` slot. Team PR,
+CI green, scale `lite`. Full review with three passes. Posted 1 thread (1 suggestion) at
+head `7a31391`.
+
+- The orchestrator wrote the Settled facts from two auto-memory notes and one grep. The
+  notes named the `Dialog.DialogHeaderFooter` wrapper and the `getChildren()` leak of a
+  slotted wrapper. The grep found the class at `Dialog.java:1039`. The code pass cleared its
+  lead with that precedent in 4 tool calls. → no change.
+- The passes returned 8 findings, and triage kept 1. The change pass found that the sibling
+  slot containers carry the component name (`DialogHeader`, `LoginOverlayFooter`). The
+  other 7 were C findings or design choices that the Dialog precedent already accepts.
+- The tests pass cited `CONVENTIONS.md:260` as `src:`. The file has 163 lines, and the rule
+  is at line 111. Line 260 is the line of the rule in the conventions excerpt of the context
+  file. Triage had to search for the rule. → the excerpt prints the source line number on
+  each quoted line, and the header asks for `src:<doc>:<that number>` (`7c3f9a7`, `e723249`).
+- The bot thread 4483966135 was resolved, and later commits fixed the Javadoc. The change
+  pass reported a related claim: the pinned alpha5 has no download button, so the Javadoc
+  order does not hold yet. The PR note already said so, and triage dropped it. No pass
+  repeated the bot claim. → no change.
+- Across reviews 8 and 9, the passes returned 11 C findings. Triage posted none of them. In
+  review 9, 4 of the 5 findings of the change pass were C. The reviewer wanted them on the
+  PR. → the triage filter of pr-review keeps a confirmed C finding that the PR introduced,
+  and posts it as a `nitpick`. The drop rule for style nits is gone (`94b40ec`).
+- The plan again printed `commands: lint=unknown test=unknown (source: package.json scripts)`
+  and `reach: no package source changed`. → see the npm item of review 7.
+- Cost: about 128k subagent tokens (change 56k with 14 calls, code 36k with 4 calls, tests
+  36k with 3 calls). The code and tests passes ran on sonnet. Each finished in less than
+  15 seconds.
+
+## 2026-11-06 — PR review 8: flow-components #10596, PDF viewer zoom API
+
+Three production files, +287, and three test files. The PR adds a `Zoom` value type,
+`getZoom()`, `setZoom()`, a read-only `zoomSignal()`, a `ZoomChangeEvent` and TestBench
+helpers. Team PR, CI green, scale `full`. Full review with three opus passes. Posted
+2 threads (1 blocking issue, 1 suggestion) at head `71f03ec`.
+
+- The plan printed `verdict_hint: take` and `skipped_flags: feature-no-ac (team author)`.
+  The fix of review 7 worked, and the gate needed no correction.
+- All three passes found the blocking finding independently. On the first update,
+  `PolylitMixin` dispatches `zoom-changed` with the default `'page-width'`. Flow
+  `MapProperty.getSyncToServerCommand` syncs the value because the server value is `null`.
+  The listener then fires a `ZoomChangeEvent` with `fromClient=true`, but the zoom did not
+  change. The orchestrator confirmed the chain with 2 source reads, not with a browser run.
+- The `page` listener of review 7 has the same flaw. The `page` property is `notify: true`
+  with the default `1`. Review 7 did not find it. Its Settled facts covered the
+  `@Synchronize` replay, but not the first notify of a default value. → each `wc_property:`
+  line prints `notify` and the default value. Settled facts add a note when a property has
+  `notify=true`, and `agents/change-reviewer.md` asks the change pass to check the first
+  sync. Re-run on #10523, the line shows `page` with `value=1 notify=true` (`4fa6bc8`,
+  `6f0a603`).
+- The orchestrator again read the web component properties at the pinned version by hand,
+  in 2 calls. The facts were the `zoom` declaration, the fallback to `page-width` and the
+  toolbar values. → see the property item of review 7.
+- The code pass and the change pass reported the same TestBench finding on `getZoom()`.
+  The code pass anchored it on line 54, the signature. The change pass anchored it on
+  line 55, the `return` statement. Triage matched them by claim. → no change, because
+  `pipeline.md` §3 already requires the declaration line.
+- The notes file gave both Open leads to the change pass. It cleared both with a source
+  reference: the echo of `setZoom` from the client, and the `@Synchronize` replay on
+  reattach.
+- The tier of the blocking finding was a judgment call again. The component is
+  experimental, and a read of the code confirmed the claim, not a run. The orchestrator
+  chose A, because it read each source line of the chain. The Javadoc of the PR promises
+  that `ZoomChangeEvent` fires when the zoom changes. → see the `severity.md` item of
+  review 7.
+- The revert check did not run, because the type is `feat`.
+- Cost: about 179k subagent tokens (tests 64k with 14 calls, change 60k with 16 calls,
+  code 55k with 8 calls).
+
 ## 2026-11-05 — PR review 7: flow-components #10523, PDF viewer page API
 
 One production file, `PdfViewer.java`, +110 −3, and two test files. The PR adds a read-only
@@ -51,8 +123,10 @@ the blocking finding in `fb9977d`.
   read of the code. The pass found it without a checklist item, so none is added.
 - The orchestrator read the web component properties at the pinned `@NpmPackage` version by
   hand and wrote them as Settled facts. The plan printed `flow_counterpart: none`, a fact
-  that is always empty for a Flow PR. → open: the plan prints the definition of each
-  property that an added line syncs, read at the pinned version of the web component.
+  that is always empty for a Flow PR. → in a Flow repository, `diff-facts.sh` prints a
+  `wc_property:` line for each property that an added Java line syncs. It reads the
+  declaration at the tag of the pinned `@NpmPackage` version in `../web-components`
+  (`4fa6bc8`, `685732c`).
 - The tests pass returned 8 findings. Triage kept 1 and merged 1 into the blocking finding.
   Two B findings asked for rigor that the codebase does not use. One was an `Integer`
   against a `Double` client value, which `getProperty(String, int)` accepts. The other was
@@ -62,13 +136,14 @@ the blocking finding in `fb9977d`.
 - The tier of the blocking finding was a judgment call. The component is experimental
   behind a feature flag. A follow-up fix in `setSrc` needs no API change. The tie-breaker
   in `severity.md` does not cover an experimental component. The orchestrator chose A,
-  because the Javadoc of the PR promises page 1. → open: a line in `severity.md`. A
-  contradiction of a promise that the PR adds to the Javadoc is A, also on an experimental
-  component.
+  because the Javadoc of the PR promises page 1. → the feature rule of `severity.md` says
+  that code that contradicts a promise of the PR Javadoc is A, also on an experimental
+  component (`6fd3277`).
 - The plan printed `commands: lint=unknown test=unknown (source: package.json scripts)` and
   `reach: no package source changed`. Both lines use the npm model, and flow-components is
-  a Maven repo. They cost no call, but they are noise. → open: for a repo without a
-  `package.json`, the plan reads the commands from `CLAUDE.md` or omits both lines.
+  a Maven repo. They cost no call, but they are noise. → with a root `pom.xml`, the plan
+  prints the Maven commands. In a Flow repository, `diff-facts.sh` omits the `reach:`,
+  `snapshot_packages:` and `flow_counterpart:` lines (`20cd076`, `4fa6bc8`).
 - The revert check did not run, because the type is `feat`.
 - Cost: about 146k subagent tokens across three passes (change 65k, tests 44k, code 37k).
   The code pass used 3 tool calls.
