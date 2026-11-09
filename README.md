@@ -52,28 +52,20 @@ Restart the session so that the skills load.
 - `references/pipeline.md` describes the plan, the fan-out, the roll call and the triage.
 - `references/severity.md` defines the A / B / C tiers and the Conventional Comments labels.
 
-`docs/` holds the design history. No skill loads it.
+`docs/contracts.md` lists the plan keys and the contracts of the extension points: fact
+packs, owner directories, stages, the findings file and the prompt block. The rest of `docs/` holds the
+design history. No skill loads it.
 
-The two review skills need only these files. Copy them together to move the skills to
-another plugin:
+The review core works on a repository of any owner. It reads these docs of the repository
+as its conventions, in this order: `.github/review-instructions.md`,
+`.github/copilot-instructions.md`, `CONVENTIONS.md`, `CLAUDE.md`, `AGENTS.md`,
+`CONTRIBUTING.md` and `CODING_STANDARDS.md`. The context file quotes them while their total
+stays at 400 lines or less. Rules, facts and screening labels for the repositories of one
+owner live in an owner directory (see Config). `owners/vaadin/` holds those of Vaadin.
 
-- `skills/pr-review/`, `skills/self-review/`
-- `agents/change-reviewer.md`, `agents/code-reviewer.md`, `agents/test-reviewer.md`
-- `references/`, `docs/rationale.md`
-- `hooks/hooks.json`, `scripts/hooks/bash-guard.py`
-- `scripts/review-plan.sh`, `scripts/get-pr-context.sh`, `scripts/gh-context.sh`,
-  `scripts/diff-facts.sh`, `scripts/workflow-facts.sh`, `scripts/pr-screen.sh`,
-  `scripts/pr-refresh.sh`, `scripts/post-review.sh`, `scripts/post-comment.sh`,
-  `scripts/ab.sh`, `scripts/dev-server.sh`, `scripts/lib/`
-- the review sections of `scripts/smoke.sh`
-
-This directory is optional. Copy it only to review a Vaadin repository:
-
-- `owners/vaadin/`: the fact packs `facts/web-components.sh` and `facts/flow-components.sh`, and `screening.json`
-
-Other skills share three of these files. `comment-cleanup` reads `references/comments.md`,
-`work-summary` calls `gh-context.sh`, and `refactor-component` calls `ab.sh`. Keep a copy of
-each one in this plugin.
+Other skills share files with the review pipeline. `comment-cleanup` reads
+`references/comments.md`, `work-summary` calls `gh-context.sh`, and `refactor-component`
+calls `ab.sh`.
 
 ## Scripts
 
@@ -107,11 +99,16 @@ An owner directory holds what applies only to the repositories of one GitHub own
 
 - `facts/*.sh`: fact packs that `diff-facts.sh` runs, per the provider contract in `docs/contracts.md`
 - `screening.json`: the screening labels and the team allowlist. `pr-screen.sh --help` lists the keys
+- `rules.md`: review rules. The context file quotes them for the passes, and triage reads them
 
 The owner is the owner of the `upstream` remote, else of `origin`. The lookup reads
 `$REVIEW_SKILLS_CONFIG_DIR/<owner>/` first. The default of that variable is
 `~/.config/agent-skills`. Then it reads `owners/<owner>/` of this plugin. Without an owner
 directory, only the generic facts and screening rules apply.
+
+To add an owner, create `~/.config/agent-skills/<owner>/` with any of the three parts. The
+plan prints `fact_packs:` and `owner_rules:`, so a review shows what it loaded. A directory
+in the config dir replaces the directory of the same owner in this plugin.
 
 ## Hooks
 
@@ -129,4 +126,4 @@ The plugin runs from a cached copy of one commit. Commit the change, run
 ## Dependencies
 
 - The `gh` CLI, authenticated, for every skill that reads a PR.
-- The defaults fit [vaadin/web-components](https://github.com/vaadin/web-components).
+- No owner by default. The owner directory of the repository under review adds its rules.
