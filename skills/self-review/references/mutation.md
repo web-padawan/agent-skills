@@ -76,18 +76,33 @@ changes only where the budget goes:
 
 ## Per-mutant loop
 
+Before the first mutant, run the test command once on the clean tree:
+
+```
+${CLAUDE_PLUGIN_ROOT}/scripts/mutant.sh --head <head0> --baseline --log <report_dir>/mut-baseline.log -- <test command>
+```
+
+If the result is `RED`, stop the step and report the red baseline. A red baseline makes every
+mutant look killed.
+
 1. Mutate with the Edit tool. Disable the statement with a comment (`//`), or for a guard,
    remove only the effect of the condition (for example, disable the early return). Apply one
    mutant at a time.
-2. Run the tests (the `commands:` from the plan) for the mutated package **and every other
-   package in `affected_packages` from the plan**. A mutant in a shared base or utility
+2. Run the mutant with the test command (the `commands:` from the plan) for the mutated
+   package **and every other package in `affected_packages` from the plan**:
+
+   ```
+   ${CLAUDE_PLUGIN_ROOT}/scripts/mutant.sh --head <head0> --file <file> --log <report_dir>/mut-<n>.log -- <test command>
+   ```
+
+   Join the commands of several packages with `&&`. A mutant in a shared base or utility
    package often only breaks its consumers. That narrow run is what keeps the step
-   affordable. Note it in the report. Redirect the output of each command to a log file in
-   the report directory. Read the exit code, and on a failure the last lines of the log only.
-   That keeps the log out of your context.
-3. **Expected: failure** (non-zero exit in at least one group).
-4. Restore with `git checkout -- <file>`. Then confirm that `git diff --name-only` is empty
-   before the next mutant.
+   affordable. Note it in the report.
+3. Read the `RESULT:` line. **Expected: `KILLED`**. The script prints only the last lines of
+   the log, which keeps the log out of your context.
+4. The script restores the file with `git checkout -- <file>` on every exit, and prints
+   `tree: clean`. If it exits with 3, the tree is not clean. Stop the step and report the
+   dirty tree as a finding.
 
 ## Surviving mutants
 
