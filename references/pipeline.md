@@ -179,6 +179,10 @@ triage, drop each finding of that pass that a Settled fact answers.
 
 ## 5 — Triage
 
+When the plan prints `owner_rules: <path>`, read that file once before triage. Its rules
+extend [`severity.md`](severity.md) for the repositories of that owner. The context file
+quotes the same rules for the passes.
+
 Triage has its own ceiling of tool calls. To verify findings costs calls, and the pass
 ceilings do not cover them:
 
