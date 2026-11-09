@@ -10,7 +10,7 @@ The smells come from Martin Fowler, _Refactoring_, second edition, chapter 3.
 > The repository has no conventions doc. Two rules bind this vocabulary:
 >
 > - A documented standard of the repository wins over a smell.
-> - A smell is a judgement call, never a hard violation.
+> - A smell is a judgment call, never a hard violation.
 
 | Smell | Sign in the diff | Fix | Pass |
 | --- | --- | --- | --- |
