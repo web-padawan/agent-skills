@@ -20,6 +20,7 @@ scripts/get-pr-context.sh move
 scripts/gh-context.sh copy
 scripts/hooks/bash-guard.py move
 scripts/lib/conventional-label.sh move
+scripts/lib/lanes.sh move
 scripts/post-comment.sh move
 scripts/post-review.sh move
 scripts/pr-refresh.sh move
