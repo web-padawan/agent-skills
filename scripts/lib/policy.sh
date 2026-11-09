@@ -15,7 +15,7 @@
 # production patch plus the plan's `comment_files`, diffed directly. A pass never reads a
 # patch outside its lane, and never regenerates a patch with `git diff` (pipeline.md §2).
 # The agent is the bare name. The plan prints `<plugin name>:<agent>` as the
-# `subagent_type`. The prompt adds of each pass live in the prompt block of review-plan.sh.
+# `subagent_type`. The prompt adds of each pass live in lib/prompts.sh.
 pass_agent() {  # pass_agent <id> — the agent with the plugin prefix, a tab, the lane
   case "$1" in
     change) printf '%s:change-reviewer\tprod\n' "$PLUGIN_NAME" ;;
@@ -168,7 +168,7 @@ stage_check_flags() {  # stage_check_flags — exit 1 on an unknown stage or a b
 }
 
 # Reads: STAGE_LIST, OFF_STAGES, BUDGET_FLAGS, SCRIPT_DIR, BASE, HEAD, PROD_FILES,
-#        TEST_FILES, FINDINGS_FILE, EARLIER_MODE
+#        TEST_FILES, FINDINGS_FILE, EARLIER_MODE, GUARD
 # Sets: STAGE_LIST, STAGES_OUT
 plan_stages() {
   local entry name budget pair kept="" slot ask ref out
@@ -188,6 +188,8 @@ plan_stages() {
     IFS=$'\t' read -r slot ask ref <<< "$(stage_info "$name")"
     STAGES_OUT="${STAGES_OUT}  $name: slot $slot, budget $budget, ask $ask, ref $ref
 "
+    # A refused or unanchored run has no diff to give a stage script.
+    [ "$GUARD" = ok ] && [ -n "$BASE" ] && [ -n "$HEAD" ] || continue
     [ -x "$SCRIPT_DIR/stages/$name.sh" ] || continue
     # shellcheck disable=SC2086
     out=$(FACTS_PROD=$(printf '%s\n' $PROD_FILES | sed '/^$/d') FACTS_TESTS=$(printf '%s\n' $TEST_FILES | sed '/^$/d') \

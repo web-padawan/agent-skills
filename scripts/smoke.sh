@@ -624,7 +624,7 @@ expect "diff-facts.sh does not run the pack of another owner" \
 # Every path of scripts/dev/review-files.txt exists and has a known tag.
 MANIFEST_BAD=$(awk '!/^#/ && NF { if ($2 != "move" && $2 != "copy" && $2 != "drop") print "tag " $0; else print $1 }' \
   "$SCRIPTS/dev/review-files.txt" | while read -r p; do
-    case "$p" in "tag "*) echo "$p" ;; *) [ -e "$SCRIPTS/../$p" ] || echo "missing $p" ;; esac
+    case "$p" in ("tag "*) echo "$p" ;; (*) [ -e "$SCRIPTS/../$p" ] || echo "missing $p" ;; esac
   done)
 expect "scripts/dev/review-files.txt names existing paths with known tags" "" "$MANIFEST_BAD"
 

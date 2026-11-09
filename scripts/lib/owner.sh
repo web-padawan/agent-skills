@@ -1,4 +1,4 @@
-# owner.sh: sourced by diff-facts.sh, pr-screen.sh and review-plan.sh. The owner of a
+# owner.sh: sourced by diff-facts.sh and pr-screen.sh. The owner of a
 # repository, and the owner directory that holds its fact packs (facts/*.sh), its
 # screening config (screening.json) and its rules (rules.md).
 #
@@ -11,7 +11,7 @@
 
 owner_of_url() {  # owner_of_url <remote URL or owner/name> — the owner in lowercase, or nothing
   printf '%s\n' "$1" \
-    | sed -E -n 's#^(https?://[^/]+/|ssh://git@[^/]+/|git@[^:]+:)?([A-Za-z0-9_.-]+)/[A-Za-z0-9_.-]+/?$#\2#p' \
+    | sed -E -n 's#^(https?://[^/]+/|ssh://([^@/]+@)?[^/]+/|([^@:/]+@)?[^:/]+:)?([A-Za-z0-9_.-]+)/[A-Za-z0-9_.-]+/?$#\4#p' \
     | tr '[:upper:]' '[:lower:]'
 }
 

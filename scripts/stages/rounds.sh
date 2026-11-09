@@ -33,6 +33,8 @@ ROUND=1
 FILE="${STAGE_FINDINGS:-}"
 if [ -n "$FILE" ] && [ -f "$FILE" ] \
   && jq -e --arg head "$HEAD" '.head == $head and (has("verdict") | not)' "$FILE" >/dev/null 2>&1; then
-  ROUND=$(( $(jq -r '.round // 1' "$FILE") + 1 ))
+  LAST=$(jq -r '.round // 1' "$FILE")
+  [[ "$LAST" =~ ^[0-9]+$ ]] || LAST=1
+  ROUND=$((LAST + 1))
 fi
 echo "round: $ROUND of $BUDGET"
