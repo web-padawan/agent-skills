@@ -29,7 +29,7 @@ finding in a file is a reason to look harder at that file.
 
 - Correct handling of edge cases: empty, null, undefined, zero, out-of-range indices
 - No conditions that are always true or always false, and no inverted checks
-- Correct under re-entry, detach / re-attach, and rapid repeated calls
+- Correct under re-entry, when an object is created, removed and created again, and under rapid repeated calls
 - New components, handlers, providers and listeners are registered and reachable at runtime. Name the registration point that is missing
 - Paired operations change on both sides: add and remove, open and close, register and unregister
 
@@ -74,7 +74,7 @@ Three questions share this category. Answer all three.
   parameters, the return value, the defaults and the fired events. A doc outside the diff
   that the change made stale is a finding, for example a README or a guide. Name the stale
   sentence. Do not ask for docs on internal code
-- No decorative banners, and no comment longer than 1 line in a CSS file
+- No decorative banners
 - No mention of a protected or a private method, property or flag
 
 ## Output contract

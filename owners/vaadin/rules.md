@@ -6,3 +6,8 @@ The review plan quotes these rules into the context file of each review of a vaa
 
 - A public surface also includes a slot, a CSS custom property, a CSS part and a `.d.ts` entry. A change to one of them is a public surface change.
 - In the `Boundary:` line of a block, a CSS part or a CSS custom property is a `styling hook`.
+
+## From agents/code-reviewer.md
+
+- Logic: an element is correct when it is detached and attached again.
+- Comments: no comment longer than 1 line in a CSS file.
