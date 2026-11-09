@@ -5,16 +5,9 @@
 #
 # Usage:
 #   get-pr-context.sh [--pr <number-or-url>] [--diff-source local|remote] [--no-diff]
-#                     [--head <sha>] [--as-of <iso-time>]
 #
 # --no-diff skips the DIFFS section entirely — for callers whose subagents read
 # the diff themselves via the ANCHORS SHAs, so the orchestrator never pays for it.
-#
-# --head and --as-of audit an earlier state of the PR. --head reviews that commit of the
-# PR instead of its current head, and CI comes from that commit's check runs. --as-of
-# drops every comment, review and thread written at or after that time, and gives the
-# body as it was then. Both feed the verification audit, where a later review must not
-# leak in.
 #
 # When the branch is dirty and --diff-source is not explicitly set,
 # the DIFFS section is skipped so the caller can ask the user first.
@@ -26,34 +19,16 @@ set -euo pipefail
 PR=""
 DIFF_SOURCE=""
 NO_DIFF=false
-AUDIT_HEAD=""
-AS_OF=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
     --diff-source) DIFF_SOURCE="${2:?--diff-source requires a value}"; shift 2 ;;
     --no-diff) NO_DIFF=true; shift ;;
-    --head) AUDIT_HEAD="${2:?--head requires a value}"; shift 2 ;;
-    --as-of) AS_OF="${2:?--as-of requires a value}"; shift 2 ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
 done
-
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-# shellcheck source=lib/pr-history.sh
-. "$SCRIPT_DIR/lib/pr-history.sh"
-
-if [ -n "$AUDIT_HEAD" ] && ! [[ "$AUDIT_HEAD" =~ ^[0-9a-f]{7,40}$ ]]; then
-  echo "error: --head takes a commit SHA (7 to 40 hex characters)" >&2; exit 1
-fi
-if [ -n "$AS_OF" ] && ! valid_iso "$AS_OF"; then
-  echo "error: --as-of takes an ISO 8601 UTC time, for example 2026-10-03T08:11:25Z" >&2; exit 1
-fi
-if { [ -n "$AUDIT_HEAD" ] || [ -n "$AS_OF" ]; } && [ -z "$PR" ]; then
-  echo "error: --head and --as-of need --pr" >&2; exit 1
-fi
 
 DIFF_SOURCE_EXPLICIT=true
 if [ -z "$DIFF_SOURCE" ]; then
@@ -83,13 +58,6 @@ echo "=== PR_METADATA ==="
 
 PR_JSON=""
 if PR_JSON=$(gh pr view ${PR_ARGS[@]+"${PR_ARGS[@]}"} --json number,title,body,author,state,isDraft,baseRefName,headRefName,headRefOid,url 2>/dev/null); then
-  if [ -n "$AS_OF" ]; then
-    # The body as the reviewer saw it then. A body rewritten after a review describes
-    # the fixed state, so the review would leak into the audit.
-    AS_OF_NUMBER=$(printf '%s' "$PR_JSON" | jq -r '.number')
-    AS_OF_BODY=$(pr_body_as_of "$(pr_slug ${PR_ARGS[@]+"${PR_ARGS[@]}"})" "$AS_OF_NUMBER" "$AS_OF")
-    PR_JSON=$(printf '%s' "$PR_JSON" | jq --arg b "$AS_OF_BODY" --arg t "$AS_OF" '.body = $b | .asOf = $t')
-  fi
   echo "$PR_JSON"
 else
   PR_JSON=""
@@ -205,24 +173,7 @@ if [ -n "$HEAD_OID" ]; then
   fi
 fi
 HEAD_SOURCE="pr"
-PR_HEAD_OID="$ANCHOR_HEAD"
-if [ -n "$AUDIT_HEAD" ]; then
-  # An earlier commit of the PR. It is in the object store when it is an ancestor of the
-  # fetched PR head, which holds for every commit that a later push kept.
-  if ! git cat-file -e "$AUDIT_HEAD^{commit}" 2>/dev/null && [ -n "$PR_NUMBER" ]; then
-    git fetch origin "pull/$PR_NUMBER/head" --quiet 2>/dev/null || true
-  fi
-  if ! git cat-file -e "$AUDIT_HEAD^{commit}" 2>/dev/null; then
-    git fetch origin "$AUDIT_HEAD" --quiet 2>/dev/null || true
-  fi
-  AUDIT_FULL=$(git rev-parse --verify --quiet "$AUDIT_HEAD^{commit}" 2>/dev/null || true)
-  if [ -n "$AUDIT_FULL" ]; then
-    ANCHOR_HEAD="$AUDIT_FULL"; HEAD_SOURCE="audit"
-  else
-    ANCHOR_HEAD=""; HEAD_SOURCE="audit-missing"
-  fi
-fi
-if [ -z "$ANCHOR_HEAD" ] && [ "$HEAD_SOURCE" = "pr" ] && git rev-parse --verify HEAD >/dev/null 2>&1; then
+if [ -z "$ANCHOR_HEAD" ] && git rev-parse --verify HEAD >/dev/null 2>&1; then
   # No PR head available (no PR, offline, or deleted head ref) — anchor on local HEAD.
   ANCHOR_HEAD=$(git rev-parse HEAD)
   HEAD_SOURCE="local"
@@ -246,22 +197,12 @@ fi
 
 [ -n "$IS_FORK" ] && echo "fork: $IS_FORK"
 [ -n "$HEAD_REPO" ] && echo "head_repo: $HEAD_REPO"
-if [ "$HEAD_SOURCE" = "audit-missing" ]; then
-  echo "error: --head $AUDIT_HEAD is not in the object store, also after a fetch of the PR head"
-  echo "hint: pass a commit of the PR history (gh api repos/<owner>/<name>/pulls/<n>/commits)"
-fi
 if [ -n "$MERGE_BASE" ]; then
   echo "base_branch: $ANCHOR_BASE_BRANCH"
   echo "merge_base: $MERGE_BASE"
   echo "head: $ANCHOR_HEAD"
   if [ -n "$HEAD_OID" ] && [ "$HEAD_SOURCE" = "local" ]; then
     echo "head_source: local (PR head unavailable)"
-  fi
-  if [ "$HEAD_SOURCE" = "audit" ]; then
-    echo "head_source: audit (--head; the PR head is ${PR_HEAD_OID:-$HEAD_OID})"
-  fi
-  if [ -n "$AS_OF" ]; then
-    echo "as_of: $AS_OF"
   fi
   echo "changed_files:"
   git diff --name-only --no-renames "$MERGE_BASE..$ANCHOR_HEAD" 2>/dev/null | sed 's/^/  /' || true
@@ -282,20 +223,7 @@ echo "=== CI_STATUS ==="
 if [ -z "$PR_JSON" ]; then
   echo "unavailable: no PR resolved"
 else
-  if [ "$HEAD_SOURCE" = "audit" ] && [ "$ANCHOR_HEAD" != "$HEAD_OID" ]; then
-    # gh pr checks reports the current head. An audited head has its own check runs,
-    # in the same TAB-separated shape: name, state, elapsed, link.
-    CHECKS=$(gh api "repos/$(pr_slug ${PR_ARGS[@]+"${PR_ARGS[@]}"})/commits/$ANCHOR_HEAD/check-runs" --paginate \
-      --jq '.check_runs[] | [.name,
-        (if .status != "completed" then "pending"
-         elif .conclusion == "success" then "pass"
-         elif (.conclusion == "skipped" or .conclusion == "neutral") then "skipping"
-         elif .conclusion == "cancelled" then "cancel"
-         else "fail" end), "", .html_url] | @tsv' 2>/dev/null || true)
-    echo "source: check runs of the audited head ${ANCHOR_HEAD:0:10}"
-  else
-    CHECKS=$(gh pr checks ${PR_ARGS[@]+"${PR_ARGS[@]}"} 2>/dev/null || true)
-  fi
+  CHECKS=$(gh pr checks ${PR_ARGS[@]+"${PR_ARGS[@]}"} 2>/dev/null || true)
   if [ -z "$CHECKS" ]; then
     echo "unavailable: gh pr checks reported nothing (none configured, or not started yet)"
     echo "note: absence of checks is not a green run — treat lint and test state as unknown"
@@ -345,13 +273,12 @@ else
           reviewThreads(first:100){ nodes{
             isResolved isOutdated path line originalLine
             comments(first:20){ nodes{ databaseId createdAt author{login __typename} body } } } } } } }' 2>/dev/null \
-      | jq -r --arg asof "${AS_OF:-9999}" 'def kind: if (.author.__typename == "Bot") or (.author.login | test("bot$"; "i")) then "bot" else "human" end;
+      | jq -r 'def kind: if (.author.__typename == "Bot") or (.author.login | test("bot$"; "i")) then "bot" else "human" end;
         def claim($n): .body | split("\n") | map(select(length > 0 and (test("^:robot: AI-generated\\s*$") | not))) | .[0] // ""
           | sub("^:robot: AI-generated\\s*"; "")
           | (capture("^\\*\\*(?<t>[^*]+)\\*\\*:?\\s*(?<rest>.*)$") // {t: "", rest: .})
           | (if .rest == "" then .t else .rest end) | .[0:$n];
         .data.repository.pullRequest.reviewThreads.nodes[]
-        | .comments.nodes |= map(select(.createdAt < $asof))
         | select((.comments.nodes | length) > 0)
         | . as $t | .comments.nodes[0] as $c
         | ([ "T", $c.databaseId, $c.author.login, ($c | kind),
@@ -359,7 +286,7 @@ else
              $t.path, ($t.line // $t.originalLine // 0), ($c | claim(200)) ] | @tsv),
           ($t.comments.nodes[1:][] | [ "R", .databaseId, .author.login, (. | kind), "", "", "", (. | claim(160)) ] | @tsv)' 2>/dev/null || true)
     GENERAL=$(gh api "repos/$REPO_SLUG/issues/$PR_NUMBER/comments" --paginate 2>/dev/null \
-      | jq -r -s --arg asof "${AS_OF:-9999}" 'add // [] | .[] | select(.created_at < $asof)
+      | jq -r -s 'add // [] | .[]
         | [ .id, .user.login, (.body | split("\n") | map(select(length > 0)) | .[0] // "" | .[0:120]) ] | @tsv' 2>/dev/null || true)
   fi
 
@@ -455,13 +382,8 @@ if [ "$DIFF_SOURCE" = "local" ]; then
 else
   echo "source: remote (gh)"
   echo "---"
-  if [ "$HEAD_SOURCE" = "audit" ] && [ -n "$MERGE_BASE" ]; then
-    # gh pr diff shows the current head. The audited head diffs against its merge base.
-    git diff "$MERGE_BASE..$ANCHOR_HEAD"
-  else
-    gh pr diff ${PR_ARGS[@]+"${PR_ARGS[@]}"} 2>/dev/null || {
-      echo "error: gh pr diff failed"
-      echo "hint: check the PR number and gh authentication"
-    }
-  fi
+  gh pr diff ${PR_ARGS[@]+"${PR_ARGS[@]}"} 2>/dev/null || {
+    echo "error: gh pr diff failed"
+    echo "hint: check the PR number and gh authentication"
+  }
 fi

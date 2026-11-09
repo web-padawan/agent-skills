@@ -11,7 +11,6 @@
 #                  [--type fix|feature|refactor|chore] [--scale trivial|lite|full]
 #                  [--deep N] [--rounds N] [--fresh] [--no-coverage] [--report-dir <path>]
 #                  [--no-context] [--context-out <path>] [--no-write]
-#                  [--head <sha>] [--as-of <iso-time>]
 #
 # When a file under .github/workflows/ changed, it prints the `workflow:` facts of
 # scripts/workflow-facts.sh. When no test, code or binary file changed, it drops the tests pass.
@@ -22,7 +21,6 @@
 # scripts/hooks/bash-guard.py reads. A pr-mode run on a same-repo PR removes it, and it
 # expires after 3 hours. A fork head that is the
 # working tree refuses: its project settings loaded at session start.
-# --head and --as-of audit an earlier head of the PR (get-pr-context.sh --help).
 #
 # In self mode it also reads the findings file of the last review of the branch
 # (`<report-dir>/<branch>-findings.json`): the same head starts a further round, a newer
@@ -53,8 +51,6 @@ CONTEXT_OUT=""
 NO_WRITE=false
 ROUNDS_FLAG=""
 FRESH=false
-AUDIT_HEAD=""
-AS_OF=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -70,8 +66,6 @@ while [[ $# -gt 0 ]]; do
     --no-context) WANT_CONTEXT=false; shift ;;
     --context-out) CONTEXT_OUT="${2:?--context-out requires a value}"; shift 2 ;;
     --no-write) NO_WRITE=true; shift ;;
-    --head) AUDIT_HEAD="${2:?--head requires a value}"; shift 2 ;;
-    --as-of) AS_OF="${2:?--as-of requires a value}"; shift 2 ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
@@ -84,9 +78,6 @@ case "$DEEP" in ""|*[!0-9]*) [ -z "$DEEP" ] || { echo "error: --deep takes a num
 if [ -n "$ROUNDS_FLAG" ] && ! [[ "$ROUNDS_FLAG" =~ ^[1-9][0-9]*$ ]]; then
   echo "error: --rounds takes a number of 1 or more" >&2; exit 1
 fi
-if { [ -n "$AUDIT_HEAD" ] || [ -n "$AS_OF" ]; } && { [ "$MODE" != "pr" ] || [ -z "$PR" ]; }; then
-  echo "error: --head and --as-of need --mode pr and --pr" >&2; exit 1
-fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
@@ -95,8 +86,6 @@ PROFILES="$PLUGIN_ROOT/references/profiles.md"
 # The plugin name prefixes each agent in profiles.md and names the fork marker directory.
 PLUGIN_NAME=$(jq -r '.name // empty' "$PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null || true)
 [ -n "$PLUGIN_NAME" ] || { echo "error: no plugin name in $PLUGIN_ROOT/.claude-plugin/plugin.json" >&2; exit 1; }
-# shellcheck source=lib/pr-history.sh
-. "$SCRIPT_DIR/lib/pr-history.sh"
 # The fork marker: scripts/hooks/bash-guard.py reads it and holds the reviewer passes to
 # read-only commands while a fork review runs. It expires on its own (bash-guard.py).
 FORK_MARKER="${XDG_CACHE_HOME:-$HOME/.cache}/$PLUGIN_NAME/fork-review"
@@ -113,8 +102,6 @@ CTX_NOTE=""
 if [ "$WANT_CONTEXT" = true ]; then
   CTX_ARGS=(--no-diff)
   [ -n "$PR" ] && CTX_ARGS+=(--pr "$PR")
-  [ -n "$AUDIT_HEAD" ] && CTX_ARGS+=(--head "$AUDIT_HEAD")
-  [ -n "$AS_OF" ] && CTX_ARGS+=(--as-of "$AS_OF")
   if ! CTX=$("$SCRIPT_DIR/get-pr-context.sh" "${CTX_ARGS[@]}" 2>&1); then
     CTX_NOTE="context script failed — plan uses git-only facts"
   fi
@@ -185,12 +172,6 @@ case "$FORK" in true|false) ;; *) FORK="" ;; esac
 [ "$MODE" = "pr" ] || FORK=""
 HEAD_REPO=$(anchor head_repo)
 [[ "$HEAD_REPO" =~ ^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$ ]] || HEAD_REPO=""
-# anchor() returns the first word of a key, so test the word and write the description.
-AUDIT_LINE=""
-[ "$(anchor head_source)" = "audit" ] && AUDIT_LINE="an earlier head of the PR (--head)"
-if [ -n "$AUDIT_HEAD" ] && [ -z "$AUDIT_LINE" ]; then
-  echo "error: --head $AUDIT_HEAD did not resolve (see the context script output above)" >&2; exit 1
-fi
 
 # self mode always reviews the local branch, so its head is local HEAD; the anchors'
 # base is only trusted when it was computed against that same head (an unpushed or
@@ -558,7 +539,6 @@ fi
 SCREENING=""
 if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ "$WANT_CONTEXT" = true ]; then
   SCREENING_ARGS=(--pr "$PR" --reach-max "$REACH_MAX" --scale "$SCALE")
-  [ -n "$AS_OF" ] && SCREENING_ARGS+=(--as-of "$AS_OF")
   SCREENING=$("$SCRIPT_DIR/pr-screen.sh" "${SCREENING_ARGS[@]}" 2>&1 | sed '/^=== SCREENING ===$/d') \
     || SCREENING="error: pr-screen.sh failed — $(printf '%s' "$SCREENING" | tail -1)"
 fi
@@ -1015,11 +995,7 @@ if [ -n "$CONTEXT_PATH" ]; then
       --jq '[.number, .url, .author.login, .headRefName, .baseRefName, (.isDraft|tostring)] | @tsv' 2>/dev/null || true)
     if [ -n "$PR_TSV" ]; then
       IFS=$'\t' read -r PR_NUMBER PR_URL PR_AUTHOR PR_HEADREF PR_BASEREF PR_DRAFT <<< "$PR_TSV"
-      if [ -n "$AS_OF" ]; then
-        PR_BODY=$(pr_body_as_of "$(pr_slug ${GH_ARGS[@]+"${GH_ARGS[@]}"})" "$PR_NUMBER" "$AS_OF")
-      else
-        PR_BODY=$(gh pr view ${GH_ARGS[@]+"${GH_ARGS[@]}"} --json body --jq .body 2>/dev/null || true)
-      fi
+      PR_BODY=$(gh pr view ${GH_ARGS[@]+"${GH_ARGS[@]}"} --json body --jq .body 2>/dev/null || true)
     fi
   fi
 
@@ -1121,7 +1097,6 @@ if [ -n "$CONTEXT_PATH" ]; then
     elif [ "$FORK" = "false" ]; then
       echo "- fork: false"
     fi
-    [ -n "$AUDIT_LINE" ] && echo "- audit: $AUDIT_LINE${AS_OF:+, as of $AS_OF} — review this head as the maintainers first saw it"
     echo "- checked_out: $CHECKED_OUT — the working tree $( [ "$CHECKED_OUT" = yes ] && echo "is the head" || echo "is NOT the head (\`$HEAD0\`); read post-change content with \`git show $HEAD:<path>\`")"
     echo "- type: $TYPE (signal: $TYPE_SIGNAL; type_conflict: $TYPE_CONFLICT)"
     echo "- scale: $SCALE ($LINES production lines, $TOTAL_LINES with tests, $FILES files; $SCALE_REASON)"
@@ -1301,7 +1276,6 @@ echo "base_branch: ${BASE_BRANCH:-unknown} (base from: $BASE_SOURCE)"
 echo "pr: ${PR:-none}"
 if [ "$MODE" = "pr" ]; then
   echo "fork: ${FORK:-unknown}${HEAD_REPO:+ ($HEAD_REPO)}"
-  [ -n "$AUDIT_LINE" ] && echo "audit: $AUDIT_LINE${AS_OF:+, as of $AS_OF}"
   if [ "$FORK" = "true" ]; then
     echo "hint: fork PR — never run yarn, npm, npx, pnpm or node on this head; the Bash guard holds the passes to read-only commands (fork marker: $FORK_MARKER)"
     echo "hint: fork PR — the code pass keeps reuse and maintainability"
