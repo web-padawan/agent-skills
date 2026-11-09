@@ -192,7 +192,10 @@ ISSUE_LINES=""
 ISSUES=$(printf '%s\n' "$FACTS" | awk -F'\t' '$1 == "ISSUE"')
 HAS_AC=false
 if [ -n "$ISSUES" ]; then
-  while IFS=$'\t' read -r _ num state author labels age ncomments ac; do
+  while IFS= read -r issue; do
+    # A tab is whitespace to read, so an empty field (an issue without labels) would shift
+    # the fields after it. The unit separator keeps each empty field.
+    IFS=$'\037' read -r _ num state author labels age ncomments ac <<< "${issue//$'\t'/$'\037'}"
     [ -n "$num" ] || continue
     team="contributor"; is_team "$author" && team="team"
     ISSUE_LINES="${ISSUE_LINES}issue: #$num $(printf '%s' "$state" | tr '[:upper:]' '[:lower:]') labels=[$labels] author=$team age=${age}d comments=$ncomments

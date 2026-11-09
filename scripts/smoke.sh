@@ -351,6 +351,12 @@ expect "pr-screen.sh proposes a reply at the gate for a decide verdict" \
   --meta "$WORK/screening-meta.json") > "$WORK/screening-now.log" 2>&1
 expect "pr-screen.sh reads the current labels without --as-of" \
   "verdict_reason: behavior-altering -> question (semver)" "$(grep -m1 '^verdict_reason:' "$WORK/screening-now.log")"
+jq '.data.repository.pullRequest.closingIssuesReferences.nodes[0] |= (.labels.nodes = [] | .timelineItems.nodes = [])' \
+  "$WORK/screening-meta.json" > "$WORK/screening-nolabels.json"
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --meta "$WORK/screening-nolabels.json" \
+  --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-nolabels.log" 2>&1
+expect "pr-screen.sh keeps the fields of an issue without labels" \
+  "issue: #7 open labels=[] author=contributor age=31d comments=0" "$(grep '^issue:' "$WORK/screening-nolabels.log")"
 jq '.data.repository.pullRequest.title = "fix!: change the core mixin"
   | .data.repository.pullRequest.body = "Text\r\nBREAKING CHANGE: M is 2"' "$WORK/screening-meta.json" > "$WORK/screening-breaking.json"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
