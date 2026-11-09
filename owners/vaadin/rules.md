@@ -9,7 +9,6 @@ The review plan quotes these rules into the context file of each review of a vaa
 
 ## From agents/code-reviewer.md
 
-- Logic: an element is correct when it is detached and attached again.
 - Comments: no comment longer than 1 line in a CSS file.
 
 ## From agents/test-reviewer.md

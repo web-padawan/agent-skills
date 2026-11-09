@@ -29,7 +29,7 @@ finding in a file is a reason to look harder at that file.
 
 - Correct handling of edge cases: empty, null, undefined, zero, out-of-range indices
 - No conditions that are always true or always false, and no inverted checks
-- Correct under re-entry, when an object is created, removed and created again, and under rapid repeated calls
+- Correct under re-entry, when the same object is removed and added again (for example detached and attached again), and under rapid repeated calls
 - New components, handlers, providers and listeners are registered and reachable at runtime. Name the registration point that is missing
 - Paired operations change on both sides: add and remove, open and close, register and unregister
 
@@ -59,8 +59,8 @@ finding in a file is a reason to look harder at that file.
 - No workarounds or TODOs without follow-up
 - No legacy syntax that the conventions excerpt names as legacy
 
-When the context file quotes `## Smell vocabulary`, use its names in your claims. A smell is a
-judgement call, so it is C at most. Name a smell only on a hunk that you already flagged.
+When the context file quotes `## Smell vocabulary`, use its names in your claims. A smell name
+does not change the tier of a finding. A finding that only a smell backs is C at most.
 
 ### Comments — category `comments`
 
