@@ -41,7 +41,6 @@ stages             the stages of the run, indented, or none
 coverage           self mode: on or off. pr mode: n/a
 mutants            the mutant budget of the coverage stage
 mutant_pool        mutants above 0: the source lines that a mutant can change
-round              the round of this run and the rounds budget
 earlier_findings   none, ignored, unreadable, same, delta or rewritten
 findings_file      self mode: the path of the findings file
 conventions_doc    the conventions doc, or none
@@ -91,7 +90,7 @@ The line of a stage:
 A stage script runs from the repository root:
 
 - It takes `--base <sha>`, `--head <sha>` and `--budget <n>`.
-- The env holds `FACTS_PROD` and `FACTS_TESTS`, one path per line, and `STAGE_FINDINGS`, the path of the findings file of self mode.
+- The env holds `FACTS_PROD` and `FACTS_TESTS`, one path per line, and `STAGE_FINDINGS`, the path of the findings file of self mode. It is empty when the plan did not read that file: with `--fresh`, or when the file is unreadable.
 - It prints `<key>: <value>` lines. A failure prints `error: stages/<name>.sh failed` and the last line of its output.
 
 ## Fact provider

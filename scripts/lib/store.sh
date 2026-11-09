@@ -3,7 +3,7 @@
 #
 # Reads: MODE, BRANCH, HEAD, FRESH, REPORT_DIR
 # Sets: SLUG, REPORT_DIR, FINDINGS_FILE, EARLIER_MODE, EARLIER_HEAD, EARLIER_COUNT,
-#       EARLIER_OPEN, EARLIER_LIST, CHANGED_SINCE, ROUND
+#       EARLIER_OPEN, EARLIER_LIST, CHANGED_SINCE
 
 plan_store() {
   # ── Report paths
@@ -30,7 +30,7 @@ plan_store() {
   #             on the lines changed since (the markers below).
   #   rewritten the reviewed head is gone (rebase, force-push): reconcile, no line markers.
   FINDINGS_FILE=""; EARLIER_MODE="none"; EARLIER_HEAD=""; EARLIER_COUNT=0; EARLIER_OPEN=0
-  EARLIER_LIST=""; CHANGED_SINCE=""; ROUND=1
+  EARLIER_LIST=""; CHANGED_SINCE=""
   if [ "$MODE" = "self" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] && [ -n "$HEAD" ]; then
     FINDINGS_FILE="$REPORT_DIR/$SLUG-findings.json"
     if [ ! -f "$FINDINGS_FILE" ]; then
@@ -50,7 +50,6 @@ plan_store() {
       EARLIER_OPEN=$(jq '[.findings[] | select(.status as $s | ["open", "not_fixed", "partially_fixed", "fixed_wrongly"] | index($s))] | length' "$FINDINGS_FILE")
       if [ "$EARLIER_HEAD" = "$HEAD" ]; then
         EARLIER_MODE="same"
-        ROUND=$(( $(jq -r '.round // 1' "$FINDINGS_FILE") + 1 ))
       elif [ -n "$EARLIER_HEAD" ] && git merge-base --is-ancestor "$EARLIER_HEAD" "$HEAD" 2>/dev/null; then
         EARLIER_MODE="delta"
         # One line per file: the new-side line ranges that changed since the reviewed head.

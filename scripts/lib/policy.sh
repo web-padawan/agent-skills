@@ -4,9 +4,9 @@
 # restates it. Why the numbers look like this: docs/rationale.md.
 #
 # Reads: MODE, TYPE, SCALE, PLUGIN_NAME, BASE, HEAD, CHANGED, PROD_FILES, TEST_FILES,
-#        BINARY_FILES, CODE_RE, ROUNDS_FLAG, COVERAGE
-# Sets: LOOKUP_TYPE, PASS_TOKENS, PASSES_DROPPED, MUTANTS, DEEP_ROW, DEEP_SOURCE, ROUNDS,
-#       ROUNDS_SOURCE, CAND_DTS, CAND_EXPORTS, CAND_METHODS, DEEP_CANDIDATES, EFFORT,
+#        BINARY_FILES, CODE_RE, COVERAGE
+# Sets: LOOKUP_TYPE, PASS_TOKENS, PASSES_DROPPED, MUTANTS, DEEP_ROW, DEEP_SOURCE,
+#       CAND_DTS, CAND_EXPORTS, CAND_METHODS, DEEP_CANDIDATES, EFFORT,
 #       STAGE_LIST
 
 # The pass registry: the id, the agent and the lane that the pass reads.
@@ -60,7 +60,7 @@ plan_policy() {
   LOOKUP_TYPE="$TYPE"
   STAGE_LIST=""
 
-  local row
+  local row rounds=""
   row=$(policy_row "$MODE" "$LOOKUP_TYPE")
   PASS_TOKENS=""
   MUTANTS=0
@@ -69,7 +69,7 @@ plan_policy() {
     PASS_TOKENS=$(printf '%s' "$row" | cut -f1)
     MUTANTS=$(printf '%s' "$row" | cut -f2)
     DEEP_ROW=$(printf '%s' "$row" | cut -f3)
-    ROUNDS=$(printf '%s' "$row" | cut -f4)
+    rounds=$(printf '%s' "$row" | cut -f4)
   fi
 
   # The tests pass has no subject when no test, no code and no baseline changed: a workflow,
@@ -82,12 +82,12 @@ plan_policy() {
     PASSES_DROPPED="tests (no test, code or binary file changed)"
   fi
 
-  # Rounds budget: the row's number, capped by the scale tier; --rounds N overrides outright.
-  # A small diff gives a pass little to miss, so only the full tier repeats the fan-out.
-  case "${ROUNDS:-}" in ''|*[!0-9]*) ROUNDS=1 ;; esac
-  case "$SCALE" in trivial|lite) [ "$ROUNDS" -gt 1 ] && ROUNDS=1 ;; esac
-  ROUNDS_SOURCE="matrix, capped by scale"
-  [ -n "$ROUNDS_FLAG" ] && { ROUNDS="$ROUNDS_FLAG"; ROUNDS_SOURCE="--rounds flag"; }
+  # Stage rounds, self mode only: the row's number, capped by the scale tier. A small diff
+  # gives a pass little to miss, so only the full tier repeats the fan-out. The skill maps
+  # --rounds N to --budget rounds=N.
+  case "$rounds" in ''|*[!0-9]*) rounds=1 ;; esac
+  case "$SCALE" in trivial|lite) [ "$rounds" -gt 1 ] && rounds=1 ;; esac
+  [ "$MODE" = self ] && STAGE_LIST="${STAGE_LIST:+$STAGE_LIST }rounds=$rounds"
 
   # Effective mutant budget: the row's number, capped by the scale tier.
   local cap
@@ -151,7 +151,7 @@ plan_policy() {
 # stage contract.
 stage_info() {  # stage_info <name> — the slot, the ask flag and the reference, tab-separated
   case "$1" in
-    *) ;;
+    rounds) printf 'after-triage\tno\tskills/self-review/references/rounds.md\n' ;;
   esac
 }
 
@@ -168,7 +168,7 @@ stage_check_flags() {  # stage_check_flags — exit 1 on an unknown stage or a b
 }
 
 # Reads: STAGE_LIST, OFF_STAGES, BUDGET_FLAGS, SCRIPT_DIR, BASE, HEAD, PROD_FILES,
-#        TEST_FILES, FINDINGS_FILE
+#        TEST_FILES, FINDINGS_FILE, EARLIER_MODE
 # Sets: STAGE_LIST, STAGES_OUT
 plan_stages() {
   local entry name budget pair kept="" slot ask ref out
@@ -180,6 +180,9 @@ plan_stages() {
   done
   STAGE_LIST="${kept# }"
   STAGES_OUT=""
+  # The findings file only when the plan read it: not with --fresh, not when unreadable.
+  local findings=""
+  case "$EARLIER_MODE" in same|delta|rewritten) findings="$FINDINGS_FILE" ;; esac
   for entry in $STAGE_LIST; do
     name="${entry%%=*}"; budget="${entry#*=}"
     IFS=$'\t' read -r slot ask ref <<< "$(stage_info "$name")"
@@ -188,7 +191,7 @@ plan_stages() {
     [ -x "$SCRIPT_DIR/stages/$name.sh" ] || continue
     # shellcheck disable=SC2086
     out=$(FACTS_PROD=$(printf '%s\n' $PROD_FILES | sed '/^$/d') FACTS_TESTS=$(printf '%s\n' $TEST_FILES | sed '/^$/d') \
-      STAGE_FINDINGS="${FINDINGS_FILE:-}" "$SCRIPT_DIR/stages/$name.sh" --base "$BASE" --head "$HEAD" --budget "$budget" 2>&1) \
+      STAGE_FINDINGS="$findings" "$SCRIPT_DIR/stages/$name.sh" --base "$BASE" --head "$HEAD" --budget "$budget" 2>&1) \
       || out="error: stages/$name.sh failed — $(printf '%s' "$out" | tail -1)"
     [ -n "$out" ] && STAGES_OUT="${STAGES_OUT}$(printf '%s\n' "$out" | sed 's/^/    /')
 "

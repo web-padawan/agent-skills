@@ -34,6 +34,7 @@ scripts/pr-refresh.sh move
 scripts/pr-screen.sh move
 scripts/review-plan.sh move
 scripts/smoke.sh copy
+scripts/stages/rounds.sh move
 scripts/workflow-facts.sh move
 scripts/dev/plan-baseline.sh move
 scripts/dev/review-files.txt move
@@ -45,3 +46,4 @@ skills/pr-review/references/understand.md move
 skills/self-review/SKILL.md move
 skills/self-review/references/finalize.md move
 skills/self-review/references/mutation.md drop
+skills/self-review/references/rounds.md move

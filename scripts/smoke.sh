@@ -71,7 +71,7 @@ mkdir -p "$WORK"
 echo "work: $WORK"
 
 echo "== help"
-for f in "$SCRIPTS"/*.sh "$SCRIPTS"/facts/*.sh "$SCRIPTS"/../owners/*/facts/*.sh; do
+for f in "$SCRIPTS"/*.sh "$SCRIPTS"/facts/*.sh "$SCRIPTS"/stages/*.sh "$SCRIPTS"/../owners/*/facts/*.sh; do
   [ -e "$f" ] || continue
   case "$(basename "$f")" in smoke.sh) continue ;; esac
   check "$(basename "$f") --help" 0 "$f" --help
@@ -559,12 +559,12 @@ fx_findings() {  # fx_findings <extra jq fields> — a findings file of the fixt
 }
 fx_findings ', verdict: "clean"'
 fx_plan fx-verdict.log --type fix
-expect "review-plan.sh counts a further round on a head with a verdict" \
-  "round: 2 of 1 (rounds budget: matrix, capped by scale)" "$(grep '^round:' "$WORK/fx-verdict.log")"
+expect "review-plan.sh starts a new run at round 1 on a head with a verdict" \
+  "    round: 1 of 1" "$(grep '^    round:' "$WORK/fx-verdict.log")"
 fx_findings ''
 fx_plan fx-noverdict.log --type fix
-expect "review-plan.sh counts a further round on a head without a verdict" \
-  "round: 2 of 1 (rounds budget: matrix, capped by scale)" "$(grep '^round:' "$WORK/fx-noverdict.log")"
+expect "review-plan.sh continues the run on a head without a verdict" \
+  "    round: 2 of 1" "$(grep '^    round:' "$WORK/fx-noverdict.log")"
 fx_findings ', schema: 2'
 fx_plan fx-schema.log --type fix
 expect "review-plan.sh does not read a findings file of schema 2" \
