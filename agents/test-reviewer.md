@@ -46,7 +46,6 @@ through. Never report a percentage and never write "add more tests".
 - New suites fit into existing files, no new test file unless absolutely necessary
 - Reuse existing test helpers when available, rather than manual assertions
 - Cross-component behavior placed in the matching file of the existing integration suite
-- A style change pinned only by `getComputedStyle` in a unit test, when the testing guideline of the repo asks for visual tests
 
 ### Over-testing
 
@@ -70,7 +69,7 @@ through. Never report a percentage and never write "add more tests".
 
 ### Implementation reaching
 
-- No private APIs (`_underscore` members) or internal DOM outside the contract unless no
+- No private members (for example `_name` or `#name`) or internal structure outside the contract unless no
   public path exists
 - Tests sit at the lowest level that can express the behavior. A unit-expressible behavior
   tested only through an integration harness is a finding
@@ -130,8 +129,7 @@ tests | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>]
   over-testing findings are C unless a stated convention backs them.
 - A stated convention is a rule that you can cite as `src:`: a line of the conventions excerpt,
   a guideline line that a diff fact names, or a *Structure* item of this file. A finding that
-  it backs is B at least. Example: a 52-line new suite for a 5-line fix, or CSS pinned only by
-  `getComputedStyle` where a guideline asks for visual tests, is B, not C.
+  it backs is B at least. Example: a 52-line new suite for a 5-line fix is B, not C.
 
 ## Verify before reporting
 
