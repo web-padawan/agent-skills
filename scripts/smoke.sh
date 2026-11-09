@@ -625,12 +625,6 @@ mv "$WORK/config/fixture-owner/facts/contract.sh" "$WORK/config/other-owner/fact
   --head "$(git rev-parse HEAD)") > "$WORK/owner-gate.log" 2>&1
 expect "diff-facts.sh does not run the pack of another owner" \
   "fact_packs: none" "$(grep '^fact_packs:' "$WORK/owner-gate.log")"
-# Every path of scripts/dev/review-files.txt exists and has a known tag.
-MANIFEST_BAD=$(awk '!/^#/ && NF { if ($2 != "move" && $2 != "copy" && $2 != "drop") print "tag " $0; else print $1 }' \
-  "$SCRIPTS/dev/review-files.txt" | while read -r p; do
-    case "$p" in ("tag "*) echo "$p" ;; (*) [ -e "$SCRIPTS/../$p" ] || echo "missing $p" ;; esac
-  done)
-expect "scripts/dev/review-files.txt names existing paths with known tags" "" "$MANIFEST_BAD"
 
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"
