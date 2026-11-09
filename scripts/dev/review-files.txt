@@ -21,6 +21,7 @@ scripts/hooks/bash-guard.py move
 scripts/lib/anchors.sh move
 scripts/lib/classify.sh move
 scripts/lib/conventional-label.sh move
+scripts/lib/facts.sh move
 scripts/lib/lanes.sh move
 scripts/lib/policy.sh move
 scripts/post-comment.sh move
