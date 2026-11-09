@@ -14,7 +14,7 @@
 # production patch plus the plan's `comment_files`, diffed directly. A pass never reads a
 # patch outside its lane, and never regenerates a patch with `git diff` (pipeline.md §2).
 # The agent is the bare name. The plan prints `<plugin name>:<agent>` as the
-# `subagent_type`. The prompt adds of each pass live in the prompt block of review-plan.sh.
+# `subagent_type`. The prompt adds of each pass live in lib/prompts.sh.
 pass_agent() {  # pass_agent <id> — the agent with the plugin prefix, a tab, the lane
   case "$1" in
     change) printf '%s:change-reviewer\tprod\n' "$PLUGIN_NAME" ;;
