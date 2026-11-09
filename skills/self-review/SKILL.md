@@ -51,7 +51,7 @@ resolve from this file. If a read fails, use
 
    If the output has a `guard: refuse:` line, say the reason in one line and stop. Record
    `base`, `head` and `head0` as literal SHAs. When the user gave `$0`, fetch it with `gh`.
-   `docs/contracts.md` lists every key of the plan.
+   `${CLAUDE_PLUGIN_ROOT}/docs/contracts.md` lists every key of the plan.
 
    Per pipeline.md, resolve `type: undetermined` yourself. Re-run with `--type` so that the
    skeleton carries the type. Hand any `type_conflict` to the change pass.

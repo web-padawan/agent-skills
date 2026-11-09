@@ -10,7 +10,8 @@ and how to install and use the plugin. Do not repeat that content here.
 - `agents/`: the reviewer subagents that the review skills launch. Their contract is static.
 - `hooks/`: the plugin hooks. `hooks.json` runs `scripts/hooks/bash-guard.py` before each Bash call.
 - `references/`: the pipeline documents that the review skills share. They are tuned prompts.
-- `docs/`: the design history of the pipeline. No skill loads it.
+- `docs/`: the design history of the pipeline, and `contracts.md`, the interfaces of the review
+  core. The review skills point to `contracts.md`. No skill loads the other files.
 - `owners/<owner>/`: the fact packs, screening config and rules of one GitHub owner, for example `owners/vaadin/`.
   `scripts/lib/owner.sh` finds the directory of the repository under review.
 - `scripts/`: shell helpers that the skills call through `${CLAUDE_PLUGIN_ROOT}`, plus a few
