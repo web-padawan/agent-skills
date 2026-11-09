@@ -14,7 +14,6 @@ what is different about that skill. This file is the shared part.
 
 | Reference | Covers |
 | --- | --- |
-| [`profiles.md`](profiles.md) | The pass table, the type × scale matrix, the per-pass effort ceiling |
 | [`severity.md`](severity.md) | A / B / C, the tie-breaker, type-aware tiering, the rendering table |
 | [`delivery.md`](delivery.md) | Launch rules, the delivery clause, the roll call, the escalation ladder |
 
@@ -164,6 +163,20 @@ Run the roll call of [`delivery.md`](delivery.md) before triage. It holds the fo
 markers and the escalation ladder.
 
 ## 5 — Triage
+
+Triage has its own ceiling of tool calls. To verify findings costs calls, and the pass
+ceilings do not cover them:
+
+| scale | triage tool calls | spend them on |
+| --- | --- | --- |
+| trivial | ~5 | the one claim that decides the verdict |
+| lite | ~10 | every A candidate, then the B claims a pass marked `unverified` |
+| full | ~15 | the same, plus one runtime probe when a claim turns on real browser behavior |
+
+A claim that costs more than its share stays `unverified` and caps at B (severity.md).
+Verification that runs the code is better than a second read. A browser probe settles a CSS
+or shadow DOM claim that a second read cannot settle. Playwright MCP blocks `file:` URLs.
+Navigate to `about:blank`, then build the tree inside `browser_evaluate`.
 
 1. **Verify** every finding against the code. Mark what you cannot confirm as `accepted`,
    with a one-line reason. Keep such a finding in the report. A claim that names code outside

@@ -80,4 +80,4 @@ The rules adapt ASD-STE100 Issue 9. No word list is enforced.
 - Every tracked markdown file obeys this rule, except the exempt text above.
 - When you edit a paragraph, keep it at this standard. Do not add a sentence that breaks a rule.
 - Files in `agents/` and `references/` are tuned prompts. A rewrite can change review behavior. Rewrite one file per change, keep the meaning, and run the skill once on a known PR after the change.
-- The plan script copies marked blocks from `references/` into the shared context file. Keep the `<!-- block:name -->` markers and the tables in `references/profiles.md` intact.
+- The plan script copies marked blocks from `references/` into the shared context file. Keep the `<!-- block:name -->` markers intact.

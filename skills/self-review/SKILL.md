@@ -97,6 +97,6 @@ resolve from this file. If a read fails, use
    in chat with the type, scale tier, tier counts, the reminder that nothing was changed,
    and the verdict. The verdict is **ready for PR** / **needs more work**.
 
-The profile lives in [`../../references/profiles.md`](../../references/profiles.md) and
+The profile lives in `scripts/lib/policy.sh` and
 reaches you through the plan. The profile covers which passes run, the mutant budget, the
 deep-block budget and the rounds budget. Do not re-derive it here.

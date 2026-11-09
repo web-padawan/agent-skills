@@ -12,7 +12,6 @@ references/comment-guidelines.md move
 references/comments.md copy
 references/delivery.md move
 references/pipeline.md move
-references/profiles.md move
 references/severity.md move
 references/skeleton-blocks.md move
 scripts/diff-facts.sh move
@@ -21,6 +20,7 @@ scripts/gh-context.sh copy
 scripts/hooks/bash-guard.py move
 scripts/lib/conventional-label.sh move
 scripts/lib/lanes.sh move
+scripts/lib/policy.sh move
 scripts/post-comment.sh move
 scripts/post-review.sh move
 scripts/pr-refresh.sh move

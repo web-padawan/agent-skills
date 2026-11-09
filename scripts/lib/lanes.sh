@@ -9,7 +9,7 @@
 
 # The prepared diff is split so a pass reads only its own material: the test diff
 # is most of a branch's line count, and every pass that does not review tests was
-# paying for it. See references/profiles.md's `reads` column.
+# paying for it. See the lanes of pass_agent in lib/policy.sh.
 TEST_RE='(^|/)(test|tests|__tests__|it)/|\.(test|spec)\.[cm]?[jt]sx?$|Test\.java$|IT\.java$|Tests?\.kt$'
 # A file that a test can cover. The plan drops the tests pass when the diff has none.
 CODE_RE='\.([cm]?[jt]sx?|java|kt|css|scss|html|py|sh)$'
