@@ -95,7 +95,8 @@ After the plan, `scripts/review-plan.sh` prints `=== PROMPTS ===` and one block 
 
 ```
 --- <pass> · subagent_type: <plugin>:<agent> · model: <model> ---
-Context file: `<context path>` — read it first. Then `<notes path>` if it exists.
+Context file: `<context path>` — read it first. Then read `<notes path>` whole if it exists. Its Settled facts bind every pass, also a pass that owns no lead.
+End your reply with one line that counts that file: `notes: <n> settled, <m> leads`, or `notes: none` when it does not exist.
 Your diff: <lane>.
 <the prompt adds of the pass>
 Effort ceiling: ~<n> tool calls (scale <scale>) — a ceiling, not a target; your definition names the drop order.

@@ -589,6 +589,9 @@ fx_plan() {  # fx_plan <log> [flags] — a self-mode plan of the fixture
   (cd "$FX" && "$SCRIPTS/review-plan.sh" --mode self --no-context "$@") > "$WORK/$log" 2>&1
 }
 fx_plan fx-png.log --fresh --type fix
+PASS_N=$(grep -c '^Context file:' "$WORK/fx-png.log")
+expect "review-plan.sh asks each pass to count the notes file" \
+  "yes" "$([ "$PASS_N" -gt 0 ] && [ "$PASS_N" = "$(grep -c '^End your reply with one line that counts that file: `notes:' "$WORK/fx-png.log")" ] && echo yes)"
 expect "review-plan.sh lists a changed PNG under binary_files" \
   "binary_files: shot.png " "$(grep '^binary_files:' "$WORK/fx-png.log")"
 expect "review-plan.sh lists a changed PNG under the binary lane of the skeleton" \

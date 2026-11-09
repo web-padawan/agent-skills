@@ -34,7 +34,8 @@ plan_prompts() {
       AGENT=$(printf '%s' "$INFO" | cut -f1)
       MODEL=$(pass_model "$SCALE" "$token")
       echo "--- $token · subagent_type: $AGENT · model: ${MODEL:-inherit} ---"
-      echo "Context file: \`$CONTEXT_PATH\` — read it first. Then \`$NOTES_PATH\` if it exists."
+      echo "Context file: \`$CONTEXT_PATH\` — read it first. Then read \`$NOTES_PATH\` whole if it exists. Its Settled facts bind every pass, also a pass that owns no lead."
+      echo "End your reply with one line that counts that file: \`notes: <n> settled, <m> leads\`, or \`notes: none\` when it does not exist."
       case "$token" in
         change)
           echo "Your diff: $(lane_prod)."
