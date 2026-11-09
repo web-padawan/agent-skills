@@ -1,9 +1,10 @@
-# facts.sh: sourced by review-plan.sh. The conventions doc, the diff facts and their fact
-# packs, the screening facts, the workflow facts, the command map and the affected packages.
+# facts.sh: sourced by review-plan.sh. The conventions doc, the owner rules, the diff facts
+# and their fact packs, the screening facts, the workflow facts, the command map and the
+# affected packages.
 #
-# Reads: MODE, PR, WANT_CONTEXT, SCRIPT_DIR, BASE, HEAD, CHANGED, SCALE
-# Sets: CONVENTIONS, CONVENTIONS_WHOLE_MAX, DIFF_FACTS, REACH_MAX, SCREENING, WORKFLOW_FACTS,
-#       LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, AFFECTED
+# Reads: MODE, PR, WANT_CONTEXT, SCRIPT_DIR, PLUGIN_ROOT, BASE, HEAD, CHANGED, SCALE
+# Sets: CONVENTIONS, CONVENTIONS_WHOLE_MAX, OWNER, OWNER_RULES, DIFF_FACTS, REACH_MAX,
+#       SCREENING, WORKFLOW_FACTS, LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, AFFECTED
 
 plan_facts() {
   # ── Conventions doc (named in the plan, quoted into the context)
@@ -12,6 +13,14 @@ plan_facts() {
   for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTIONS.md CLAUDE.md AGENTS.md; do
     if [ -f "$f" ]; then CONVENTIONS="$f"; break; fi
   done
+
+  # ── Owner rules: the rules of the owner directory (lib/owner.sh), for every repository
+  # of that owner. The context file quotes them after the conventions doc.
+  OWNER=$(owner_of_repo)
+  OWNER_RULES=""
+  local owner_dir
+  owner_dir=$(owner_dir "$PLUGIN_ROOT" "$OWNER")
+  if [ -n "$owner_dir" ] && [ -f "$owner_dir/rules.md" ]; then OWNER_RULES="$owner_dir/rules.md"; fi
 
   # ── Diff facts
   # The facts of the diff that git alone answers (scripts/diff-facts.sh). The plan prints

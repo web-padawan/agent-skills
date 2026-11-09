@@ -41,6 +41,7 @@ stages             the stages of the run, indented, or none
 earlier_findings   none, ignored, unreadable, same, delta or rewritten
 findings_file      self mode: the path of the findings file
 conventions_doc    the conventions doc, or none
+owner_rules        the rules.md of the owner directory, or none
 passes             the passes with agent, model and lane, indented, or none
 agents             the number of passes
 passes_dropped     a pass that the diff gives no subject

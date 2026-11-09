@@ -8,7 +8,7 @@
 #        SCALE_REASON, DEEP_ROW, DEEP_SOURCE, EFFORT, BRANCH_COMMITS, PROD_FILES,
 #        TEST_FILES, BINARY_FILES, COMMENT_FILES, CONVENTIONS, CONVENTIONS_WHOLE_MAX,
 #        DIFF_FACTS, WORKFLOW_FACTS, EARLIER_MODE, EARLIER_HEAD, EARLIER_LIST,
-#        CHANGED_SINCE, FINDINGS_FILE
+#        CHANGED_SINCE, FINDINGS_FILE, OWNER, OWNER_RULES
 # Sets: CONTEXT_PATH, CONTEXT_NOTE, NOTES_PATH, PROD_DIFF_WHERE, TESTS_DIFF_WHERE,
 #       CONTEXT_LINES, PR_NUMBER, PR_URL, CI_SECTION, COMMENTS_SECTION
 #
@@ -150,6 +150,14 @@ section_conventions() {
     conventions_excerpt "$CONVENTIONS"
   else
     echo "(no conventions doc found in this repo)"
+  fi
+  if [ -n "$OWNER_RULES" ]; then
+    echo
+    echo "### Owner rules ($OWNER)"
+    echo
+    echo "Source: \`$OWNER_RULES\`. These rules apply to every repository of the owner."
+    echo
+    conventions_excerpt "$OWNER_RULES" | sed 's/^###/####/'
   fi
   return 0
 }
