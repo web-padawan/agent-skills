@@ -585,6 +585,10 @@ for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
     | sort -u | comm -23 - <(printf '%s\n' "$CONTRACT_KEYS"))
   expect "docs/contracts.md lists every plan key of $log" "" "$unknown"
 done
+check "review-plan.sh refuses --off with an unknown stage" 1 \
+  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --off nosuch"
+check "review-plan.sh refuses --budget without a number" 1 \
+  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --budget rounds=x"
 # Every path of scripts/dev/review-files.txt exists and has a known tag.
 MANIFEST_BAD=$(awk '!/^#/ && NF { if ($2 != "move" && $2 != "copy" && $2 != "drop") print "tag " $0; else print $1 }' \
   "$SCRIPTS/dev/review-files.txt" | while read -r p; do

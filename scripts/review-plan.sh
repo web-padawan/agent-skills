@@ -12,6 +12,7 @@
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
 #                  [--type fix|feature|refactor|chore]
 #                  [--rounds N] [--fresh] [--no-coverage] [--report-dir <path>]
+#                  [--off <stage>] [--budget <stage>=<n>]
 #                  [--no-context] [--context-out <path>] [--no-write]
 #
 # When a file under .github/workflows/ changed, it prints the `workflow:` facts of
@@ -51,6 +52,8 @@ CONTEXT_OUT=""
 NO_WRITE=false
 ROUNDS_FLAG=""
 FRESH=false
+OFF_STAGES=""
+BUDGET_FLAGS=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -64,6 +67,8 @@ while [[ $# -gt 0 ]]; do
     --no-context) WANT_CONTEXT=false; shift ;;
     --context-out) CONTEXT_OUT="${2:?--context-out requires a value}"; shift 2 ;;
     --no-write) NO_WRITE=true; shift ;;
+    --off) OFF_STAGES="$OFF_STAGES ${2:?--off requires a stage}"; shift 2 ;;
+    --budget) BUDGET_FLAGS="$BUDGET_FLAGS ${2:?--budget requires <stage>=<n>}"; shift 2 ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
@@ -93,6 +98,7 @@ PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
 . "$SCRIPT_DIR/lib/context.sh"
 # shellcheck source=lib/prompts.sh
 . "$SCRIPT_DIR/lib/prompts.sh"
+stage_check_flags
 # The plugin name prefixes each agent of lib/policy.sh and names the fork marker directory.
 PLUGIN_NAME=$(jq -r '.name // empty' "$PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null || true)
 [ -n "$PLUGIN_NAME" ] || { echo "error: no plugin name in $PLUGIN_ROOT/.claude-plugin/plugin.json" >&2; exit 1; }
@@ -117,6 +123,7 @@ plan_facts
 
 # ── Report paths and earlier findings (lib/store.sh) ─────────────────
 plan_store
+plan_stages
 
 # Mutant candidate pool — advisory, not a budget: non-styling source lines the
 # coverage stage could mutate (mutation.md skips styling), so a styling-only diff
@@ -195,6 +202,7 @@ echo "scale_reason: $SCALE_REASON"
 echo "deep: $DEEP_ROW (source: $DEEP_SOURCE)"
 echo "deep_candidates: $DEEP_CANDIDATES (.d.ts files $CAND_DTS, new exports $CAND_EXPORTS, new public methods $CAND_METHODS)"
 echo "effort_per_pass: ~$EFFORT tool calls (scale $SCALE)"
+if [ -n "$STAGE_LIST" ]; then echo "stages:"; printf '%s' "$STAGES_OUT"; else echo "stages: none"; fi
 if [ "$MODE" = "pr" ]; then
   echo "coverage: n/a (pr mode — the coverage stage is self-review only)"
 else
