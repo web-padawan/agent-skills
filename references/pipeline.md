@@ -182,8 +182,8 @@ Navigate to `about:blank`, then build the tree inside `browser_evaluate`.
    with a one-line reason. Keep such a finding in the report. A claim that names code outside
    its hunk and carries no `src:` enters as `unverified`. Open that code before you confirm
    it. This applies to the categories `behavior`, `fix`, `api`, `impact`, `logic` and
-   `reuse`. Example: "the crud dialog inherits the margin" needs the crud line that
-   inherits it.
+   `reuse`. Example: "the sibling dialog inherits the margin" needs the line of the dialog
+   that inherits it.
 2. **Dedup**: the same file, line and claim from several agents is one finding. Keep the
    clearest wording. When agents filed the finding under different categories, it lives
    under the category of the owner pass, with a one-line pointer from the other. Two passes
