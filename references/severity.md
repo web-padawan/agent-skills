@@ -30,8 +30,8 @@ at most. Name the unverified part in the claim. Impact decides the tier only aft
 confirms the claim. A claim about code outside the hunk with no `src:` line counts as
 unverified until triage reads that code.
 
-**CI is authoritative on a PR scope.** The `ci:` digest of the plan settles lint, test and
-visual-baseline state for the head. A green check means that no pass may report that failure.
+**CI is authoritative on a PR scope.** The `ci:` digest of the plan settles lint and test
+state for the head. A green check means that no pass may report that failure.
 No pass should re-run the command locally to prove one. A prettier or test run that contradicts
 a green check is a local-environment finding, not a PR finding.
 
@@ -62,8 +62,7 @@ The change type shifts where the A line sits. Apply these rules on top of the ru
 A tests finding can read as both "lets a real bug through" (A) and "coverage gap away from the
 core" (B). The type-aware line wins, except when the unpinned path is what the branch exists
 to deliver. In that case the tier is A (on a **fix**, always). Tie-break: pinned anywhere else
-(another suite, another theme) → B. A stale-but-passing baseline is B when the whole fix is to
-regenerate it. The report must still say that the committed baseline does not match the code.
+(another suite) → B.
 
 ## Slop and comments
 
@@ -107,8 +106,8 @@ the tier and category. Nothing downstream picks a label from the tier again.
 | confirmed B or C, the one-line fix is the whole change | `todo` | `(<category>)` |
 | confirmed C | `nitpick` | none, non-blocking by nature |
 | any tier, key claim `unverified` | `question` | `(<category>)` |
-| routed to a human: AT verdict, design intent, semver call, parity with a wrapper or binding | `question` | `(a11y)` · `(design)` · `(semver)` · `(parity)` |
-| a process step, not a code change: a `.d.ts` entry, a dev page, a companion PR | `chore` | `(blocking)` when merge depends on it |
+| routed to a human: AT verdict, design intent, semver call, parity with another implementation of the API | `question` | `(a11y)` · `(design)` · `(semver)` · `(parity)` |
+| a process step, not a code change: a type declaration, a demo, a change in another repository | `chore` | `(blocking)` when merge depends on it |
 | a concern that pre-dates the diff, worth a follow-up issue | `thought` | none |
 
 Rules that accompany the table:
@@ -121,8 +120,8 @@ Rules that accompany the table:
   The former is an `issue` or `suggestion`. The latter is a `nitpick`.
 - **A `question` is worded as one.** The subject asks. The discussion says what you checked and
   what you could not check. An unverified claim never posts as an assertion.
-- **A routed `question` names the owner or the test**: the AT × browser matrix, the theme to
-  check, the wrapper API that it must match. It concludes nothing.
+- **A routed `question` names the owner or the test**: the AT × browser matrix, the
+  configuration to check, the API that it must match. It concludes nothing.
 - **`if-minor`** only on a B `suggestion` whose fix could balloon past its one-line
   description. Otherwise `non-blocking`.
 - **Every `issue` pairs with its fix**: the one-line fix from the frozen list is the discussion.
