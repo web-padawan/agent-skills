@@ -774,6 +774,18 @@ PR_HITS=$(cd "$SCRIPTS/.." && grep -rnE '#[0-9]{3,}' agents references skills ow
   || true)
 expect "only docs/retrospective.md cites a past PR" "" "$PR_HITS"
 
+echo "== owner names"
+# The review core names an owner only in an owner/repo name, for example
+# vaadin/web-components. A rule for one owner lives in owners/<owner>/rules.md.
+ROOT="$SCRIPTS/.."
+OWNER_HITS=$(cd "$ROOT" && grep -rn -i -w -E 'vaadin|lumo|aura' \
+  agents references skills/pr-review skills/self-review docs/contracts.md \
+  scripts/review-plan.sh scripts/diff-facts.sh scripts/get-pr-context.sh scripts/pr-screen.sh \
+  scripts/pr-refresh.sh scripts/post-review.sh scripts/post-comment.sh scripts/workflow-facts.sh \
+  scripts/lib scripts/stages scripts/hooks $(ls -d scripts/facts 2>/dev/null) 2>/dev/null \
+  | grep -v -i -E 'vaadin/[a-z0-9._-]+' || true)
+expect "the review core names an owner only in an owner/repo citation" "" "$OWNER_HITS"
+
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"
   rm -rf "$WORK"
