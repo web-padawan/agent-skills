@@ -531,6 +531,19 @@ expect "lib/lanes.sh sorts the test and code files of several languages" \
   "test:pkg/x_test.go test:app/test_views.py test:app/views_test.py test:lib/a_spec.rb test:src/AppTests.cs test:src/a.test.ts code:src/a.go code:src/lib.rs code:app/views.py code:src/App.vue " \
   "$LANES"
 
+# A plain class indents its members by 2 spaces. A new public method there is a deep candidate.
+DC="$WORK/deep"
+git init -q -b main "$DC"
+git -C "$DC" config user.email smoke@example.com; git -C "$DC" config user.name smoke; git -C "$DC" config commit.gpgsign false
+mkdir -p "$DC/src" && printf 'class A {\n}\n' > "$DC/src/a.ts"
+git -C "$DC" add -A && git -C "$DC" commit -q -m base && git -C "$DC" update-ref refs/remotes/origin/main HEAD
+git -C "$DC" checkout -q -b topic
+printf 'class A {\n  open(force: boolean): void {\n    setTimeout(() => {\n    });\n  }\n}\n' > "$DC/src/a.ts"
+git -C "$DC" commit -q -am "feat: open"
+(cd "$DC" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type feature) > "$WORK/deep.log" 2>&1
+expect "review-plan.sh counts a public method of a plain class as a deep candidate" \
+  "deep_candidates: 1 (.d.ts files 0, new exports 0, new public methods 1)" "$(grep '^deep_candidates:' "$WORK/deep.log")"
+
 echo "== review-plan.sh fixtures"
 # Fixtures that pin the plan output of edge paths: a changed PNG, conventions docs of 300
 # and 500 lines, findings files on the same head, and a dirty tracked file.
