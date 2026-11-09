@@ -719,151 +719,6 @@ if [ -n "$BASE" ]; then
   BRANCH_COMMITS=$(git log --oneline --no-decorate --reverse "$BASE..$HEAD" 2>/dev/null || true)
 fi
 
-# ── New unit ──────────────────────────────────────────────────────────
-# Omissions never show in a diff: a pass sees what a new unit has, not what its
-# siblings have and it lacks. When the diff adds a unit (a new directory whose
-# peers carry the same manifest), build the expected set from the siblings:
-#   registration gaps — files outside every unit that mention >= 80% of the
-#     siblings by token, but not the new unit;
-#   scaffold gaps — lines that >= 80% of same-class siblings share at the same
-#     relative path, but the new unit's file lacks. Class = siblings that carry
-#     the new unit's most common license comment line (all siblings without one).
-# The gaps are leads for the change pass, never facts: a gap can be intentional.
-UNIT_MANIFESTS=" pom.xml package.json build.gradle build.gradle.kts Cargo.toml go.mod pyproject.toml "
-NEW_UNIT=""; UNIT_TOKEN=""; UNIT_PRE=""; UNIT_SUF=""; UNIT_SIBLINGS=""; UNIT_NSIB=0
-UNIT_CLASS_DESC=""; REG_GAPS=""; SCAFFOLD_GAPS=""; REG_GAP_COUNT=0; SCAFFOLD_GAP_COUNT=0
-
-unit_peers() {  # unit_peers <parent> — directory names directly under <parent> at HEAD
-  if [ "$1" = "." ]; then git ls-tree -d --name-only "$HEAD" 2>/dev/null || true
-  else git ls-tree -d --name-only "$HEAD" "$1/" 2>/dev/null | sed "s|^$1/||" || true; fi
-}
-
-unit_detect() {
-  local added f parts i cand parent name top peers segs nseg total k m pre suf cnt bestcnt p mid j
-  added=$(git diff --name-only --diff-filter=A -M "$BASE..$HEAD" 2>/dev/null || true)
-  for f in $added; do
-    case "$UNIT_MANIFESTS" in *" ${f##*/} "*) ;; *) continue ;; esac
-    IFS='/' read -ra parts <<< "$f"
-    cand=""
-    for ((i = 1; i < ${#parts[@]}; i++)); do
-      cand=$(IFS='/'; printf '%s' "${parts[*]:0:i}")
-      git cat-file -e "$BASE:$cand" 2>/dev/null || break
-      cand=""
-    done
-    [ -n "$cand" ] || continue
-    case "$cand" in */*) parent=${cand%/*} ;; *) parent="." ;; esac
-    name=${cand##*/}
-    # the shallowest manifest inside the candidate decides what a peer must carry
-    top=$(printf '%s\n' $added | grep "^$cand/" | awk -F/ -v m="$UNIT_MANIFESTS" '
-      { b = $NF; if (index(m, " " b " ") && (best == "" || NF < bn)) { best = $0; bn = NF } }
-      END { print best }')
-    top=${top#$cand/}
-    case "$top" in */*) continue ;; esac   # the unit's own root must hold the manifest
-    peers=$(unit_peers "$parent" | grep -vxF "$name" || true)
-    IFS='-' read -ra segs <<< "$name"
-    nseg=${#segs[@]}
-    for ((total = nseg - 1; total >= 0; total--)); do
-      bestcnt=0
-      for ((k = 0; k <= total; k++)); do
-        m=$((total - k))
-        pre=""; suf=""
-        [ "$k" -gt 0 ] && pre="$(IFS='-'; printf '%s' "${segs[*]:0:k}")-"
-        [ "$m" -gt 0 ] && suf="-$(IFS='-'; printf '%s' "${segs[*]:nseg-m:m}")"
-        cnt=0; mid=""
-        for p in $peers; do
-          case "$p" in "$pre"*"$suf") ;; *) continue ;; esac
-          j=${p#"$pre"}; j=${j%"$suf"}
-          [ -n "$j" ] && [ ${#p} -gt $((${#pre} + ${#suf})) ] || continue
-          if [ "$parent" = "." ]; then j="$p/$top"; else j="$parent/$p/$top"; fi
-          git cat-file -e "$HEAD:$j" 2>/dev/null || continue
-          j=${p#"$pre"}; j=${j%"$suf"}
-          cnt=$((cnt + 1)); mid="$mid $j"
-        done
-        if [ "$cnt" -ge 3 ] && [ "$cnt" -gt "$bestcnt" ]; then
-          bestcnt=$cnt; UNIT_PRE=$pre; UNIT_SUF=$suf; UNIT_SIBLINGS=$mid
-        fi
-      done
-      [ "$bestcnt" -ge 3 ] && break
-    done
-    [ "$bestcnt" -ge 3 ] 2>/dev/null || { UNIT_SIBLINGS=""; continue; }
-    NEW_UNIT=$cand
-    UNIT_TOKEN=${name#"$UNIT_PRE"}; UNIT_TOKEN=${UNIT_TOKEN%"$UNIT_SUF"}
-    UNIT_NSIB=$bestcnt
-    UNIT_PARENT=$parent
-    return 0
-  done
-  return 0
-}
-
-unit_dir() {  # unit_dir <token> — the directory of the unit with that token
-  local d="$UNIT_PRE$1$UNIT_SUF"
-  if [ "$UNIT_PARENT" = "." ]; then printf '%s' "$d"; else printf '%s/%s' "$UNIT_PARENT" "$d"; fi
-}
-
-unit_census() {
-  local t excl=() pats=() threshold own
-  excl+=(":(exclude)$NEW_UNIT")
-  for t in $UNIT_SIBLINGS; do excl+=(":(exclude)$(unit_dir "$t")"); pats+=(-e "$t"); done
-  threshold=$(( (UNIT_NSIB * 8 + 9) / 10 ))
-  own=$(git grep -l -w -F -e "$UNIT_TOKEN" "$HEAD" -- . "${excl[@]}" 2>/dev/null | sed "s|^$HEAD:||" || true)
-  REG_GAPS=$(git grep -o -w -F "${pats[@]}" "$HEAD" -- . "${excl[@]}" 2>/dev/null | awk -v h="$HEAD:" -v th="$threshold" '
-      { line = substr($0, length(h) + 1); tok = line; sub(/.*:/, "", tok); path = line; sub(/:[^:]*$/, "", path)
-        if (!((path, tok) in seen)) { seen[path, tok] = 1; n[path]++ } }
-      END { for (p in n) if (n[p] >= th) printf "%s\t%d\n", p, n[p] }' | sort || true)
-  REG_GAPS=$(printf '%s\n' "$REG_GAPS" | while IFS=$'\t' read -r path cnt; do
-      [ -n "$path" ] || continue
-      printf '%s\n' "$own" | grep -qxF "$path" && continue
-      printf '%s: mentions %s of %s siblings\n' "$path" "$cnt" "$UNIT_NSIB"
-    done | head -12 || true)
-  REG_GAP_COUNT=$(printf '%s\n' "$REG_GAPS" | grep -c . || true)
-}
-
-unit_scaffold() {
-  local class t cls="" ncls=0 f rel relp sp n tmp out=""
-  class=$(git grep -h -i -E '^[[:space:]]*(\*|//|#).*licen' "$HEAD" -- "$NEW_UNIT" 2>/dev/null \
-    | sort | uniq -c | sort -rn | head -1 | sed 's/^ *[0-9]* //' || true)
-  if [ -n "$class" ]; then
-    for t in $UNIT_SIBLINGS; do
-      git grep -q -F -e "$class" "$HEAD" -- "$(unit_dir "$t")" 2>/dev/null || continue
-      cls="$cls $t"; ncls=$((ncls + 1)); [ "$ncls" -ge 12 ] && break
-    done
-  fi
-  if [ "$ncls" -ge 3 ]; then
-    UNIT_CLASS_DESC="$ncls siblings that carry the license line \`$(printf '%s' "$class" | sed 's/^[[:space:]]*//' | cut -c1-100)\`"
-  else
-    cls=$(printf '%s\n' $UNIT_SIBLINGS | head -12 | tr '\n' ' '); ncls=$(printf '%s\n' $cls | grep -c . || true)
-    UNIT_CLASS_DESC="$ncls siblings (no shared license line)"
-  fi
-  tmp=$(mktemp -d)
-  for f in $(git ls-tree -r --name-only "$HEAD" -- "$NEW_UNIT" 2>/dev/null); do
-    case " $BINARY_FILES " in *" $f "*) continue ;; esac
-    rel=${f#"$NEW_UNIT"/}; relp=${rel//$UNIT_TOKEN/@T@}; n=0; : > "$tmp/all"
-    for t in $cls; do
-      sp="$(unit_dir "$t")/${relp//@T@/$t}"
-      git cat-file -e "$HEAD:$sp" 2>/dev/null || continue
-      n=$((n + 1))
-      git show "$HEAD:$sp" 2>/dev/null | sed -e 's/^[[:space:]]*//' -e "s/$t/@T@/g" | grep -v '^$' | sort -u >> "$tmp/all" || true
-    done
-    [ "$n" -ge 3 ] || continue
-    sort "$tmp/all" | uniq -c | awk -v n="$n" '$1 * 10 >= n * 8' | sed 's/^ *[0-9]* //' | sort -u > "$tmp/common"
-    git show "$HEAD:$f" 2>/dev/null | sed -e 's/^[[:space:]]*//' -e "s/$UNIT_TOKEN/@T@/g" | sort -u > "$tmp/new" || true
-    out="$out$(comm -23 "$tmp/common" "$tmp/new" | cut -c1-160 | sed "s|^|$rel: |")
-"
-  done
-  rm -rf "$tmp"
-  SCAFFOLD_GAPS=$(printf '%s' "$out" | grep -v '^$' | head -12 || true)
-  SCAFFOLD_GAP_COUNT=$(printf '%s\n' "$SCAFFOLD_GAPS" | grep -c . || true)
-}
-
-UNIT_PARENT="."
-if [ -n "$BASE" ] && [ -n "$HEAD" ]; then
-  unit_detect
-  if [ -n "$NEW_UNIT" ]; then
-    unit_census
-    unit_scaffold
-  fi
-fi
-
 # ── Context skeleton ──────────────────────────────────────────────────
 # Everything deterministic about the shared context file (references/pipeline.md §2):
 # the framing, identity, rules and rubric copied from the reference docs by marker,
@@ -1107,18 +962,6 @@ if [ -n "$CONTEXT_PATH" ]; then
       echo "- Workflow (scripts/workflow-facts.sh; read each \`uses:\` action at its ref before a claim about its inputs or behavior):"
       printf '%s\n' "$WORKFLOW_FACTS" | sed 's/^/    /'
     fi
-    if [ -n "$NEW_UNIT" ]; then
-      echo
-      echo "## New unit"
-      echo
-      block "$PLUGIN_ROOT/references/skeleton-blocks.md" new-unit-header
-      echo
-      echo "- Unit: \`$NEW_UNIT\`, token \`$UNIT_TOKEN\`, $UNIT_NSIB siblings."
-      echo "- Registration gaps (files outside every unit that mention at least 80% of the siblings, but not this unit):"
-      if [ -n "$REG_GAPS" ]; then printf '%s\n' "$REG_GAPS" | sed 's/^/    - /'; else echo "    - none"; fi
-      echo "- Scaffold gaps (lines that at least 80% of $UNIT_CLASS_DESC share at the same path, but this unit lacks):"
-      if [ -n "$SCAFFOLD_GAPS" ]; then printf '%s\n' "$SCAFFOLD_GAPS" | sed 's/^/    - /'; else echo "    - none"; fi
-    fi
     echo
     echo "## Already on the PR"
     echo
@@ -1259,11 +1102,6 @@ case "$EARLIER_MODE" in
 esac
 [ -n "$FINDINGS_FILE" ] && echo "findings_file: $FINDINGS_FILE"
 echo "conventions_doc: ${CONVENTIONS:-none}"
-if [ -n "$NEW_UNIT" ]; then
-  echo "new_unit: $NEW_UNIT (token $UNIT_TOKEN, $UNIT_NSIB siblings), registration_gaps $REG_GAP_COUNT, scaffold_gaps $SCAFFOLD_GAP_COUNT"
-else
-  echo "new_unit: none"
-fi
 
 if [ "$GUARD" != "ok" ]; then
   echo "passes: none — the guard refused this run"

@@ -120,12 +120,6 @@ nits after the passes report them.
 > merge of the base branch. Do not raise a style point on code that the author did not write.
 <!-- /block -->
 
-<!-- block:new-unit-header -->
-> Omissions do not show in a diff. The plan script built this list from the siblings of the
-> new unit. Each gap is an Open lead that the change pass owns. A gap is not a fact. The
-> conventions excerpt or the intent can explain it.
-<!-- /block -->
-
 <!-- block:conventions-header -->
 > This is the conventions doc of the repository. A doc of more than 400 lines is named, not
 > quoted. Do not open the conventions doc unless a finding of yours needs a rule that this

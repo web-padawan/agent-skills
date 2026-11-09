@@ -42,7 +42,6 @@ compatibility* strictly. Nothing observable may change.
 - Two parts are independent when each fixes its own symptom and has its own tests
 - A title that names only one of several parts is a `scope` finding
 - With a parent PR/issue: the extraction stands alone and depends on nothing from the parent
-- Each gap in `## New unit` ends as a `scope` finding or a `lead cleared:` line that names the rule or intent that explains it
 
 ### Behavior and compatibility — category `behavior`
 
