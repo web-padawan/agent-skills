@@ -54,8 +54,9 @@ for f in $(printf '%s\n' $PROD | grep '\.java$' || true); do
       WC_PROPS="${WC_PROPS}wc_property: $prop -> unknown (no tag $tag in $WC_DIR)
 "; continue
     fi
+    # Only the package of the component: another package can declare a property of the
+    # same name (upload declares `fileName`, flow-components #10597).
     hit=$(git -C "$WC_DIR" grep -n -E "^[[:space:]]+$prop: \{" "$tag" -- "packages/$pkg/src/*.js" 2>/dev/null | head -1 || true)
-    [ -n "$hit" ] || hit=$(git -C "$WC_DIR" grep -n -E "^[[:space:]]+$prop: \{" "$tag" -- 'packages/*/src/*.js' 2>/dev/null | head -1 || true)
     if [ -z "$hit" ]; then
       WC_PROPS="${WC_PROPS}wc_property: $prop -> not declared in @vaadin/$pkg@$ver (a native, inherited or connector property)
 "; continue

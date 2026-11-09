@@ -300,7 +300,8 @@ expect "diff-facts.sh prints the rule of the shadow DOM read" 1 \
   "$(grep -c '^rule: Each `shadow_reach` entry' "$WORK/diff-facts.log")"
 
 # A Flow repository: the diff syncs a property, and the web component checkout declares it
-# with notify and a default at the pinned tag.
+# with notify and a default at the pinned tag. It also syncs `fileName`, which only another
+# package declares.
 FLOWFX="$WORK/flowfx"; WCFX="$WORK/wcfx"
 git init -q -b main "$WCFX"
 (
@@ -308,6 +309,8 @@ git init -q -b main "$WCFX"
   git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
   mkdir -p packages/x/src
   printf 'static get properties() {\n  return {\n    zoom: {\n      type: String,\n      value: %s,\n      notify: true,\n    },\n  };\n}\n' "'a'" > packages/x/src/vaadin-x.js
+  mkdir -p packages/y/src
+  printf 'static get properties() {\n  return {\n    fileName: {\n      type: String,\n    },\n  };\n}\n' > packages/y/src/vaadin-y.js
   git add . && git commit -q -m wc && git tag v1.0.0
 )
 git init -q -b main "$FLOWFX"
@@ -318,14 +321,17 @@ git init -q -b main "$FLOWFX"
   printf '<project/>\n' > pom.xml
   printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {}\n' > x-flow/src/main/java/X.java
   git add . && git commit -q -m base
-  printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {\n  @Synchronize(property = "zoom", value = "zoom-changed")\n  String getZoom() { return null; }\n}\n' > x-flow/src/main/java/X.java
+  printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {\n  @Synchronize(property = "zoom", value = "zoom-changed")\n  String getZoom() { return null; }\n  void setFileName(String f) { getElement().setProperty("fileName", f); }\n}\n' > x-flow/src/main/java/X.java
   git add . && git commit -q -m change
 )
 (cd "$FLOWFX" && REVIEW_WC_DIR="$WCFX" "$SCRIPTS/diff-facts.sh" --base "$(git rev-parse HEAD~1)" \
   --head "$(git rev-parse HEAD)") > "$WORK/diff-facts-flow.log" 2>&1
 expect "diff-facts.sh prints the web component declaration of a synced property" \
   "wc_property: zoom -> @vaadin/x@1.0.0 packages/x/src/vaadin-x.js:3 type=String value='a' notify=true" \
-  "$(grep '^wc_property:' "$WORK/diff-facts-flow.log")"
+  "$(grep '^wc_property: zoom ' "$WORK/diff-facts-flow.log")"
+expect "diff-facts.sh does not take the declaration of a property from another package" \
+  "wc_property: fileName -> not declared in @vaadin/x@1.0.0 (a native, inherited or connector property)" \
+  "$(grep '^wc_property: fileName ' "$WORK/diff-facts-flow.log")"
 expect "diff-facts.sh prints no reach line in a Flow repository" \
   "" "$(grep -E '^(reach|flow_counterpart):' "$WORK/diff-facts-flow.log")"
 expect "diff-facts.sh prints the first-sync rule of a notify property" 1 \
