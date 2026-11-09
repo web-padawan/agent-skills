@@ -59,6 +59,9 @@ finding in a file is a reason to look harder at that file.
 - No workarounds or TODOs without follow-up
 - No legacy syntax that the conventions excerpt names as legacy
 
+When the context file quotes `## Smell vocabulary`, use its names in your claims. A smell is a
+judgement call, so it is C at most. Name a smell only on a hunk that you already flagged.
+
 ### Comments — category `comments`
 
 Three questions share this category. Answer all three.
