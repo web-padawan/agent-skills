@@ -62,9 +62,7 @@ The script wrote the skeleton. The skeleton already holds these parts:
 - the new-unit gaps, when the diff adds a unit: registration and scaffold gaps from its siblings
 - the earlier findings, when the last self-review of the branch left a findings file, and on a
   newer head the line ranges changed since
-- the conventions excerpt: the whole doc up to 400 lines. A longer doc gives the chapters
-  selected by the kinds of file touched and by what the
-  added lines use
+- the conventions excerpt: the whole doc up to 400 lines. A longer doc is named only
 - the comment policy, when the diff touches a comment
 - the severity rubric
 - the rules of the mode

@@ -551,8 +551,8 @@ expect "review-plan.sh quotes a conventions doc of 300 lines whole" \
   "$(grep '^Source: `CONVENTIONS' "$FX_DIR/context.md")"
 awk 'BEGIN { print "# Conventions"; print "## Testing"; for (i = 1; i <= 160; i++) print "Test rule " i; print "## Components"; for (i = 1; i <= 160; i++) print "Code rule " i; print "## Release"; for (i = 1; i <= 170; i++) print "Release rule " i }' > "$FX/CONVENTIONS.md"
 fx_plan fx-conv500.log --fresh --type fix
-expect "review-plan.sh names the chapters of a conventions doc of 500 lines" \
-  "Source: \`CONVENTIONS.md\`. Chapters selected by signals: src ." \
+expect "review-plan.sh names a conventions doc of 500 lines and does not quote it" \
+  "Source: \`CONVENTIONS.md\`, not quoted (494 lines, over 400)." \
   "$(grep '^Source: `CONVENTIONS' "$FX_DIR/context.md")"
 rm -f "$FX/CONVENTIONS.md"
 mkdir -p "$FX_DIR"

@@ -867,8 +867,8 @@ fi
 # ── Context skeleton ──────────────────────────────────────────────────
 # Everything deterministic about the shared context file (references/pipeline.md §2):
 # the framing, identity, rules and rubric copied from the reference docs by marker,
-# the PR body, the lanes, the diff (inline when small), the conventions chapters the
-# touched file kinds select, and the Settled facts this script can prove. The
+# the PR body, the lanes, the diff (inline when small), the conventions doc when it is
+# short, and the Settled facts this script can prove. The
 # orchestrator appends only what it verified itself.
 block() {  # block <doc> <name> — print one marked block from a reference doc, headings demoted
   awk -v name="$2" '
@@ -877,75 +877,15 @@ block() {  # block <doc> <name> — print one marked block from a reference doc,
     f' "$1" | sed 's/^#/##/'
 }
 
-conventions_excerpt() {  # conventions_excerpt <doc> "<signals>" — chapters selected by signal
-  local doc="$1" signals="$2" nhead re=""
-  # A doc that fits the budget is quoted whole: chapter selection is lossy, and a missed
-  # "when you add X, also update Y" rule is a missed finding (the upstream Vaadin CI review
-  # reads the whole doc for the same reason).
-  if [ "$(wc -l < "$doc")" -le "$CONVENTIONS_WHOLE_MAX" ]; then
-    awk '/^# / { next } /^#/ || /^[[:space:]]*$/ { print; next } { printf "%d| %s\n", NR, $0 }' "$doc" | sed 's/^#/##/'
-    return
+conventions_excerpt() {  # conventions_excerpt <doc> — the doc quoted whole, with line numbers
+  # A doc that fits the budget is quoted whole: a missed "when you add X, also update Y"
+  # rule is a missed finding (the upstream Vaadin CI review reads the whole doc for the
+  # same reason). A longer doc is named only.
+  if [ "$(wc -l < "$1")" -le "$CONVENTIONS_WHOLE_MAX" ]; then
+    awk '/^# / { next } /^#/ || /^[[:space:]]*$/ { print; next } { printf "%d| %s\n", NR, $0 }' "$1" | sed 's/^#/##/'
+  else
+    echo "(the conventions doc is over $CONVENTIONS_WHOLE_MAX lines — not quoted; open \`$1\` only for a finding that needs it)"
   fi
-  nhead=$(grep -c '^## ' "$doc" 2>/dev/null || true)
-  if [ "${nhead:-0}" -lt 3 ]; then
-    echo "(the conventions doc has no chapters and is over $CONVENTIONS_WHOLE_MAX lines — not quoted; open \`$doc\` only for a finding that needs it)"
-    return
-  fi
-  for sig in $signals; do
-    case "$sig" in
-      src) re="${re}|component|implement|code style|naming" ;;
-      properties) re="${re}|propert|attribute" ;;
-      events) re="${re}|event" ;;
-      lifecycle) re="${re}|lifecycle|template|render" ;;
-      a11y) re="${re}|accessib|a11y" ;;
-      deprecation) re="${re}|deprecat" ;;
-      jsdoc) re="${re}|jsdoc|documenting|documentation" ;;
-      types) re="${re}|typescript|type definition" ;;
-      css) re="${re}|styl|them|css" ;;
-      test) re="${re}|test" ;;
-      build) re="${re}|build|depend|packag|release" ;;
-      all) re="${re}|." ;;
-    esac
-  done
-  re="${re#|}"
-  if [ -z "$re" ]; then
-    echo "(no conventions chapter selected — the diff touches no source, style or test file)"
-    return
-  fi
-  # Chapter headings become H3 so the skeleton keeps its own H2 structure.
-  awk -v re="$re" '
-    /^## / { keep = (tolower($0) ~ re) }
-    /^# / { next }
-    !keep { next }
-    /^#/ || /^[[:space:]]*$/ { print; next }
-    { printf "%d| %s\n", NR, $0 }' "$doc" | sed 's/^#/##/'
-}
-
-# Signals for the conventions excerpt: the kinds of file touched, plus what the added
-# production lines actually use — a diff that adds no event needs no Events chapter.
-conventions_signals() {
-  local sig="" added=""
-  for f in $PROD_FILES; do
-    case "$UNIT_MANIFESTS" in *" ${f##*/} "*) sig="$sig build"; continue ;; esac
-    case "$f" in
-      *.d.ts) sig="$sig types" ;;
-      *.css|*styles/*|*-styles.js|*-styles.ts) sig="$sig css" ;;
-      *.js|*.mjs|*.cjs|*.ts|*.mts|*.cts|*.jsx|*.tsx|*.java|*.kt) sig="$sig src" ;;
-    esac
-  done
-  if [ -n "$PROD_FILES" ]; then
-    added=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | grep '^+' | grep -v '^+++' || true)
-    printf '%s\n' "$added" | grep -qE 'static get properties|reflectToAttribute|notify:|@attr|@property' && sig="$sig properties"
-    printf '%s\n' "$added" | grep -qE 'dispatchEvent|CustomEvent|@fires|addEventListener' && sig="$sig events"
-    printf '%s\n' "$added" | grep -qE 'connectedCallback|disconnectedCallback|firstUpdated|willUpdate|updated\(|render\(|ready\(|static get observers' && sig="$sig lifecycle"
-    printf '%s\n' "$added" | grep -qE 'role=|aria-|tabindex|focusVisible|announce\(' && sig="$sig a11y"
-    printf '%s\n' "$added" | grep -qE '@deprecated|issueWarning' && sig="$sig deprecation"
-    printf '%s\n' "$added" | grep -qE '^\+[[:space:]]*(/\*\*|\*[[:space:]]|\* @)' && sig="$sig jsdoc types"
-  fi
-  [ -n "$TEST_FILES" ] && sig="$sig test"
-  # A new unit must follow the "when you add a new X" rules, and those sit in any chapter.
-  [ -n "$NEW_UNIT" ] && sig="$sig all"
-  printf '%s\n' $sig | awk 'NF && !seen[$0]++' | tr '\n' ' '
 }
 
 CONTEXT_PATH=""
@@ -985,8 +925,6 @@ if [ -n "$CONTEXT_PATH" ]; then
   fi
 
   CHECKED_OUT="no"; [ "$HEAD0" = "$HEAD" ] && CHECKED_OUT="yes"
-
-  SIGNALS=$(conventions_signals)
 
   # Prod diff: inline at -U10 up to ~400 lines — every pass reads it, so a patch file
   # only adds a Read per pass. A small file touched in several places is quoted whole
@@ -1137,10 +1075,10 @@ if [ -n "$CONTEXT_PATH" ]; then
       if [ "$(wc -l < "$CONVENTIONS")" -le "$CONVENTIONS_WHOLE_MAX" ]; then
         echo "Source: \`$CONVENTIONS\`, quoted whole ($(wc -l < "$CONVENTIONS" | tr -d ' ') lines)."
       else
-        echo "Source: \`$CONVENTIONS\`. Chapters selected by signals: ${SIGNALS:-(none)}."
+        echo "Source: \`$CONVENTIONS\`, not quoted ($(wc -l < "$CONVENTIONS" | tr -d ' ') lines, over $CONVENTIONS_WHOLE_MAX)."
       fi
       echo
-      conventions_excerpt "$CONVENTIONS" "$SIGNALS"
+      conventions_excerpt "$CONVENTIONS"
     else
       echo "(no conventions doc found in this repo)"
     fi
