@@ -537,9 +537,8 @@ fx_plan() {  # fx_plan <log> [flags] — a self-mode plan of the fixture
 fx_plan fx-png.log --fresh --type fix
 expect "review-plan.sh lists a changed PNG under binary_files" \
   "binary_files: shot.png " "$(grep '^binary_files:' "$WORK/fx-png.log")"
-expect "review-plan.sh prints the size of a changed PNG" \
-  "binary_dims: 1 png — 1 new, 0 removed, 0 resized, 0 same size (per-file WxH beside each binary in the skeleton)" \
-  "$(grep '^binary_dims:' "$WORK/fx-png.log")"
+expect "review-plan.sh lists a changed PNG under the binary lane of the skeleton" \
+  "- shot.png" "$(sed -n '/^binary (never diffed):$/{n;p;}' "$FX_DIR/context.md")"
 awk 'BEGIN { print "# Conventions"; for (c = 1; c <= 3; c++) { print "## Chapter " c; for (i = 1; i <= 98; i++) print "Rule " c "." i } }' > "$FX/CONVENTIONS.md"
 fx_plan fx-conv300.log --fresh --type fix
 expect "review-plan.sh quotes a conventions doc of 300 lines whole" \

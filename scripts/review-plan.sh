@@ -134,19 +134,6 @@ ci_summary() {
   '
 }
 
-# Image baselines are the only machine-readable evidence a binary diff carries.
-# stdin: PNG bytes. stdout: WxH, or nothing when the stream is not a PNG.
-png_dims() {
-  od -An -tu1 -N24 2>/dev/null | awk '
-    { for (i = 1; i <= NF; i++) b[++n] = $i }
-    END {
-      if (n < 24) exit
-      if (b[1] != 137 || b[2] != 80 || b[3] != 78 || b[4] != 71) exit
-      printf "%dx%d", b[17]*16777216 + b[18]*65536 + b[19]*256 + b[20], \
-                      b[21]*16777216 + b[22]*65536 + b[23]*256 + b[24]
-    }'
-}
-
 BRANCH=$(git branch --show-current 2>/dev/null || echo "")
 HEAD0=$(git rev-parse HEAD 2>/dev/null || echo "")
 
@@ -635,32 +622,6 @@ if [ -n "$CHANGED" ]; then
   AFFECTED=$(printf '%s\n' "$CHANGED" | awk -F/ '$1 == "packages" && NF > 2 { print $1 "/" $2 }' | sort -u | tr '\n' ' ')
 fi
 
-# Dimensions for every changed PNG. A changed WxH is a layout change and belongs
-# in the context file as a Settled fact; an unchanged WxH with moved bytes is a
-# repaint. Without this, passes are left guessing a baseline from its byte count.
-BINARY_DIMS=""
-DIMS_NEW=0; DIMS_GONE=0; DIMS_RESIZED=0; DIMS_SAME=0
-if [ -n "$BINARY_FILES" ] && [ -n "$BASE" ]; then
-  for bin in $BINARY_FILES; do
-    case "$bin" in *.png|*.PNG) ;; *) continue ;; esac
-    BIN_BEFORE=$(git show "$BASE:$bin" 2>/dev/null | png_dims || true)
-    BIN_AFTER=$(git show "$HEAD:$bin" 2>/dev/null | png_dims || true)
-    [ -z "$BIN_BEFORE" ] && BIN_BEFORE="absent"
-    [ -z "$BIN_AFTER" ] && BIN_AFTER="absent"
-    if [ "$BIN_BEFORE" = "$BIN_AFTER" ]; then
-      BINARY_DIMS="${BINARY_DIMS}  $bin: $BIN_AFTER (size unchanged)
-"
-      DIMS_SAME=$((DIMS_SAME + 1))
-    else
-      BINARY_DIMS="${BINARY_DIMS}  $bin: $BIN_BEFORE -> $BIN_AFTER
-"
-      if [ "$BIN_BEFORE" = absent ]; then DIMS_NEW=$((DIMS_NEW + 1))
-      elif [ "$BIN_AFTER" = absent ]; then DIMS_GONE=$((DIMS_GONE + 1))
-      else DIMS_RESIZED=$((DIMS_RESIZED + 1)); fi
-    fi
-  done
-fi
-
 # Mutant candidate pool — advisory, not a budget: non-styling source lines the
 # coverage stage could mutate (mutation.md skips styling), so a styling-only diff
 # reports 0 instead of sending the stage looking for work that does not exist.
@@ -911,11 +872,8 @@ if [ -n "$CONTEXT_PATH" ]; then
     echo
     echo "prod:"; for f in $PROD_FILES; do echo "- $f"; done; [ -z "$PROD_FILES" ] && echo "- none"
     echo; echo "tests:"; for f in $TEST_FILES; do echo "- $f"; done; [ -z "$TEST_FILES" ] && echo "- none"
-    echo; echo "binary (never diffed; for images, WxH on base -> head — a changed size is a layout change, \`size unchanged\` means content moved inside the same box):"
-    for f in $BINARY_FILES; do
-      DIMS=$(printf '%s' "$BINARY_DIMS" | awk -v p="  $f: " 'index($0, p) == 1 { print substr($0, length(p) + 1); exit }')
-      echo "- $f${DIMS:+ — $DIMS}"
-    done
+    echo; echo "binary (never diffed):"
+    for f in $BINARY_FILES; do echo "- $f"; done
     [ -z "$BINARY_FILES" ] && echo "- none"
     echo
     echo "$(git diff --shortstat "$BASE..$HEAD" 2>/dev/null | sed 's/^ *//')"
@@ -1131,12 +1089,6 @@ fi
 echo "prod_files: ${PROD_FILES:-none}"
 echo "test_files: ${TEST_FILES:-none}"
 echo "binary_files: ${BINARY_FILES:-none}"
-if [ -n "$BINARY_DIMS" ]; then
-  echo "binary_dims: $((DIMS_NEW + DIMS_GONE + DIMS_RESIZED + DIMS_SAME)) png — $DIMS_NEW new, $DIMS_GONE removed, $DIMS_RESIZED resized, $DIMS_SAME same size (per-file WxH beside each binary in the skeleton)"
-  # New and removed files carry no before/after story; the resized and same-size
-  # ones are the evidence — a size that did not change while content did is a fix's signature.
-  printf '%s' "$BINARY_DIMS" | grep -v ': absent -> \|-> absent$' || true
-fi
 echo "comment_files: ${COMMENT_FILES:-none}"
 
 if [ -n "$BRANCH_COMMITS" ]; then
