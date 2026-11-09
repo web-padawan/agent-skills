@@ -4,6 +4,46 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-09 — PR review 10: flow-components #10597, PDF viewer download API
+
+One production file, `PdfViewer.java`, +59, and 5 new tests in `PdfViewerTest.java`. The PR
+adds `download()`, `getFileName()`, `setFileName()` and `setDownloadButtonVisible()`. Team PR,
+CI green, scale `lite`. Full review with three passes. Posted 4 threads (1 question,
+1 suggestion, 2 nitpicks) at head `e1d19d5`.
+
+- The plan printed `wc_property: fileName -> @vaadin/pdf-viewer@25.4.0-alpha5
+  packages/upload/src/vaadin-upload-file-mixin.js:50`. The lookup matched a property of
+  another package in the bundle. The real declaration is in web-components #13301, which the
+  pinned alpha5 does not contain. The orchestrator corrected it in the Settled facts.
+  → no change yet. The lookup should search only the package of the component.
+- The plan printed `gate_default: Full review`. The orchestrator recommended `Quick review`
+  in the chat but listed `Full review` first without a mark. The reviewer chose
+  `Full review`. → no change.
+- The passes returned 9 findings, and triage kept 4. The tests pass cited the
+  one-test-per-property rule of `CONVENTIONS.md`. That rule landed on main on Nov 6 (#10565),
+  and the branch merged main after it. The conventions excerpt carried the rule.
+- The tests pass did not read the notes file, because no lead named it. It then filed the
+  `EnableFeatureFlagExtension` as unverified noise. A Settled fact already explained it:
+  `onAttach` checks the flag, and the download test attaches the viewer. Triage dropped it.
+  → no change yet. Every pass must read Settled facts, also when it owns no lead.
+- The change pass again filed the client error of the pinned alpha before the version bump.
+  The PR note and a Settled fact both said so. Triage dropped it, as in review 9.
+  → no change yet. This is the second run with the same drop.
+- The change pass rated the queued `download()` on a detached viewer as a B behavior issue.
+  `callJsFunction` queues by Flow design, and the queue also lets a call before `add()` work.
+  Triage posted it as `question (design)`.
+- The code pass anchored its finding at `PdfViewer.java:459`. The Javadoc is at line 174.
+  The change pass anchored the same claim at line 173, and triage deduped by claim.
+- The orchestrator anchored the design question at line 224. It read the line from
+  `sed -n` piped to `cat -n`, which numbers the output from 1. The method is at line 217, and
+  the hunk ends at line 223. The dry run of `post-review.sh` did not flag it. The post demoted
+  the thread to a file thread. → no change yet. The dry run could check each line against
+  the hunks of the diff.
+- Two orchestrator Bash calls failed on `echo =====`. In zsh, a word that starts with `=`
+  expands to a command path. → no change. Use `echo '---'` as a separator.
+- Cost: about 118k subagent tokens (change 48k with 11 calls in 97 seconds, code 33k with
+  3 calls, tests 37k with 3 calls). The code and tests passes ran on sonnet.
+
 ## 2026-11-06 — PR review 9: flow-components #10594, PDF viewer toolbar actions
 
 One production file, `PdfViewer.java`, +42, and one new unit test file. The PR adds
