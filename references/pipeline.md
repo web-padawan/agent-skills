@@ -59,7 +59,6 @@ The script wrote the skeleton. The skeleton already holds these parts:
 - the Settled facts that the script can prove (CI digest, image dimensions)
 - the comments already on the PR: thread id, author, bot or human, open or resolved,
   `path:line`, first line
-- the new-unit gaps, when the diff adds a unit: registration and scaffold gaps from its siblings
 - the earlier findings, when the last self-review of the branch left a findings file, and on a
   newer head the line ranges changed since
 - the conventions excerpt: the whole doc up to 400 lines. A longer doc is named only
