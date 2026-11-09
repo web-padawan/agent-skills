@@ -88,7 +88,7 @@ fi
 
 # Added production code that reads the shadow DOM of another element (`other.$.id`). It
 # couples a parent to the internals of a child. The family usually has a declarative
-# path instead, for example a delegated property (#13327: `focusElement.$.button`).
+# path instead, for example a delegated property. A read looks like `focusElement.$.button`.
 SHADOW_REACH=""
 SRC_JS=$(printf '%s\n' $PROD | grep -E '\.[cm]?[jt]s$' | grep -v '\.d\.ts$' || true)
 if [ -n "$SRC_JS" ]; then

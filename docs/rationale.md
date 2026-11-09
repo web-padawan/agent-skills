@@ -60,14 +60,13 @@ skill loads that file. Read this file before you drop a rule that looks like cer
   reproduced. The bot's claim is not authoritative. Only the claim's existence is.
 - **A decision comes before a review.** On 11 fork PRs, labels and import counts named every
   PR that stopped at a team decision. Hence the screening facts and a gate before the fan-out.
-  The rules of `pr-screen.sh`, each with the PR that set it:
-  - `behavior-altering` is a semver call. #12974 changed the host `display` in a minor.
+  The rules of `pr-screen.sh`:
+  - `behavior-altering` is a semver call.
   - `feature-no-ac` holds a contributor to the PR template, which asks for an issue with
-    acceptance criteria. #12970 had none. A team author takes a feature from the backlog,
-    so flow-components #10523 got a false `decide` before the rule was limited.
+    acceptance criteria. A team author takes a feature from the backlog, so the flag skips
+    a team author.
   - `low-impact` with a reach of 3 or more: a Low-impact issue rarely justifies a change to
-    a module that many packages import. #12976 changed the PositionMixin of 10 packages.
-    #13316 changed the OverlayMixin of 17.
+    a module that many packages import.
   - `a11y` with a reach of 3 or more needs a test with a screen reader, which no pass runs.
   - `untriaged` or `self-filed`: no team confirmation of the bug. A team author who files
     an issue is that confirmation.

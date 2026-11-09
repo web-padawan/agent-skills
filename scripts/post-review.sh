@@ -204,8 +204,7 @@ ROOTS=$(gh api "repos/$REPO_SLUG/pulls/$PR_NUMBER/comments" --paginate \
 
 # ── Every line anchor sits in a hunk of the PR diff ──────────────────
 # GitHub takes a line thread only on a line of a diff hunk. On any other line, the thread
-# moves to the file, and the author reads an anchor that the review did not mean
-# (flow-components #10597).
+# moves to the file, and the author reads an anchor that the review did not mean.
 if [ "$BODY_ONLY" != true ]; then
   HUNKS=$(gh api "repos/$REPO_SLUG/pulls/$PR_NUMBER/files" --paginate --jq '
     .[] | .filename as $f

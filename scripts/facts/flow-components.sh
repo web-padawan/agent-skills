@@ -32,7 +32,7 @@ TESTS=${FACTS_TESTS:-}
 WC_DIR=${REVIEW_WC_DIR:-../web-components}
 
 # The newest local state of the web components. A Flow change can land before the version
-# bump, so the pinned tag can lack the API that it uses (flow-components #10597).
+# bump, so the pinned tag can lack the API that it uses.
 WC_REF=""; WC_LATER_AT=""
 for r in refs/remotes/origin/main refs/heads/main; do
   if git -C "$WC_DIR" rev-parse -q --verify "$r^{commit}" >/dev/null 2>&1; then WC_REF=$r; break; fi
@@ -56,7 +56,7 @@ wc_later() {  # wc_later <pkg> <regex> — ", declared after it at <ref> (<sha>)
 # Web component properties that the added Java lines sync, read at the pinned version.
 # A `notify: true` property with a default fires `<prop>-changed` on its first update, and
 # the Flow client syncs the default while the server holds no value. A server listener of
-# that property then runs once with no user action (flow-components #10596, #10523).
+# that property then runs once with no user action.
 WC_PROPS=""; WC_SEEN=" "
 WC_METHODS=""; WM_SEEN=" "
 for f in $(printf '%s\n' $PROD | grep '\.java$' || true); do
@@ -83,7 +83,7 @@ for f in $(printf '%s\n' $PROD | grep '\.java$' || true); do
 "; continue
     fi
     # Only the package of the component: another package can declare a property of the
-    # same name (upload declares `fileName`, flow-components #10597).
+    # same name.
     hit=$(wc_decl "$tag" "$pkg" "^[[:space:]]+$prop: \{")
     if [ -z "$hit" ]; then
       later=$(wc_later "$pkg" "^[[:space:]]+$prop: \{")
@@ -144,9 +144,9 @@ done
 printf '%s' "$WC_PROPS$WC_METHODS"
 echo "rule: Each \`wc_property\` line gives the web component declaration of a property that the added Java lines sync. Each \`wc_method\` line gives the declaration of a method that they call with callJsFunction."
 if printf '%s' "$WC_PROPS" | grep -q 'notify=true'; then
-  echo "rule: A \`wc_property\` with \`notify=true\` and a default fires \`<prop>-changed\` on the first update of the web component. The Flow client syncs that default while the server holds no value, so a server property listener runs once on attach with no user action. Check whether a listener of this diff fires an event or sets state for that first sync (vaadin/flow-components#10596)."
+  echo "rule: A \`wc_property\` with \`notify=true\` and a default fires \`<prop>-changed\` on the first update of the web component. The Flow client syncs that default while the server holds no value, so a server property listener runs once on attach with no user action. Check whether a listener of this diff fires an event or sets state for that first sync."
 fi
 if printf '%s' "$WC_PROPS$WC_METHODS" | grep -q 'declared after it'; then
-  echo "rule: A \`declared after it\` entry is newer than the pinned @NpmPackage version. The Flow change lands before the version bump, so a client error at the pinned version is expected and is not a finding. Report the missing bump only when the PR body does not name it (vaadin/flow-components#10597)."
+  echo "rule: A \`declared after it\` entry is newer than the pinned @NpmPackage version. The Flow change lands before the version bump, so a client error at the pinned version is expected and is not a finding. Report the missing bump only when the PR body does not name it."
 fi
 exit 0

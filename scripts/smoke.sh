@@ -643,6 +643,15 @@ for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
   expect "docs/contracts.md lists every plan key of $log" "" "$unknown"
 done
 
+echo "== past PRs"
+# Only docs/retrospective.md cites a past PR or issue. The fixture PRs of plan-baseline.sh
+# and the shorthand link example of comment-slop.md are data, not citations.
+PR_HITS=$(cd "$SCRIPTS/.." && grep -rnE '#[0-9]{3,}' agents references skills owners docs scripts \
+  README.md CLAUDE.md 2>/dev/null \
+  | grep -v -E '^(docs/retrospective\.md|scripts/smoke\.sh|scripts/dev/plan-baseline\.sh|skills/comment-cleanup/references/comment-slop\.md):' \
+  || true)
+expect "only docs/retrospective.md cites a past PR" "" "$PR_HITS"
+
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"
   rm -rf "$WORK"

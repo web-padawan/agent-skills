@@ -64,8 +64,7 @@ fi
 read -r NOISE_N NOISE_TOTAL <<< "$NOISE"
 
 # New test files, with their size next to the production size. A new suite for a small fix
-# breaks the "no new test file unless necessary" rule of the tests pass (#12974: 52 lines of
-# a new suite for a 5-line fix).
+# breaks the "no new test file unless necessary" rule of the tests pass.
 NEW_TESTS=""
 PROD_LINES=$(git diff --numstat "$BASE..$HEAD" -- $PROD 2>/dev/null | awk '$1 != "-" { n += $1 + $2 } END { print n + 0 }')
 for f in $(git diff --name-only --diff-filter=A "$BASE..$HEAD" -- $TESTS 2>/dev/null | grep -v '__snapshots__' | grep -v '/screenshots/' || true); do
