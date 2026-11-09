@@ -147,6 +147,14 @@ finding of its categories (the `## Earlier findings` section of the skeleton):
 earlier <id> | <fixed|partially_fixed|fixed_wrongly|not_fixed|obsolete> | <how, one clause>
 ```
 
+The last line of every pass counts the notes file. The prompt block asks for it:
+
+```
+notes: <n> settled, <m> leads
+```
+
+`notes: none` means that the pass found no notes file.
+
 Categories, by owner pass:
 
 - `change`: `scope`, `behavior`, `fix`, `boundary`, `api`, `impact`
@@ -161,6 +169,12 @@ lines are what triage works on.
 
 Run the roll call of [`delivery.md`](delivery.md) before triage. It holds the format, the
 markers and the escalation ladder.
+
+Then compare the `notes:` line of each pass with the notes file that you wrote. A missing
+line, `notes: none` or a wrong count means that the pass did not read the Settled facts. In
+triage, drop each finding of that pass that a Settled fact answers. Example: in
+vaadin/flow-components#10597, the tests pass did not read the notes file and filed a
+feature flag as noise.
 
 ## 5 — Triage
 
