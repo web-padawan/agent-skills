@@ -59,6 +59,6 @@ that the new test fails without the fix. Give each checkable claim one status:
 - `static`: a read of the diff answers it. Name what you read.
 - `run`: only a test run answers it. On a fork PR, the review runs nothing. The claim stays
   unverified and can reach the PR only as a `question`.
-- `contradicted`: the plan or the diff says otherwise. Example: the body of
-  vaadin/web-components#13316 says that the snapshot run ends with 2 failed tests. A
+- `contradicted`: the plan or the diff says otherwise. Example: the body says that the test
+  run ends with 2 failed tests, and the `ci:` line of the plan shows a green test check. A
   contradicted claim is a finding.
