@@ -589,6 +589,16 @@ expect "review-plan.sh names the dirty tracked files" \
   "$(grep '^guard:' "$WORK/last.log")"
 git -C "$FX" checkout -q -- src/a.js
 
+echo "== contracts"
+# Every key that the plan prints is in the plan key list of docs/contracts.md.
+CONTRACT_KEYS=$(awk '/^## Plan keys/ { s = 1; next } /^## / { s = 0 } s && /^```/ { c = !c; next } s && c && NF { print $1 }' \
+  "$SCRIPTS/../docs/contracts.md" | sort -u)
+for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
+  unknown=$(awk '/^=== PLAN ===$/ { f = 1; next } /^=== PROMPTS ===$/ { f = 0 } f && /^[a-z_0-9]+:/ { sub(/:.*/, ""); print }' "$WORK/$log" \
+    | sort -u | comm -23 - <(printf '%s\n' "$CONTRACT_KEYS"))
+  expect "docs/contracts.md lists every plan key of $log" "" "$unknown"
+done
+
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"
   rm -rf "$WORK"
