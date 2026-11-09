@@ -673,6 +673,12 @@ for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
     | sort -u | comm -23 - <(printf '%s\n' "$CONTRACT_KEYS"))
   expect "docs/contracts.md lists every plan key of $log" "" "$unknown"
 done
+# Every key that a stage script prints is in the stage key list of docs/contracts.md.
+STAGE_KEYS=$(awk '/^Stage keys\./ { s = 1; next } s && /^```/ { c = !c; if (!c) exit; next } s && c && NF { print $1 }' \
+  "$SCRIPTS/../docs/contracts.md" | sort -u)
+unknown=$(cat "$WORK"/fx-*.log | awk '/^stages:$/ { f = 1; next } f && /^    [a-z_]+:/ { k = $1; sub(/:$/, "", k); print k; next } f && !/^  / { f = 0 }' \
+  | sort -u | comm -23 - <(printf '%s\n' "$STAGE_KEYS"))
+expect "docs/contracts.md lists every stage key of the fixture plans" "" "$unknown"
 check "review-plan.sh refuses --off with an unknown stage" 1 \
   bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --off nosuch"
 check "review-plan.sh refuses --budget without a number" 1 \

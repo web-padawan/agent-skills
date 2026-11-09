@@ -78,6 +78,15 @@ coverage check. A stage adds one entry to the registry and the profiles of
 - **Carve-out**: the reference file of a stage can permit an edit of a tracked file. `SKILL.md` names each such stage in its rules.
 - **pr-review**: it has no slot. A stage for pr mode needs a slot in that `SKILL.md` first.
 
+Stage keys. A stage script prints them under the line of its stage, indented by four spaces:
+
+```
+round              rounds: the round of this run and the budget, as <k> of <n>
+mutants            coverage: the mutant budget
+mutant_pool        coverage, budget above 0: the source lines that a mutant can change
+error              a stage script that failed
+```
+
 The line of a stage:
 
 ```
