@@ -304,6 +304,9 @@ plan_context() {
     PROD_PATCH="$PATCH_STEM-prod.patch"
     TESTS_PATCH="$PATCH_STEM-tests.patch"
     mkdir -p "$(dirname "$CONTEXT_PATH")"
+    # A new context starts without notes. The path is the same for every branch, so an
+    # earlier notes file holds the facts of another branch or of an earlier round.
+    rm -f "$NOTES_PATH" "$PROD_PATCH" "$TESTS_PATCH"
 
     # PR fields for the identity section and the body. gh's own --jq, never grep on JSON.
     PR_NUMBER=""; PR_URL=""; PR_AUTHOR=""; PR_HEADREF=""; PR_BASEREF=""; PR_DRAFT=""; PR_BODY=""

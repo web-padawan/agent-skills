@@ -34,7 +34,7 @@
 # plan's `context:` path — `--context-out` picks the path, `--no-write` skips it. The
 # skeleton and, for a large diff, the two patch files beside it are the only files this
 # script creates; it names (never writes) the `notes:` file the orchestrator adds beside
-# them. After the plan it prints `=== PROMPTS ===`: the literal prompt for each pass, with
+# them, and deletes an earlier notes file and patches when it writes a new skeleton. After the plan it prints `=== PROMPTS ===`: the literal prompt for each pass, with
 # the pass's agent and model, so a launch copies a block instead of assembling one.
 # It never stages, commits, or touches tracked files.
 #

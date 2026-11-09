@@ -588,7 +588,12 @@ fx_plan() {  # fx_plan <log> [flags] — a self-mode plan of the fixture
   local log="$1"; shift
   (cd "$FX" && "$SCRIPTS/review-plan.sh" --mode self --no-context "$@") > "$WORK/$log" 2>&1
 }
+mkdir -p "$FX_DIR"
+echo "## Settled facts" > "$FX_DIR/context-notes.md"
+echo "stale" > "$FX_DIR/context-prod.patch"
 fx_plan fx-png.log --fresh --type fix
+expect "review-plan.sh deletes the notes file and patches of an earlier context" \
+  "" "$(ls "$FX_DIR/context-notes.md" "$FX_DIR/context-prod.patch" 2>/dev/null)"
 PASS_N=$(grep -c '^Context file:' "$WORK/fx-png.log")
 expect "review-plan.sh asks each pass to count the notes file" \
   "yes" "$([ "$PASS_N" -gt 0 ] && [ "$PASS_N" = "$(grep -c '^End your reply with one line that counts that file: `notes:' "$WORK/fx-png.log")" ] && echo yes)"
