@@ -543,6 +543,11 @@ git -C "$DC" commit -q -am "feat: open"
 (cd "$DC" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type feature) > "$WORK/deep.log" 2>&1
 expect "review-plan.sh counts a public method of a plain class as a deep candidate" \
   "deep_candidates: 1 (.d.ts files 0, new exports 0, new public methods 1)" "$(grep '^deep_candidates:' "$WORK/deep.log")"
+printf 'module example.com/deep\n' > "$DC/go.mod" && git -C "$DC" add go.mod && git -C "$DC" commit -q -m "chore: add go.mod"
+(cd "$DC" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type chore) > "$WORK/go.log" 2>&1
+expect "review-plan.sh maps the test command of a Go module" \
+  "commands: lint=go vet ./... test=go test ./... src_glob=**/*.go (source: Go module (root go.mod); take a per-package or a missing command from CLAUDE.md or AGENTS.md)" \
+  "$(grep '^commands:' "$WORK/go.log")"
 
 echo "== review-plan.sh fixtures"
 # Fixtures that pin the plan output of edge paths: a changed PNG, conventions docs of 300

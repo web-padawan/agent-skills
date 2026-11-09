@@ -72,6 +72,12 @@ plan_facts() {
     SRC_GLOB="src/**"
     ls -d packages/*/src >/dev/null 2>&1 && SRC_GLOB="packages/*/src/**"
     CMD_SOURCE="package.json scripts ($PM)"
+  elif [ -f go.mod ]; then
+    TEST_CMD="go test ./..."; LINT_CMD="go vet ./..."; SRC_GLOB="**/*.go"
+    CMD_SOURCE="Go module (root go.mod)"
+  elif [ -f Cargo.toml ]; then
+    TEST_CMD="cargo test"; LINT_CMD="cargo clippy"; SRC_GLOB="**/src/**"
+    CMD_SOURCE="Cargo package (root Cargo.toml)"
   else
     CMD_SOURCE="no root manifest"
   fi
