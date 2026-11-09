@@ -169,6 +169,7 @@ with Write as one JSON object:
 
 ```json
 {
+  "schema": 1,
   "branch": "feat/foo",
   "head": "<the head SHA of this run>",
   "base": "<the base SHA of this run>",
@@ -195,6 +196,8 @@ with Write as one JSON object:
 }
 ```
 
+- `schema` is the version of this format. Write `1`. The plan reads a file without
+  `schema` as schema 1, and does not read a file of a higher schema.
 - Write the file at the end of every run, also when the review has no finding. Then
   `findings` is `[]`, which records a clean review of `head`.
 - `round` at the top is the number of the last round of this run. Each finding keeps the
