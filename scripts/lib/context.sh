@@ -31,8 +31,8 @@ block() {  # block <doc> <name> — print one marked block from a reference doc,
 
 conventions_excerpt() {  # conventions_excerpt <doc> — the doc quoted whole, with line numbers
   # A doc that fits the budget is quoted whole: a missed "when you add X, also update Y"
-  # rule is a missed finding (the upstream Vaadin CI review reads the whole doc for the
-  # same reason). A longer doc is named only.
+  # rule is a missed finding (the upstream CI review of vaadin/github-actions reads the
+  # whole doc for the same reason). A longer doc is named only.
   if [ "$(wc -l < "$1")" -le "$CONVENTIONS_WHOLE_MAX" ]; then
     awk '/^# / { next } /^#/ || /^[[:space:]]*$/ { print; next } { printf "%d| %s\n", NR, $0 }' "$1" | sed 's/^#/##/'
   else

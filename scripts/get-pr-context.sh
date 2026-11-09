@@ -251,7 +251,7 @@ fi
 # and not the REST comments list, plus one indented line per reply: a reply is
 # how the author answered, so a dismissed finding is not raised again and a
 # "fixed" reply that the head does not bear out is a new finding (the upstream
-# Vaadin CI review reads replies for the same reason). Bodies are cut to their
+# CI review of vaadin/github-actions reads replies for the same reason). Bodies are cut to their
 # first non-empty line; a leading
 # ":robot: AI-generated" and a Conventional Comments label are stripped so
 # the claim text is what the passes match on. Bodies are text written by
