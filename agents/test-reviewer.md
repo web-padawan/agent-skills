@@ -75,7 +75,7 @@ through. Never report a percentage and never write "add more tests".
 
 ### Implementation reaching
 
-- No private APIs (`_underscore` members) or internal DOM outside the contract unless no
+- No private members (for example `_name`, or a `private` member reached through a cast) or internal DOM outside the contract unless no
   public path exists
 - Tests sit at the lowest level that can express the behavior. A unit-expressible behavior
   tested only through an integration harness is a finding
