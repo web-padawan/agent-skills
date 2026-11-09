@@ -11,11 +11,6 @@ The review plan quotes these rules into the context file of each review of a vaa
 
 - Comments: no comment longer than 1 line in a CSS file.
 
-## From agents/test-reviewer.md
-
-- Structure: a style change pinned only by `getComputedStyle` in a unit test is a finding when the testing guideline of the repository asks for visual tests. A guideline backs it, so it is B, not C.
-- Implementation reaching: internal DOM outside the contract of the element counts as internal structure.
-
 ## From references/severity.md
 
 - CI: the `ci:` digest also settles the state of the visual baselines for the head.
