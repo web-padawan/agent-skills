@@ -18,7 +18,8 @@ plan_facts() {
   # them, and the skeleton quotes them whole under Settled facts, in both modes.
   DIFF_FACTS=""; REACH_MAX=0
   if [ -n "$BASE" ] && [ -n "$HEAD" ] && [ -n "$CHANGED" ]; then
-    DIFF_FACTS=$("$SCRIPT_DIR/diff-facts.sh" --base "$BASE" --head "$HEAD" 2>&1 | sed '/^=== DIFF_FACTS ===$/d') \
+    DIFF_FACTS=$(FACTS_MODE="$MODE" FACTS_PR="$PR" FACTS_OFFLINE="$([ "$WANT_CONTEXT" = true ] || echo 1)" \
+      "$SCRIPT_DIR/diff-facts.sh" --base "$BASE" --head "$HEAD" 2>&1 | sed '/^=== DIFF_FACTS ===$/d') \
       || DIFF_FACTS="error: diff-facts.sh failed — $(printf '%s' "$DIFF_FACTS" | tail -1)"
     REACH_MAX=$(printf '%s\n' "$DIFF_FACTS" | sed -n 's/^reach_max: //p' | head -1)
     REACH_MAX=${REACH_MAX:-0}

@@ -71,7 +71,8 @@ mkdir -p "$WORK"
 echo "work: $WORK"
 
 echo "== help"
-for f in "$SCRIPTS"/*.sh "$SCRIPTS"/facts/*.sh "$SCRIPTS"/stages/*.sh; do
+for f in "$SCRIPTS"/*.sh "$SCRIPTS"/facts/*.sh "$SCRIPTS"/stages/*.sh "$SCRIPTS"/../owners/*/facts/*.sh; do
+  [ -e "$f" ] || continue
   case "$(basename "$f")" in smoke.sh) continue ;; esac
   check "$(basename "$f") --help" 0 "$f" --help
 done
@@ -303,7 +304,7 @@ check "pr-refresh.sh refuses a context file without a PR" 2 \
   "$SCRIPTS/pr-refresh.sh" --at gate --context "$WORK/self-context.md"
 
 echo "== pr-screen.sh"
-SCREENING_CONFIG="$SCRIPTS/../config/screening/vaadin.json"
+SCREENING_CONFIG="$SCRIPTS/../owners/vaadin/screening.json"
 # Three packages import the changed module, and a unit test asserts CSS. The fixture
 # issue is 31 days old and has the label `Impact: Low`.
 SCREENING_REPO="$WORK/screening"
@@ -319,6 +320,7 @@ git init -q -b main "$SCREENING_REPO"
     printf "import { M } from '@vaadin/core/src/vaadin-core-mixin.js';\n" > "packages/$p/src/vaadin-$p.js"
   done
   git add . && git commit -q -m base
+  git remote add origin https://github.com/vaadin/web-components.git
   git update-ref refs/remotes/origin/main HEAD
   git checkout -q -b feature
   printf 'export const M = 2;\nconst b = child.$.button;\n' > packages/core/src/vaadin-core-mixin.js
@@ -377,6 +379,7 @@ git init -q -b main "$FLOWFX"
   cd "$FLOWFX" || exit 1
   git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
   mkdir -p x-flow/src/main/java
+  git remote add origin https://github.com/vaadin/flow-components.git
   printf '<project/>\n' > pom.xml
   printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {}\n' > x-flow/src/main/java/X.java
   git add . && git commit -q -m base
@@ -692,6 +695,29 @@ check "review-plan.sh refuses --off with an unknown stage" 1 \
   bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --off nosuch"
 check "review-plan.sh refuses --budget without a number" 1 \
   bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --budget rounds=x"
+# The provider contract and the owner gate: a pack of the owner directory runs with the
+# contract flags and env, and the same pack under another owner does not run.
+mkdir -p "$WORK/config/fixture-owner/facts" "$WORK/config/other-owner/facts"
+cat > "$WORK/config/fixture-owner/facts/contract.sh" <<'PACK'
+#!/usr/bin/env bash
+[ "$1" = --base ] && [ "$3" = --head ] || { echo "error: no --base and --head"; exit 1; }
+[ "$FACTS_PROD" = "src/a.js" ] || { echo "error: FACTS_PROD is '$FACTS_PROD'"; exit 1; }
+[ -z "$FACTS_TESTS" ] && [ "$FACTS_OWNER" = fixture-owner ] && [ "$FACTS_MODE" = self ] \
+  || { echo "error: FACTS_TESTS, FACTS_OWNER or FACTS_MODE is wrong"; exit 1; }
+echo "reach_max: 2"
+PACK
+chmod +x "$WORK/config/fixture-owner/facts/contract.sh"
+git -C "$FX" remote set-url origin https://github.com/fixture-owner/x.git
+(cd "$FX" && REVIEW_SKILLS_CONFIG_DIR="$WORK/config" "$SCRIPTS/diff-facts.sh" --base "$(git rev-parse HEAD~1)" \
+  --head "$(git rev-parse HEAD)") > "$WORK/owner-facts.log" 2>&1
+expect "diff-facts.sh runs a pack of the owner directory with the contract flags and env" \
+  "fact_packs: fixture-owner/contract|reach_max: 2" \
+  "$(grep '^fact_packs:' "$WORK/owner-facts.log")|$(grep '^reach_max:' "$WORK/owner-facts.log")"
+mv "$WORK/config/fixture-owner/facts/contract.sh" "$WORK/config/other-owner/facts/contract.sh"
+(cd "$FX" && REVIEW_SKILLS_CONFIG_DIR="$WORK/config" "$SCRIPTS/diff-facts.sh" --base "$(git rev-parse HEAD~1)" \
+  --head "$(git rev-parse HEAD)") > "$WORK/owner-gate.log" 2>&1
+expect "diff-facts.sh does not run the pack of another owner" \
+  "fact_packs: none" "$(grep '^fact_packs:' "$WORK/owner-gate.log")"
 
 echo "== past PRs"
 # Only docs/retrospective.md cites a past PR or issue. The fixture PRs of plan-baseline.sh
