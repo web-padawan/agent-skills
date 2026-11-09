@@ -40,7 +40,7 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*)
 - **What:** the usage hint shown next to the slash command.
 - **Convention:** quote it. Use `<angle>` for required parts, `[square]` for
   optional parts, and `|` for alternatives. Example from `self-review`:
-  `"[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--deep N]"`.
+  `"[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--rounds N]"`.
   Add it whenever the skill takes a positional input or flags.
 
 ### `disable-model-invocation`

@@ -8,8 +8,8 @@
 #
 # Usage:
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
-#                  [--type fix|feature|refactor|chore] [--scale trivial|lite|full]
-#                  [--deep N] [--rounds N] [--fresh] [--no-coverage] [--report-dir <path>]
+#                  [--type fix|feature|refactor|chore]
+#                  [--rounds N] [--fresh] [--no-coverage] [--report-dir <path>]
 #                  [--no-context] [--context-out <path>] [--no-write]
 #
 # When a file under .github/workflows/ changed, it prints the `workflow:` facts of
@@ -42,8 +42,6 @@ set -euo pipefail
 MODE="self"
 PR=""
 TYPE_FLAG=""
-SCALE_FLAG=""
-DEEP=""
 COVERAGE="on"
 REPORT_DIR=""
 WANT_CONTEXT=true
@@ -57,8 +55,6 @@ while [[ $# -gt 0 ]]; do
     --mode) MODE="${2:?--mode requires a value}"; shift 2 ;;
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
     --type) TYPE_FLAG="${2:?--type requires a value}"; shift 2 ;;
-    --scale) SCALE_FLAG="${2:?--scale requires a value}"; shift 2 ;;
-    --deep) DEEP="${2:?--deep requires a value}"; shift 2 ;;
     --rounds) ROUNDS_FLAG="${2:?--rounds requires a value}"; shift 2 ;;
     --fresh) FRESH=true; shift ;;
     --no-coverage) COVERAGE="off"; shift ;;
@@ -73,8 +69,6 @@ done
 
 case "$MODE" in self|pr) ;; *) echo "error: --mode must be self or pr" >&2; exit 1 ;; esac
 case "$TYPE_FLAG" in ""|fix|feature|refactor|chore) ;; *) echo "error: --type must be fix, feature, refactor or chore" >&2; exit 1 ;; esac
-case "$SCALE_FLAG" in ""|trivial|lite|full) ;; *) echo "error: --scale must be trivial, lite or full" >&2; exit 1 ;; esac
-case "$DEEP" in ""|*[!0-9]*) [ -z "$DEEP" ] || { echo "error: --deep takes a number" >&2; exit 1; } ;; esac
 if [ -n "$ROUNDS_FLAG" ] && ! [[ "$ROUNDS_FLAG" =~ ^[1-9][0-9]*$ ]]; then
   echo "error: --rounds takes a number of 1 or more" >&2; exit 1
 fi
@@ -383,9 +377,6 @@ if [ -n "$OVERRIDES" ] && [ "$SCALE" != "full" ]; then
 elif [ -n "$OVERRIDES" ]; then
   SCALE_REASON="size (risk override also applies: $OVERRIDES)"
 fi
-if [ -n "$SCALE_FLAG" ]; then
-  SCALE="$SCALE_FLAG"; SCALE_REASON="forced by --scale"
-fi
 
 # ── Resolve the matrix row ────────────────────────────────────────────
 matrix_row() {
@@ -471,7 +462,7 @@ case "$SCALE" in trivial) CAP=3 ;; lite) CAP=8 ;; *) CAP=999 ;; esac
 [ "$MODE" != "self" ] && MUTANTS=0
 
 # Effective deep-block budget for the change pass: the row's number, capped by the
-# scale tier; --deep N overrides outright (0 keeps the pass, skips its blocks).
+# scale tier.
 case "$DEEP_ROW" in ''|*[!0-9]*) DEEP_ROW=0 ;; esac
 case "$SCALE" in trivial) DCAP=1 ;; lite) DCAP=2 ;; *) DCAP=999 ;; esac
 [ "$DEEP_ROW" -gt "$DCAP" ] && DEEP_ROW="$DCAP"
@@ -506,7 +497,6 @@ fi
 # A fork PR keeps one block at least: its author is outside the team, so the consumer
 # trace of the top change is the review's job (crud in #12966 was such a consumer).
 if [ "$FORK" = "true" ] && [ "$DEEP_ROW" -lt 1 ]; then DEEP_ROW=1; DEEP_SOURCE="fork minimum"; fi
-if [ -n "$DEEP" ]; then DEEP_ROW="$DEEP"; DEEP_SOURCE="--deep flag"; fi
 
 # Per-pass effort ceiling from the scale tier — references/profiles.md, "Pass effort".
 case "$SCALE" in

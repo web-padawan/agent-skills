@@ -1,7 +1,7 @@
 ---
 name: pr-review
 description: Review a GitHub pull request from someone else. Explain its goal with a concrete example, check the screening facts (linked issue and labels, the packages that import the changed code, fork origin, the claims of the body) and whether the change is worth a review now, then, after you confirm, run the plugin's reviewer agents or a quick single-context review, and post only what you select as inline Conventional Comments, one summary review, or a drafted reply. Use when asked to review this PR, walk me through a PR, review a contribution, an external, community, fork or AI-generated PR, triage a PR before review, do a full review of a pull request, or review and post comments on a PR. Not for your own branch before it has a PR (self-review).
-argument-hint: "[PR number or URL, or blank to auto-detect from current branch] [--deep N] [--quick]"
+argument-hint: "[PR number or URL, or blank to auto-detect from current branch] [--quick]"
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/gh-context.sh:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/pr-refresh.sh:*), Bash(*/scripts/post-review.sh:*), Bash(*/scripts/post-comment.sh:*)
 ---
 
@@ -48,7 +48,7 @@ Run the plan script once. Write the plugin root as a literal path. Write the con
 the scratchpad:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode pr [--pr <number-or-url>] [--deep N] \
+${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode pr [--pr <number-or-url>] \
   --context-out <scratchpad>/pr-<number>-context.md
 ```
 

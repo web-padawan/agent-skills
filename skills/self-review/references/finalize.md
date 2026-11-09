@@ -72,7 +72,7 @@ reply, compressed. Never lose a finding, only relocate it.
 
 **Verdict: ready for PR | needs more work**
 Type: <feature | fix | refactor | chore> (signal: <what decided it>)
-Scale: <trivial | lite | full> (<N> lines, <M> files<, override or --scale reason>)
+Scale: <trivial | lite | full> (<N> lines, <M> files<, override reason>)
 Deep review: <N> of <M> significant changes   <!-- omit when the deep budget was 0 -->
 Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missing   <!-- name every pass -->
 

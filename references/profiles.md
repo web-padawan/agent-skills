@@ -61,9 +61,6 @@ The effective budget is `min(row, tier cap, max(1, candidates))`. So a fix with 
 surface gets one block for its top change instead of three surveys. The plan script prints
 the capped numbers and the candidate count.
 
-`--deep N` overrides the deep budget outright. `--deep 0` keeps the change pass but skips
-its blocks.
-
 The plan script drops the tests pass when no test, code or binary file changed. A workflow,
 config or doc change gives that pass no subject. The plan prints `passes_dropped:`. The risk
 override still raises the scale of the other passes.
