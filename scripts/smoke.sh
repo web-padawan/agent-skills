@@ -576,6 +576,8 @@ expect "review-plan.sh lists a changed PNG under binary_files" \
   "binary_files: shot.png " "$(grep '^binary_files:' "$WORK/fx-png.log")"
 expect "review-plan.sh lists a changed PNG under the binary lane of the skeleton" \
   "- shot.png" "$(sed -n '/^binary (never diffed):$/{n;p;}' "$FX_DIR/context.md")"
+expect "review-plan.sh quotes the smell vocabulary when the repository has no conventions doc" \
+  "1" "$(grep -c '^## Smell vocabulary$' "$FX_DIR/context.md")"
 awk 'BEGIN { print "# Conventions"; for (c = 1; c <= 3; c++) { print "## Chapter " c; for (i = 1; i <= 98; i++) print "Rule " c "." i } }' > "$FX/CONVENTIONS.md"
 fx_plan fx-conv300.log --fresh --type fix
 expect "review-plan.sh quotes a conventions doc of 300 lines whole" \
@@ -594,6 +596,8 @@ expect "review-plan.sh names every conventions doc in lookup order" \
   "conventions_doc: CLAUDE.md, CONTRIBUTING.md" "$(grep '^conventions_doc:' "$WORK/fx-docs.log")"
 expect "review-plan.sh quotes every conventions doc that fits" \
   "### CLAUDE.md|### CONTRIBUTING.md" "$(grep -E '^### (CLAUDE|CONTRIBUTING)' "$FX_DIR/context.md" | paste -sd '|' -)"
+expect "review-plan.sh leaves out the smell vocabulary when the repository has a conventions doc" \
+  "0" "$(grep -c '^## Smell vocabulary$' "$FX_DIR/context.md")"
 rm -f "$FX/CONTRIBUTING.md" "$FX/CLAUDE.md"
 mkdir -p "$FX_DIR"
 fx_findings() {  # fx_findings <extra jq fields> — a findings file of the fixture head
@@ -680,7 +684,7 @@ OWNER_HITS=$(cd "$ROOT" && grep -rn -i -w -E 'vaadin|lumo|aura' \
   agents references skills/pr-review skills/self-review docs/contracts.md \
   scripts/review-plan.sh scripts/diff-facts.sh scripts/get-pr-context.sh scripts/pr-screen.sh \
   scripts/pr-refresh.sh scripts/post-review.sh scripts/post-comment.sh scripts/workflow-facts.sh \
-  scripts/lib scripts/stages scripts/hooks $(ls -d scripts/facts 2>/dev/null) 2>/dev/null \
+  scripts/lib scripts/stages scripts/sections scripts/hooks $(ls -d scripts/facts 2>/dev/null) 2>/dev/null \
   | grep -v -i -E 'vaadin/[a-z0-9._-]+' || true)
 expect "the review core names an owner only in an owner/repo citation" "" "$OWNER_HITS"
 
