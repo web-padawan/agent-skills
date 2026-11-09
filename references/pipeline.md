@@ -172,9 +172,7 @@ markers and the escalation ladder.
 
 Then compare the `notes:` line of each pass with the notes file that you wrote. A missing
 line, `notes: none` or a wrong count means that the pass did not read the Settled facts. In
-triage, drop each finding of that pass that a Settled fact answers. Example: in
-vaadin/flow-components#10597, the tests pass did not read the notes file and filed a
-feature flag as noise.
+triage, drop each finding of that pass that a Settled fact answers.
 
 ## 5 — Triage
 
@@ -218,9 +216,7 @@ Navigate to `about:blank`, then build the tree inside `browser_evaluate`.
 
    An **open** thread that no pass reproduced is an `[orchestrator]` lead. Verify it within
    the triage ceiling and record `confirmed by review` or `not reproduced`. A posted comment
-   repeats the claim of another thread only when you confirmed it. Example: a reply on
-   vaadin/flow-components#10523 repeated a bot claim about event order, and the author showed
-   that the claim was false.
+   repeats the claim of another thread only when you confirmed it.
 
    Then dedup against `## Earlier findings`, when the skeleton has it. A finding whose file
    and claim match an earlier finding is that earlier finding, not a new one. Apply each
