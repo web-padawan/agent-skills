@@ -468,9 +468,7 @@ DEEP_SOURCE="matrix, capped by scale"
 
 # Deep candidates — what the diff actually offers a boundary block: `.d.ts` files,
 # new exports, added public (non-underscore) methods at class indentation. A fix with
-# none of these gets one block for its top change instead of three surveys. Public
-# properties are not counted directly; the repo convention that syncs them into the
-# `.d.ts` catches them through the first signal.
+# none of these gets one block for its top change instead of three surveys.
 CAND_DTS=0; CAND_EXPORTS=0; CAND_METHODS=0
 if [ -n "$BASE" ] && [ -n "$PROD_FILES" ]; then
   CAND_DTS=$(printf '%s\n' $PROD_FILES | grep -c '\.d\.ts$' || true)
@@ -482,7 +480,7 @@ if [ -n "$BASE" ] && [ -n "$PROD_FILES" ]; then
       body = substr($0, 2)
       if (body !~ /^    (static |async |get |set )?[A-Za-z$][A-Za-z0-9$]*[ \t]*\(/) next
       name = body; sub(/^    (static |async |get |set )?/, "", name); sub(/[ \t]*\(.*$/, "", name)
-      if (name ~ /^(if|for|while|switch|catch|return|super|constructor|ready|render|connectedCallback|disconnectedCallback|attributeChangedCallback|firstUpdated|willUpdate|updated|requestUpdate|performUpdate)$/) next
+      if (name ~ /^(if|for|while|switch|catch|return|super|constructor|render|connectedCallback|disconnectedCallback|attributeChangedCallback|firstUpdated|willUpdate|updated|requestUpdate|performUpdate)$/) next
       n++
     }
     END { print n + 0 }' || echo 0)
@@ -492,9 +490,6 @@ if [ "$DEEP_ROW" -gt 0 ]; then
   CAND_CAP=$DEEP_CANDIDATES; [ "$CAND_CAP" -lt 1 ] && CAND_CAP=1
   if [ "$DEEP_ROW" -gt "$CAND_CAP" ]; then DEEP_ROW="$CAND_CAP"; DEEP_SOURCE="matrix, capped by scale and by $DEEP_CANDIDATES deep candidates"; fi
 fi
-# A fork PR keeps one block at least: its author is outside the team, so the consumer
-# trace of the top change is the review's job (crud in #12966 was such a consumer).
-if [ "$FORK" = "true" ] && [ "$DEEP_ROW" -lt 1 ]; then DEEP_ROW=1; DEEP_SOURCE="fork minimum"; fi
 
 # Per-pass effort ceiling from the scale tier — references/profiles.md, "Pass effort".
 case "$SCALE" in
