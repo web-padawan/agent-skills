@@ -82,6 +82,8 @@ PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
 . "$SCRIPT_DIR/lib/anchors.sh"
 # shellcheck source=lib/classify.sh
 . "$SCRIPT_DIR/lib/classify.sh"
+# shellcheck source=lib/facts.sh
+. "$SCRIPT_DIR/lib/facts.sh"
 # The plugin name prefixes each agent of lib/policy.sh and names the fork marker directory.
 PLUGIN_NAME=$(jq -r '.name // empty' "$PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null || true)
 [ -n "$PLUGIN_NAME" ] || { echo "error: no plugin name in $PLUGIN_ROOT/.claude-plugin/plugin.json" >&2; exit 1; }
@@ -101,44 +103,8 @@ plan_classify
 # ── Policy: passes, budgets, models, effort (lib/policy.sh) ──────────
 plan_policy
 
-# ── Conventions doc (named in the plan, quoted into the context) ──────
-CONVENTIONS=""
-CONVENTIONS_WHOLE_MAX=400
-for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTIONS.md CLAUDE.md AGENTS.md; do
-  if [ -f "$f" ]; then CONVENTIONS="$f"; break; fi
-done
-
-# ── Diff facts ────────────────────────────────────────────────────────
-# The facts of the diff that git alone answers (scripts/diff-facts.sh). The plan prints
-# them, and the skeleton quotes them whole under Settled facts, in both modes.
-DIFF_FACTS=""; REACH_MAX=0
-if [ -n "$BASE" ] && [ -n "$HEAD" ] && [ -n "$CHANGED" ]; then
-  DIFF_FACTS=$("$SCRIPT_DIR/diff-facts.sh" --base "$BASE" --head "$HEAD" 2>&1 | sed '/^=== DIFF_FACTS ===$/d') \
-    || DIFF_FACTS="error: diff-facts.sh failed — $(printf '%s' "$DIFF_FACTS" | tail -1)"
-  REACH_MAX=$(printf '%s\n' "$DIFF_FACTS" | sed -n 's/^reach_max: //p' | head -1)
-  REACH_MAX=${REACH_MAX:-0}
-fi
-
-# ── Screening (pr mode) ───────────────────────────────────────────────
-# What a maintainer must know before a review is worth it: the author, the linked issue,
-# the flags and the verdict hint. Only the plan prints it. The passes never learn the bar.
-SCREENING=""
-if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ "$WANT_CONTEXT" = true ]; then
-  SCREENING_ARGS=(--pr "$PR" --reach-max "$REACH_MAX" --scale "$SCALE")
-  SCREENING=$("$SCRIPT_DIR/pr-screen.sh" "${SCREENING_ARGS[@]}" 2>&1 | sed '/^=== SCREENING ===$/d') \
-    || SCREENING="error: pr-screen.sh failed — $(printf '%s' "$SCREENING" | tail -1)"
-fi
-
-# ── Workflow facts ────────────────────────────────────────────────────
-# A workflow change depends on the actions it calls, the token of each job and who
-# triggers the runs. None of that is in the diff (retrospective, PR review 6).
-WORKFLOW_FACTS=""
-if [ -n "$BASE" ] && [ -n "$HEAD" ] && printf '%s\n' "$CHANGED" | grep -q '^\.github/workflows/'; then
-  WF_ARGS=(--base "$BASE" --head "$HEAD")
-  [ "$WANT_CONTEXT" = true ] || WF_ARGS+=(--no-gh)
-  WORKFLOW_FACTS=$("$SCRIPT_DIR/workflow-facts.sh" "${WF_ARGS[@]}" 2>&1) \
-    || WORKFLOW_FACTS="error: workflow-facts.sh failed — $(printf '%s' "$WORKFLOW_FACTS" | tail -1)"
-fi
+# ── Facts: conventions, diff, screening, workflow, commands (lib/facts.sh)
+plan_facts
 
 # ── Report paths ──────────────────────────────────────────────────────
 SLUG=$(printf '%s' "${BRANCH:-detached}" | tr '/' '-')
@@ -200,30 +166,6 @@ if [ "$MODE" = "self" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] && [ -n "$HEAD" ]; 
     # further round sees it and does not report it again.
     EARLIER_LIST=$(jq -r '.findings[] | "\(.id) | \(.status) | \(.category) | \(.file // "-"):\(.line // "-") | \(.tier) | \(.claim)" + ([.merged[]? | " Merged: \(.file // "-"):\(.line // "-") \(.claim)"] | join(""))' "$FINDINGS_FILE")
   fi
-fi
-
-# ── Command map ───────────────────────────────────────────────────────
-LINT_CMD=""; TEST_CMD=""; SRC_GLOB=""; CMD_SOURCE=""
-# Only the root manifest decides. The conventions doc names a per-package or a lint command.
-if [ -f pom.xml ]; then
-  TEST_CMD="mvn test"; SRC_GLOB="**/src/main/**"
-  CMD_SOURCE="Maven layout (root pom.xml)"
-elif [ -f package.json ]; then
-  PM=npm; [ -f yarn.lock ] && PM=yarn; [ -f pnpm-lock.yaml ] && PM=pnpm
-  RUN="$PM"; [ "$PM" = npm ] && RUN="npm run"
-  jq -e '.scripts.lint' package.json >/dev/null 2>&1 && LINT_CMD="$RUN lint"
-  jq -e '.scripts.test' package.json >/dev/null 2>&1 && TEST_CMD="$PM test"
-  SRC_GLOB="src/**"
-  ls -d packages/*/src >/dev/null 2>&1 && SRC_GLOB="packages/*/src/**"
-  CMD_SOURCE="package.json scripts ($PM)"
-else
-  CMD_SOURCE="no root manifest"
-fi
-CMD_SOURCE="$CMD_SOURCE; take a per-package or a missing command from ${CONVENTIONS:-CLAUDE.md or AGENTS.md}"
-
-AFFECTED=""
-if [ -n "$CHANGED" ]; then
-  AFFECTED=$(printf '%s\n' "$CHANGED" | awk -F/ '$1 == "packages" && NF > 2 { print $1 "/" $2 }' | sort -u | tr '\n' ' ')
 fi
 
 # Mutant candidate pool — advisory, not a budget: non-styling source lines the
