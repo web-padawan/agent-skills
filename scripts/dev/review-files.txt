@@ -25,6 +25,7 @@ scripts/lib/conventional-label.sh move
 scripts/lib/facts.sh move
 scripts/lib/lanes.sh move
 scripts/lib/policy.sh move
+scripts/lib/prompts.sh move
 scripts/lib/store.sh move
 scripts/post-comment.sh move
 scripts/post-review.sh move
