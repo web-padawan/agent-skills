@@ -36,7 +36,6 @@ Restart the session so that the skills load.
 /agent-skills:self-review --fix --no-coverage   # force type, skip the coverage check
 /agent-skills:self-review --rounds 3            # up to 3 rounds, stops when one adds no new A or B
 /agent-skills:self-review --fresh               # ignore the findings file of the last run
-/agent-skills:pr-review 9042 --deep 2           # a deeper change pass
 /agent-skills:refactor-component packages/<name>
 /agent-skills:comment-cleanup --commit HEAD
 /agent-skills:screenshot-diff packages/button

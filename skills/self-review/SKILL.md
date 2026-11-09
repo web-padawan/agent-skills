@@ -1,7 +1,7 @@
 ---
 name: self-review
 description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs three review passes in one parallel batch: a change pass (scope, behavior, fix correctness, plus boundary/impact blocks on the top significant changes), a code pass (logic, conventions, reuse, maintainability, comments) and a tests pass; the diff's scale tier (trivial/lite/full) sizes the coverage, deep-block and rounds budgets only. A large feature gets a second round that looks for what the first missed, and a run on a newer head reconciles the findings of the last run. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Use on your own branch; not for reviewing someone else's PR (pr-review).
-argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--scale trivial|lite|full] [--deep N] [--rounds N] [--fresh] [--no-coverage]"
+argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--rounds N] [--fresh] [--no-coverage]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(mvn:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/ab.sh:*)
 ---
@@ -41,7 +41,7 @@ resolve from this file. If a read fails, use
 
 1. **Plan.** Resolve the plugin root to a literal path. Then run the plan script in one call:
    `${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode self` plus the flags that the user
-   passed (`--fix|--feature|--refactor|--chore` → `--type`, `--scale`, `--deep N`,
+   passed (`--fix|--feature|--refactor|--chore` → `--type`,
    `--rounds N`, `--fresh`, `--no-coverage`). If the output has a `guard: refuse:` line, say the reason in one line and
    stop. Record `base`, `head` and `head0` as literal SHAs. When the user gave `$0`, fetch it
    with `gh`.
@@ -63,8 +63,7 @@ resolve from this file. If a read fails, use
 3. **Fan out.** Send one message with one Agent call per pass. Use the `subagent_type`,
    `model` and prompt from the `=== PROMPTS ===` block of the plan, verbatim. Pass no `name`
    (delivery.md). The block already carries the lane of each pass, the deep budget and the
-   effort ceiling. `--deep N` overrides the deep budget. A budget of `0` skips the blocks,
-   never the pass.
+   effort ceiling. A budget of `0` skips the blocks, never the pass.
 4. **Assert nothing changed.** `git status --porcelain --untracked-files=no` must still be
    empty. If a pass edited anyway, revert those tracked files with `git checkout -- <path>`.
    Delete the files that the pass created, by path. Keep only the output of the pass as
