@@ -116,8 +116,16 @@ plan_policy() {
       /^\+/ {
         if (file !~ /\.[cm]?[jt]sx?$/ || file ~ /\.d\.ts$/) next
         body = substr($0, 2)
-        if (body !~ /^    (static |async |get |set )?[A-Za-z$][A-Za-z0-9$]*[ \t]*\(/) next
-        name = body; sub(/^    (static |async |get |set )?/, "", name); sub(/[ \t]*\(.*$/, "", name)
+        # A member of a mixin class sits at 4 spaces. A member of a plain class sits at 2
+        # spaces. A line with => is a callback, not a member. A 4-space line ends with { or
+        # with ( for a multi-line signature. A 2-space line ends with {.
+        if (body ~ /=>/) next
+        if (body ~ /^    (static |async |get |set )?[A-Za-z$][A-Za-z0-9$]*[ \t]*\(/ && body ~ /[{(][ \t]*$/) {
+          name = body; sub(/^    (static |async |get |set )?/, "", name)
+        } else if (body ~ /^  ((static|async|get|set|public|protected|override)[ \t]+)*[A-Za-z$][A-Za-z0-9$]*[ \t]*\(.*\{[ \t]*$/) {
+          name = body; sub(/^  ((static|async|get|set|public|protected|override)[ \t]+)*/, "", name)
+        } else next
+        sub(/[ \t]*\(.*$/, "", name)
         if (name ~ /^(if|for|while|switch|catch|return|super|constructor|render|connectedCallback|disconnectedCallback|attributeChangedCallback|firstUpdated|willUpdate|updated|requestUpdate|performUpdate)$/) next
         n++
       }
