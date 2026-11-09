@@ -347,6 +347,10 @@ expect "pr-screen.sh proposes a decision for a low-impact change with a wide rea
   "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/screening.log")"
 expect "pr-screen.sh proposes a reply at the gate for a decide verdict" \
   "gate_default: Draft a reply" "$(grep '^gate_default:' "$WORK/screening.log")"
+jq '.data.repository.pullRequest.closingIssuesReferences.nodes[0].labels.nodes = []' "$WORK/screening-meta.json" > "$WORK/screening-nolabels.json"
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --meta "$WORK/screening-nolabels.json") > "$WORK/screening-nolabels.log" 2>&1
+expect "pr-screen.sh keeps the fields of an issue without labels" \
+  "issue: #7 open labels=[] author=contributor age=31d comments=0" "$(grep '^issue:' "$WORK/screening-nolabels.log")"
 expect "pr-screen.sh gives no behavior-altering reason without a breaking label or marker" \
   "0" "$(grep -c 'behavior-altering' "$WORK/screening.log")"
 jq '.data.repository.pullRequest.title = "fix!: change the core mixin"
