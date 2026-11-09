@@ -34,6 +34,7 @@ scripts/pr-refresh.sh move
 scripts/pr-screen.sh move
 scripts/review-plan.sh move
 scripts/smoke.sh copy
+scripts/stages/coverage.sh drop
 scripts/stages/rounds.sh move
 scripts/workflow-facts.sh move
 scripts/dev/plan-baseline.sh move

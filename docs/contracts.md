@@ -38,9 +38,6 @@ deep               the deep budget of the change pass and its source
 deep_candidates    the count of .d.ts files, new exports and new public methods
 effort_per_pass    the tool call ceiling of each pass
 stages             the stages of the run, indented, or none
-coverage           self mode: on or off. pr mode: n/a
-mutants            the mutant budget of the coverage stage
-mutant_pool        mutants above 0: the source lines that a mutant can change
 earlier_findings   none, ignored, unreadable, same, delta or rewritten
 findings_file      self mode: the path of the findings file
 conventions_doc    the conventions doc, or none

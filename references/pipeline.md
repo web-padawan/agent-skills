@@ -19,8 +19,8 @@ what is different about that skill. This file is the shared part.
 
 ## 1 — Plan
 
-`scripts/review-plan.sh --mode self|pr [--pr N] [--type T] [--no-coverage]
-[--context-out <path>]` prints a `=== PLAN ===` block. The script also
+`scripts/review-plan.sh --mode self|pr [--pr N] [--type T] [--off <stage>]
+[--budget <stage>=<n>] [--context-out <path>]` prints a `=== PLAN ===` block. The script also
 **writes the context skeleton** at the path that its `context:` line names (see §2). Record
 the literal `base` / `head` / `head0` SHAs. Shell variables do not survive between tool
 calls, and subagents never see them. The plan is authoritative for everything that it prints.

@@ -575,7 +575,7 @@ printf 'export function a() {\n  return 3;\n}\n' > "$FX/src/a.js"
 check "review-plan.sh refuses a dirty tracked file in self mode" 2 \
   bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --type fix"
 expect "review-plan.sh names the dirty tracked files" \
-  "guard: refuse: tracked files are dirty — commit or stash first (the coverage stage restores mutants against the index)" \
+  "guard: refuse: tracked files are dirty — commit or stash first" \
   "$(grep '^guard:' "$WORK/last.log")"
 git -C "$FX" checkout -q -- src/a.js
 

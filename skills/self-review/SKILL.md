@@ -43,7 +43,7 @@ resolve from this file. If a read fails, use
 1. **Plan.** Resolve the plugin root to a literal path. Then run the plan script in one call:
    `${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode self` plus the flags that the user
    passed (`--fix|--feature|--refactor|--chore` → `--type`,
-   `--rounds N` → `--budget rounds=N`, `--fresh`, `--no-coverage`). If the output has a `guard: refuse:` line, say the reason in one line and
+   `--rounds N` → `--budget rounds=N`, `--fresh`, `--no-coverage` → `--off coverage`). If the output has a `guard: refuse:` line, say the reason in one line and
    stop. Record `base`, `head` and `head0` as literal SHAs. When the user gave `$0`, fetch it
    with `gh`.
 
