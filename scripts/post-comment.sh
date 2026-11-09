@@ -50,7 +50,7 @@ while [[ $# -gt 0 ]]; do
     --no-label) CHECK_LABEL=false; shift ;;
     --allow-nearby) ALLOW_NEARBY=true; shift ;;
     --help|-h) sed -n '2,30p' "$0"; exit 0 ;;
-    *) echo "Unknown option: $1" >&2; exit 1 ;;
+    *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
 done
 
@@ -103,6 +103,7 @@ fi
 PR_JSON=$(gh pr view ${PR_ARGS[@]+"${PR_ARGS[@]}"} --json number,headRefOid,url 2>/dev/null) || {
   echo "error: failed to resolve the PR" >&2
   echo "hint: pass --pr <number-or-url>, or check gh authentication" >&2
+  echo "hint: a --pr URL selects the repository; a number uses the repository of the current directory" >&2
   exit 1
 }
 PR_NUMBER=$(echo "$PR_JSON" | grep -o '"number":[0-9]*' | head -1 | cut -d: -f2 || true)
