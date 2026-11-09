@@ -301,18 +301,22 @@ expect "diff-facts.sh prints the rule of the shadow DOM read" 1 \
 
 # A Flow repository: the diff syncs a property, and the web component checkout declares it
 # with notify and a default at the pinned tag. It also syncs `fileName`, which only another
-# package declares.
+# package declares, and uses `downloadButtonHidden` and `download()`, which only a commit after
+# the tag declares.
 FLOWFX="$WORK/flowfx"; WCFX="$WORK/wcfx"
 git init -q -b main "$WCFX"
 (
   cd "$WCFX" || exit 1
   git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
   mkdir -p packages/x/src
-  printf 'static get properties() {\n  return {\n    zoom: {\n      type: String,\n      value: %s,\n      notify: true,\n    },\n  };\n}\n' "'a'" > packages/x/src/vaadin-x.js
+  printf 'static get properties() {\n  return {\n    zoom: {\n      type: String,\n      value: %s,\n      notify: true,\n    },\n  };\n}\n  open() {\n  }\n' "'a'" > packages/x/src/vaadin-x.js
   mkdir -p packages/y/src
   printf 'static get properties() {\n  return {\n    fileName: {\n      type: String,\n    },\n  };\n}\n' > packages/y/src/vaadin-y.js
   git add . && git commit -q -m wc && git tag v1.0.0
+  printf 'static get properties() {\n  return {\n    downloadButtonHidden: {\n      type: Boolean,\n    },\n  };\n}\n  download() {\n  }\n' > packages/x/src/vaadin-x-download-mixin.js
+  git add . && git commit -q -m download
 )
+WCFX_LATER=$(git -C "$WCFX" rev-parse --short main)
 git init -q -b main "$FLOWFX"
 (
   cd "$FLOWFX" || exit 1
@@ -321,7 +325,7 @@ git init -q -b main "$FLOWFX"
   printf '<project/>\n' > pom.xml
   printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {}\n' > x-flow/src/main/java/X.java
   git add . && git commit -q -m base
-  printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {\n  @Synchronize(property = "zoom", value = "zoom-changed")\n  String getZoom() { return null; }\n  void setFileName(String f) { getElement().setProperty("fileName", f); }\n}\n' > x-flow/src/main/java/X.java
+  printf '@NpmPackage(value = "@vaadin/x", version = "1.0.0")\nclass X {\n  @Synchronize(property = "zoom", value = "zoom-changed")\n  String getZoom() { return null; }\n  void setFileName(String f) { getElement().setProperty("fileName", f); }\n  void hideDownload() { getElement().setProperty("downloadButtonHidden", true); }\n  void download() { getElement().callJsFunction("download"); }\n  void open() { getElement().callJsFunction("open"); }\n}\n' > x-flow/src/main/java/X.java
   git add . && git commit -q -m change
 )
 (cd "$FLOWFX" && REVIEW_WC_DIR="$WCFX" "$SCRIPTS/diff-facts.sh" --base "$(git rev-parse HEAD~1)" \
@@ -332,6 +336,17 @@ expect "diff-facts.sh prints the web component declaration of a synced property"
 expect "diff-facts.sh does not take the declaration of a property from another package" \
   "wc_property: fileName -> not declared in @vaadin/x@1.0.0 (a native, inherited or connector property)" \
   "$(grep '^wc_property: fileName ' "$WORK/diff-facts-flow.log")"
+expect "diff-facts.sh names a property that only a commit after the pinned tag declares" \
+  "wc_property: downloadButtonHidden -> not in @vaadin/x@1.0.0, declared after it at main ($WCFX_LATER) packages/x/src/vaadin-x-download-mixin.js:3" \
+  "$(grep '^wc_property: downloadButtonHidden ' "$WORK/diff-facts-flow.log")"
+expect "diff-facts.sh names a called method that only a commit after the pinned tag declares" \
+  "wc_method: download -> not in @vaadin/x@1.0.0, declared after it at main ($WCFX_LATER) packages/x/src/vaadin-x-download-mixin.js:8" \
+  "$(grep '^wc_method: download ' "$WORK/diff-facts-flow.log")"
+expect "diff-facts.sh prints the declaration of a called method at the pinned tag" \
+  "wc_method: open -> @vaadin/x@1.0.0 packages/x/src/vaadin-x.js:10" \
+  "$(grep '^wc_method: open ' "$WORK/diff-facts-flow.log")"
+expect "diff-facts.sh prints the rule of an API newer than the pinned version" 1 \
+  "$(grep -c '^rule: A `declared after it` entry' "$WORK/diff-facts-flow.log")"
 expect "diff-facts.sh prints no reach line in a Flow repository" \
   "" "$(grep -E '^(reach|flow_counterpart):' "$WORK/diff-facts-flow.log")"
 expect "diff-facts.sh prints the first-sync rule of a notify property" 1 \
