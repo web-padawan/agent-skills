@@ -15,7 +15,7 @@
 # A section is a function section_<name> below, or a file scripts/sections/<name>.sh that
 # the composer sources. SECTIONS names them in order. A section prints nothing when its
 # condition fails. Otherwise it starts with an empty line, except the title.
-SECTIONS="title framing identity rules rubric pr-body changed-files conventions comment-policy settled-facts already-on-pr earlier-findings diff notes"
+SECTIONS="title framing identity rules rubric pr-body changed-files conventions smells comment-policy settled-facts already-on-pr earlier-findings diff notes"
 
 # Everything deterministic about the shared context file (references/pipeline.md §2):
 # the framing, identity, rules and rubric copied from the reference docs by marker,
