@@ -6,13 +6,17 @@ Render the gate from the frozen list of triage
 ([`../../../references/pipeline.md`](../../../references/pipeline.md) §5.7), never from the
 agent reports.
 
+Before you print the gate, give each finding the id that the findings file will hold. An
+earlier finding keeps its id. A new finding gets the next free id. The gate, the report and
+the findings file show the same id, so that the author can dispute a finding by its id.
+
 First, print this in chat, compact and scannable. The full detail belongs in the report:
 
 ```
 Type: refactor — signal: branch name prefix · Scale: lite (78 lines, 4 files)
 
 A (must fix before merge) — 2
-  packages/foo/src/foo.js:42 — <claim> → <suggested fix>
+  F12 packages/foo/src/foo.js:42 — <claim> → <suggested fix>
 B (follow-up is fine) — 3
 C (taste) — 5
 ```
@@ -87,8 +91,8 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 <one paragraph: what was reviewed, what was found, what remains>
 
 ## Scope
-- [A][confirmed] packages/foo/src/foo.js:42 — <claim> → <suggested fix>
-- [C][accepted] <file>:<line> — <claim> — <why it is not a problem>
+- [A][confirmed] F12 packages/foo/src/foo.js:42 — <claim> → <suggested fix>
+- [C][accepted] F14 <file>:<line> — <claim> — <why it is not a problem>
 
 ## Behavior
 ## Fix
@@ -114,16 +118,17 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 | F3 | fixed | packages/foo/src/foo.js:42 — <claim> |
 
 ## Follow-ups
-- [B] <file>:<line> — **<label> (<category>, non-blocking):** <one-line claim>
+- [B] F13 <file>:<line> — **<label> (<category>, non-blocking):** <one-line claim>
 
 ## Next steps
 Fix the A findings, then re-run. Coverage gaps: write the test that each survivor names.
 ````
 
-- Every finding appears under its category, tagged `[tier]` and `[status]`. Statuses are
-  exactly two. `confirmed` means real and still open, because this skill fixed nothing.
-  `accepted` means that the finding needs no action, as a false positive or a deliberate
-  choice. Add `[orchestrator]` to findings that you raised yourself rather than a pass.
+- Every finding appears under its category, tagged `[tier]` and `[status]`, then its id.
+  Statuses are exactly two. `confirmed` means real and still open, because this skill fixed
+  nothing. `accepted` means that the finding needs no action, as a false positive or a
+  deliberate choice. Add `[orchestrator]` to findings that you raised yourself rather than a
+  pass.
 - **When the verification of a claim is not obvious from the claim, say how you verified
   it.** Close the finding with `— verified: <how>` (the command run, the browsers reproduced
   in, the commit read). A corrected agent claim says what the agent overstated, in one clause.
@@ -149,7 +154,7 @@ Fix the A findings, then re-run. Coverage gaps: write the test that each survivo
   the whole-fix revert result:
   `regression test: <name> fails without the fix | none fails without the fix`.
 - **Follow-ups** indexes every `confirmed` B and C finding as a paste-ready list for the
-  follow-up issue. Each line holds `file:line`, the Conventional Comments label and
+  follow-up issue. Each line holds the id, `file:line`, the Conventional Comments label and
   decorations of the finding from the frozen list
   ([`../../../references/severity.md`](../../../references/severity.md), *Rendering*), and
   the one-line claim. Do not include the fix, because it is above, under its category. When
