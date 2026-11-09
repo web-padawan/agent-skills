@@ -36,8 +36,9 @@ Five carve-outs outrank the table:
 - A full link to an **open** issue that explains a current workaround is a RETAIN. A closed
   issue is a REWRITE. Keep the reason and delete the link. Never use the `#` shorthand.
   An issue that the diff under review fixes counts as closed.
-- A docblock on a **public** member is never a DROP. The type declarations, the web types
-  and the documentation site include its text. A REWRITE of it edits the sibling `.d.ts` too.
+- A docblock on a **public** member is never a DROP. Generated API docs and type declarations
+  can include its text. A REWRITE of it also edits a sibling type declaration, for example a
+  `.d.ts` file.
 - Every docblock tag is a RETAIN, for example `@param`, `@return`, `@type`, `@attr` and
   `@fires`. A directive is not a comment. Keep `eslint-disable`, `prettier-ignore`,
   `@ts-expect-error`, `c8 ignore`, `istanbul ignore` and a license header.
