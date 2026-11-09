@@ -168,7 +168,7 @@ stage_check_flags() {  # stage_check_flags — exit 1 on an unknown stage or a b
 }
 
 # Reads: STAGE_LIST, OFF_STAGES, BUDGET_FLAGS, SCRIPT_DIR, BASE, HEAD, PROD_FILES,
-#        TEST_FILES, FINDINGS_FILE, EARLIER_MODE
+#        TEST_FILES, FINDINGS_FILE, EARLIER_MODE, GUARD
 # Sets: STAGE_LIST, STAGES_OUT
 plan_stages() {
   local entry name budget pair kept="" slot ask ref out
@@ -188,6 +188,8 @@ plan_stages() {
     IFS=$'\t' read -r slot ask ref <<< "$(stage_info "$name")"
     STAGES_OUT="${STAGES_OUT}  $name: slot $slot, budget $budget, ask $ask, ref $ref
 "
+    # A refused or unanchored run has no diff to give a stage script.
+    [ "$GUARD" = ok ] && [ -n "$BASE" ] && [ -n "$HEAD" ] || continue
     [ -x "$SCRIPT_DIR/stages/$name.sh" ] || continue
     # shellcheck disable=SC2086
     out=$(FACTS_PROD=$(printf '%s\n' $PROD_FILES | sed '/^$/d') FACTS_TESTS=$(printf '%s\n' $TEST_FILES | sed '/^$/d') \

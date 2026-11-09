@@ -5,8 +5,8 @@
 #
 # The policy it resolves lives in scripts/lib/policy.sh, so no skill restates it.
 # The modules in scripts/lib/ run in this order: anchors, lanes, classify, policy, facts,
-# store, context, prompts. Each one defines plan_<module>, and its header names the
-# variables that it reads and sets. docs/contracts.md lists the plan keys.
+# store, stages (in policy.sh), context, prompts. Each one defines plan_<module>, and its
+# header names the variables that it reads and sets. docs/contracts.md lists the plan keys.
 #
 # Usage:
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
@@ -26,8 +26,9 @@
 # working tree refuses: its project settings loaded at session start.
 #
 # In self mode it also reads the findings file of the last review of the branch
-# (`<report-dir>/<branch>-findings.json`): the same head starts a further round, a newer
-# head reconciles the earlier findings. `--fresh` ignores the file.
+# (`<report-dir>/<branch>-findings.json`): the same head lists the earlier findings so that
+# no pass repeats them, a newer head reconciles them. `--fresh` ignores the file. The stage
+# `rounds` (scripts/stages/rounds.sh) counts the round.
 #
 # Prints get-pr-context.sh's PR_METADATA, CI_STATUS and EXISTING_COMMENTS sections (skip
 # with --no-context; the other sections are restated by the plan) then === PLAN ===, and
