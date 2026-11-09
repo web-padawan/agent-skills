@@ -59,7 +59,7 @@ Examples, from maintainer replies on fork PRs:
 
 - decide: `Thanks for the PR. We will discuss with the team whether this change is ok to do in a minor release before proceeding.`
 - decline: `Closing per above comment. A proper solution needs the offset API of the linked issue, which would also simplify the margin workarounds in other components. Thanks for the regression tests, they can be reused if we agree to proceed with the offset API.`
-- redirect: `**suggestion**: Move the aria-controls binding into the heading template` followed by the precedent (a sibling property already uses the same binding), the template binding, what it removes (a manual update method and an extra render wait), and two tests: a replaced heading and replaced content.
+- redirect: `**suggestion**: Move the aria-controls binding into the heading template` followed by the `delegateProps` precedent (`opened` already uses it), the template binding, what it removes (`__updateAriaControls()`, the `updateComplete` wait), and two tests: a replaced heading and replaced content.
 
 ## Good and bad comment examples
 
