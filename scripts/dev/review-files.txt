@@ -1,0 +1,40 @@
+# The files of the review skills, one path and one tag per line.
+#   move  copy to review-skills at step 44, remove from agent-skills at step 51
+#   copy  copy to review-skills, keep in agent-skills
+#   drop  never copy, remove from agent-skills at step 51
+# Each step of the review core plan updates the paths that it adds, moves or deletes.
+agents/change-reviewer.md move
+agents/code-reviewer.md move
+agents/test-reviewer.md move
+docs/contracts.md move
+hooks/hooks.json move
+references/comment-guidelines.md move
+references/comments.md copy
+references/delivery.md move
+references/pipeline.md move
+references/profiles.md move
+references/severity.md move
+references/skeleton-blocks.md move
+scripts/diff-facts.sh move
+scripts/get-pr-context.sh move
+scripts/gh-context.sh copy
+scripts/hooks/bash-guard.py move
+scripts/lib/conventional-label.sh move
+scripts/lib/pr-history.sh move
+scripts/post-comment.sh move
+scripts/post-review.sh move
+scripts/pr-refresh.sh move
+scripts/pr-screen.sh move
+scripts/review-plan.sh move
+scripts/smoke.sh copy
+scripts/workflow-facts.sh move
+scripts/dev/plan-baseline.sh move
+scripts/dev/review-files.txt move
+skills/pr-review/SKILL.md move
+skills/pr-review/references/present.md move
+skills/pr-review/references/quick.md move
+skills/pr-review/references/screening.md move
+skills/pr-review/references/understand.md move
+skills/self-review/SKILL.md move
+skills/self-review/references/finalize.md move
+skills/self-review/references/mutation.md drop

@@ -583,6 +583,22 @@ expect "review-plan.sh names the dirty tracked files" \
   "$(grep '^guard:' "$WORK/last.log")"
 git -C "$FX" checkout -q -- src/a.js
 
+echo "== contracts"
+# Every key that the plan prints is in the plan key list of docs/contracts.md.
+CONTRACT_KEYS=$(awk '/^## Plan keys/ { s = 1; next } /^## / { s = 0 } s && /^```/ { c = !c; next } s && c && NF { print $1 }' \
+  "$SCRIPTS/../docs/contracts.md" | sort -u)
+for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
+  unknown=$(awk '/^=== PLAN ===$/ { f = 1; next } /^=== PROMPTS ===$/ { f = 0 } f && /^[a-z_0-9]+:/ { sub(/:.*/, ""); print }' "$WORK/$log" \
+    | sort -u | comm -23 - <(printf '%s\n' "$CONTRACT_KEYS"))
+  expect "docs/contracts.md lists every plan key of $log" "" "$unknown"
+done
+# Every path of scripts/dev/review-files.txt exists and has a known tag.
+MANIFEST_BAD=$(awk '!/^#/ && NF { if ($2 != "move" && $2 != "copy" && $2 != "drop") print "tag " $0; else print $1 }' \
+  "$SCRIPTS/dev/review-files.txt" | while read -r p; do
+    case "$p" in "tag "*) echo "$p" ;; *) [ -e "$SCRIPTS/../$p" ] || echo "missing $p" ;; esac
+  done)
+expect "scripts/dev/review-files.txt names existing paths with known tags" "" "$MANIFEST_BAD"
+
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"
   rm -rf "$WORK"
