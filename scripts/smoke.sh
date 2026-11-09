@@ -250,7 +250,7 @@ check "pr-refresh.sh refuses a context file without a PR" 2 \
 echo "== pr-screen.sh"
 SCREENING_CONFIG="$SCRIPTS/../config/screening/vaadin.json"
 # Three packages import the changed module, and a unit test asserts CSS. The fixture
-# issue got `Impact: Low` before the review and `behavior altering change` after it.
+# issue is 31 days old and has the label `Impact: Low`.
 SCREENING_REPO="$WORK/screening"
 git init -q -b main "$SCREENING_REPO"
 (
@@ -271,19 +271,15 @@ git init -q -b main "$SCREENING_REPO"
   printf "it('x', () => {\n  expect(getComputedStyle(el).color).to.equal('blue');\n});\n" > packages/core/test/core.test.js
   git add . && git commit -q -m change
 )
-cat > "$WORK/screening-meta.json" <<'EOF'
+ISSUE_CREATED=$(jq -nr 'now - 31 * 86400 | todate')
+cat > "$WORK/screening-meta.json" <<EOF
 {"slug": "owner/name", "data": {"repository": {"pullRequest": {
   "title": "fix: change the core mixin", "isCrossRepository": true, "author": {"login": "someone"},
   "closingIssuesReferences": {"nodes": [{
-    "number": 7, "state": "OPEN", "createdAt": "2026-01-01T00:00:00Z", "author": {"login": "platosha"},
+    "number": 7, "state": "OPEN", "createdAt": "$ISSUE_CREATED", "author": {"login": "platosha"},
     "body": "The core mixin is wrong.",
-    "labels": {"nodes": [{"name": "bug"}, {"name": "Impact: Low"}, {"name": "behavior altering change"}]},
-    "comments": {"nodes": []},
-    "timelineItems": {"nodes": [
-      {"__typename": "LabeledEvent", "createdAt": "2026-01-01T00:00:01Z", "label": {"name": "bug"}},
-      {"__typename": "LabeledEvent", "createdAt": "2026-01-02T00:00:00Z", "label": {"name": "Impact: Low"}},
-      {"__typename": "LabeledEvent", "createdAt": "2026-03-01T00:00:00Z", "label": {"name": "behavior altering change"}}
-    ]}}]}}}}}
+    "labels": {"nodes": [{"name": "bug"}, {"name": "Impact: Low"}]},
+    "comments": {"nodes": []}}]}}}}}
 EOF
 SCREENING_BASE=$(git -C "$SCREENING_REPO" rev-parse HEAD~1)
 SCREENING_HEAD=$(git -C "$SCREENING_REPO" rev-parse HEAD)
@@ -339,23 +335,21 @@ expect "review-plan.sh quotes the diff facts in the skeleton" \
   "    shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" \
   "$(grep '^    shadow_reach:' "$SCREENING_REPO/.git/self-review/context.md" 2>/dev/null)"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
-  --meta "$WORK/screening-meta.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening.log" 2>&1
-expect "pr-screen.sh replays the labels to --as-of" \
+  --meta "$WORK/screening-meta.json") > "$WORK/screening.log" 2>&1
+expect "pr-screen.sh sets the flag of an issue label" \
   "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening.log")"
 expect "pr-screen.sh counts a former employee as team" \
-  "issue: #7 open labels=[Impact: Low, bug] author=team age=31d comments=0" "$(grep '^issue:' "$WORK/screening.log")"
+  "issue: #7 open labels=[bug, Impact: Low] author=team age=31d comments=0" "$(grep '^issue:' "$WORK/screening.log")"
 expect "pr-screen.sh proposes a decision for a low-impact change with a wide reach" \
   "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/screening.log")"
 expect "pr-screen.sh proposes a reply at the gate for a decide verdict" \
   "gate_default: Draft a reply" "$(grep '^gate_default:' "$WORK/screening.log")"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
-  --meta "$WORK/screening-meta.json") > "$WORK/screening-now.log" 2>&1
-expect "pr-screen.sh reads the current labels without --as-of" \
-  "verdict_reason: behavior-altering -> question (semver)" "$(grep -m1 '^verdict_reason:' "$WORK/screening-now.log")"
+expect "pr-screen.sh gives no behavior-altering reason without a breaking label or marker" \
+  "0" "$(grep -c 'behavior-altering' "$WORK/screening.log")"
 jq '.data.repository.pullRequest.title = "fix!: change the core mixin"
   | .data.repository.pullRequest.body = "Text\r\nBREAKING CHANGE: M is 2"' "$WORK/screening-meta.json" > "$WORK/screening-breaking.json"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
-  --meta "$WORK/screening-breaking.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-breaking.log" 2>&1
+  --meta "$WORK/screening-breaking.json") > "$WORK/screening-breaking.log" 2>&1
 expect "pr-screen.sh reads a breaking change that the title and the body mark" \
   "breaking_marker: title and body" "$(grep '^breaking_marker:' "$WORK/screening-breaking.log")"
 expect "pr-screen.sh sets behavior-altering for a marked breaking change" \
@@ -363,20 +357,20 @@ expect "pr-screen.sh sets behavior-altering for a marked breaking change" \
 # A feature without acceptance criteria: a contributor gets the flag, a team author skips it.
 jq '.data.repository.pullRequest.title = "feat: add a core option"' "$WORK/screening-meta.json" > "$WORK/screening-feat.json"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
-  --meta "$WORK/screening-feat.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-feat.log" 2>&1
+  --meta "$WORK/screening-feat.json") > "$WORK/screening-feat.log" 2>&1
 expect "pr-screen.sh flags a feature of a contributor without acceptance criteria" \
   "issue_flags: low-impact feature-no-ac" "$(grep '^issue_flags:' "$WORK/screening-feat.log")"
 jq '.data.repository.pullRequest.author.login = "platosha"' "$WORK/screening-feat.json" > "$WORK/screening-feat-team.json"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
-  --meta "$WORK/screening-feat-team.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-feat-team.log" 2>&1
+  --meta "$WORK/screening-feat-team.json") > "$WORK/screening-feat-team.log" 2>&1
 expect "pr-screen.sh keeps only the team flags for a team author" \
   "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening-feat-team.log")"
 expect "pr-screen.sh lists the contributor flags it skipped for a team author" \
   "skipped_flags: self-filed feature-no-ac (team author)" "$(grep '^skipped_flags:' "$WORK/screening-feat-team.log")"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 \
-  --meta "$WORK/screening-feat.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-generic.log" 2>&1
+  --meta "$WORK/screening-feat.json") > "$WORK/screening-generic.log" 2>&1
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --scale trivial \
-  --meta "$WORK/screening-feat.json" --as-of 2026-02-01T00:00:00Z) > "$WORK/screening-trivial.log" 2>&1
+  --meta "$WORK/screening-feat.json") > "$WORK/screening-trivial.log" 2>&1
 expect "pr-screen.sh proposes a quick review for a trivial take verdict" \
   "gate_default: Quick review" "$(grep '^gate_default:' "$WORK/screening-trivial.log")"
 expect "pr-screen.sh applies only the generic rules without a config" \

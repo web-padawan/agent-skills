@@ -4,7 +4,7 @@
 # markers set, and a verdict hint from fixed rules.
 #
 # Usage:
-#   pr-screen.sh --pr <number-or-url> [--reach-max <n>] [--as-of <iso-time>] [--meta <file.json>]
+#   pr-screen.sh --pr <number-or-url> [--reach-max <n>] [--meta <file.json>]
 #                [--config <file.json>] [--scale trivial|lite|full]
 #
 # Run it from inside the target repository. review-plan.sh calls it in pr mode.
@@ -12,9 +12,6 @@
 #   import one changed module. A fact pack prints it. Two rules read it. The default is 0.
 # --scale is the scale tier of the plan. It picks the `gate_default:` option of a `take`
 #   verdict. The default is full.
-# --as-of reads the labels, the state and the comments of each issue as they were at that
-#   time. An audit of an earlier head needs it: a maintainer often labels an issue during
-#   the review (#11746 got `behavior altering change` 16 days after the PR).
 # --meta reads the GraphQL answer from a file instead of gh, and team membership from the
 #   allowlist only. The smoke test uses it.
 # --config names the screening config. The default is config/screening/<owner>.json of the
@@ -46,12 +43,11 @@ set -euo pipefail
 
 REACH_DECIDE=3
 
-PR=""; REACH_MAX=0; AS_OF=""; META_FILE=""; CONFIG=""; SCALE="full"
+PR=""; REACH_MAX=0; META_FILE=""; CONFIG=""; SCALE="full"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
     --reach-max) REACH_MAX="${2:?--reach-max requires a value}"; shift 2 ;;
-    --as-of) AS_OF="${2:?--as-of requires a value}"; shift 2 ;;
     --meta) META_FILE="${2:?--meta requires a value}"; shift 2 ;;
     --config) CONFIG="${2:?--config requires a value}"; shift 2 ;;
     --scale) SCALE="${2:?--scale requires a value}"; shift 2 ;;
@@ -61,15 +57,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-# shellcheck source=lib/pr-history.sh
-. "$SCRIPT_DIR/lib/pr-history.sh"
 
 [ -n "$PR" ] || { echo "error: --pr is required" >&2; exit 2; }
 [[ "$REACH_MAX" =~ ^[0-9]+$ ]] || { echo "error: --reach-max takes a number" >&2; exit 2; }
 case "$SCALE" in trivial|lite|full) ;; *) echo "error: --scale takes trivial, lite or full" >&2; exit 2 ;; esac
-if [ -n "$AS_OF" ] && ! valid_iso "$AS_OF"; then
-  echo "error: --as-of takes an ISO 8601 UTC time, for example 2026-10-03T08:11:25Z" >&2; exit 2
-fi
 command -v jq >/dev/null 2>&1 || { echo "error: jq not found" >&2; exit 1; }
 if [ -n "$CONFIG" ] && ! jq -e 'type == "object"' "$CONFIG" >/dev/null 2>&1; then
   echo "error: --config takes a JSON object file" >&2; exit 2
@@ -81,7 +72,8 @@ if [ -n "$META_FILE" ]; then
   SLUG=$(jq -r '.slug // "owner/name"' "$META_FILE")
 else
   command -v gh >/dev/null 2>&1 || { echo "error: gh CLI not found" >&2; exit 1; }
-  SLUG=$(pr_slug "$PR")
+  SLUG=$(gh pr view "$PR" --json url --jq '.url' 2>/dev/null \
+    | sed -n 's|^https://[^/]*/\([^/]*/[^/]*\)/pull/.*|\1|p')
   [ -n "$SLUG" ] || { echo "error: cannot resolve the PR $PR" >&2; exit 1; }
   NUMBER=$(gh pr view "$PR" --json number --jq .number 2>/dev/null || true)
   [[ "$NUMBER" =~ ^[0-9]+$ ]] || { echo "error: cannot resolve the PR $PR" >&2; exit 1; }
@@ -92,13 +84,7 @@ else
         closingIssuesReferences(first:5){ nodes{
           number state createdAt author{login} body
           labels(first:30){ nodes{ name } }
-          comments(first:50){ nodes{ createdAt body } }
-          timelineItems(first:100, itemTypes:[LABELED_EVENT, UNLABELED_EVENT, CLOSED_EVENT, REOPENED_EVENT]){ nodes{
-            __typename
-            ... on LabeledEvent{ createdAt label{ name } }
-            ... on UnlabeledEvent{ createdAt label{ name } }
-            ... on ClosedEvent{ createdAt }
-            ... on ReopenedEvent{ createdAt } } } } } } } }' 2>/dev/null) \
+          comments(first:50){ nodes{ createdAt body } } } } } } }' 2>/dev/null) \
     || { echo "error: gh could not read the PR $PR" >&2; exit 1; }
 fi
 ORG="${SLUG%%/*}"
@@ -131,25 +117,17 @@ is_team() {  # is_team <login>
   gh api "orgs/$ORG/members/$login" --silent >/dev/null 2>&1
 }
 
-# One TSV line for the PR, then one per issue, with labels and state replayed to --as-of.
-FACTS=$(printf '%s' "$META" | jq -r --arg asof "${AS_OF:-}" --arg acre "$AC_PATTERN" '
-  def at: if $asof == "" then (now | todate) else $asof end;
-  def before: .createdAt < at;
+# One TSV line for the PR, then one per issue.
+FACTS=$(printf '%s' "$META" | jq -r --arg acre "$AC_PATTERN" '
   .data.repository.pullRequest as $p
   | (["PR", ($p.title // ""), ($p.isCrossRepository | tostring), ($p.author.login // "")] | @tsv),
     ($p.closingIssuesReferences.nodes[]
-     | select(.createdAt < at)
      | . as $i
-     | ($i.timelineItems.nodes | map(select(before)) | sort_by(.createdAt)) as $ev
-     | (if $asof == "" then [$i.labels.nodes[].name]
-        else reduce ($ev[] | select(.__typename == "LabeledEvent" or .__typename == "UnlabeledEvent")) as $e
-          ([]; if $e.__typename == "LabeledEvent" then (. + [$e.label.name] | unique) else (. - [$e.label.name]) end) end) as $labels
-     | (if $asof == "" then $i.state
-        else ([$ev[] | select(.__typename == "ClosedEvent" or .__typename == "ReopenedEvent")] | last | .__typename // "")
-          | if . == "ClosedEvent" then "CLOSED" else "OPEN" end end) as $state
-     | ([$i.comments.nodes[] | select(before)]) as $comments
+     | [$i.labels.nodes[].name] as $labels
+     | $i.state as $state
+     | $i.comments.nodes as $comments
      | ((([$i.body] + [$comments[].body]) | join("\n")) | (if $acre == "" then false else test($acre; "i") end)) as $ac
-     | (((at | fromdateiso8601) - ($i.createdAt | fromdateiso8601)) / 86400 | floor) as $age
+     | ((now - ($i.createdAt | fromdateiso8601)) / 86400 | floor) as $age
      | ["ISSUE", ($i.number | tostring), $state, ($i.author.login // ""), ($labels | join(", ")),
         ($age | tostring), ($comments | length | tostring), ($ac | tostring)] | @tsv)
 ' 2>/dev/null) || { echo "error: the PR facts did not parse" >&2; exit 1; }
@@ -175,12 +153,8 @@ add_contributor_flag() {
   fi
 }
 
-# A breaking change that the author marked. --as-of reads the body as it was then.
-if [ -n "$AS_OF" ] && [ -z "$META_FILE" ]; then
-  PR_BODY=$(pr_body_as_of "$SLUG" "$NUMBER" "$AS_OF")
-else
-  PR_BODY=$(printf '%s' "$META" | jq -r '.data.repository.pullRequest.body // ""')
-fi
+# A breaking change that the author marked.
+PR_BODY=$(printf '%s' "$META" | jq -r '.data.repository.pullRequest.body // ""')
 BREAKING=""
 BREAKING_TITLE_RE='^[A-Za-z]+(\([^)]*\))?!:'
 BREAKING_BODY_RE=$'(^|\n)BREAKING[ -]CHANGE:'
@@ -228,7 +202,6 @@ echo "fork: ${IS_FORK:-unknown}"
 echo "pr_author: ${PR_AUTHOR:-unknown} ($PA_TEAM)"
 echo "screening_config: ${CONFIG:-none (generic rules only)}"
 echo "title_type: $TITLE_TYPE"
-[ -n "$AS_OF" ] && echo "as_of: $AS_OF"
 if [ -n "$ISSUE_LINES" ]; then printf '%s' "$ISSUE_LINES"; else echo "issue: none linked with a closing keyword"; fi
 echo "issue_flags: ${FLAGS:-none}"
 [ -n "$SKIPPED" ] && echo "skipped_flags: $SKIPPED (team author)"

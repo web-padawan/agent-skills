@@ -22,7 +22,6 @@ head               the head SHA under review
 base_branch        the base branch and the source of the base
 pr                 the PR argument, or none
 fork               pr mode: true or false, and the head repository
-audit              pr mode with --head: the audited head
 hint               an instruction for the orchestrator. It can repeat
 ci                 the CI digest, or not gathered
 existing_comments  the summary of the threads on the PR
