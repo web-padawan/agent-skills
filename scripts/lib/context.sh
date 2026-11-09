@@ -164,7 +164,7 @@ section_conventions() {
     echo
     echo "### Owner rules ($OWNER)"
     echo
-    echo "Source: \`$OWNER_RULES\`. These rules apply to every repository of the owner."
+    echo "Source: \`$OWNER_RULES\`. These rules apply to every repository of the owner. A rule under \`#### From <file>\` extends the checklist or the rules of that file, in the category that it names."
     echo
     conventions_excerpt "$OWNER_RULES" | sed 's/^###/####/'
   fi
