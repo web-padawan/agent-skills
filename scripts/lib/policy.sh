@@ -6,7 +6,8 @@
 # Reads: MODE, TYPE, SCALE, PLUGIN_NAME, BASE, HEAD, CHANGED, PROD_FILES, TEST_FILES,
 #        BINARY_FILES, CODE_RE, ROUNDS_FLAG, COVERAGE
 # Sets: LOOKUP_TYPE, PASS_TOKENS, PASSES_DROPPED, MUTANTS, DEEP_ROW, DEEP_SOURCE, ROUNDS,
-#       ROUNDS_SOURCE, CAND_DTS, CAND_EXPORTS, CAND_METHODS, DEEP_CANDIDATES, EFFORT
+#       ROUNDS_SOURCE, CAND_DTS, CAND_EXPORTS, CAND_METHODS, DEEP_CANDIDATES, EFFORT,
+#       STAGE_LIST
 
 # The pass registry: the id, the agent and the lane that the pass reads.
 # The lane is the whole diff input of the pass. `prod` is the prepared production patch.
@@ -57,6 +58,7 @@ policy_row() {  # policy_row <mode> <type>
 
 plan_policy() {
   LOOKUP_TYPE="$TYPE"
+  STAGE_LIST=""
 
   local row
   row=$(policy_row "$MODE" "$LOOKUP_TYPE")
@@ -138,5 +140,58 @@ plan_policy() {
     lite) EFFORT=20 ;;
     *) EFFORT=30 ;;
   esac
+  return 0
+}
+
+# ── Stages
+# A stage is a step of a skill outside the fan-out, with a budget that the plan sets. The
+# registry names the slot of the skill where the stage runs, whether the gate asks a
+# question for it, and the reference file that holds its steps. plan_policy lists the
+# stages of a profile in STAGE_LIST as <name>=<budget> words. docs/contracts.md holds the
+# stage contract.
+stage_info() {  # stage_info <name> — the slot, the ask flag and the reference, tab-separated
+  case "$1" in
+    *) ;;
+  esac
+}
+
+stage_check_flags() {  # stage_check_flags — exit 1 on an unknown stage or a bad budget
+  local s pair
+  for s in $OFF_STAGES; do
+    [ -n "$(stage_info "$s")" ] || { echo "error: --off: unknown stage $s" >&2; exit 1; }
+  done
+  for pair in $BUDGET_FLAGS; do
+    [[ "$pair" =~ ^[a-z][a-z0-9-]*=[0-9]+$ ]] || { echo "error: --budget takes <stage>=<number>, got $pair" >&2; exit 1; }
+    [ -n "$(stage_info "${pair%%=*}")" ] || { echo "error: --budget: unknown stage ${pair%%=*}" >&2; exit 1; }
+  done
+  return 0
+}
+
+# Reads: STAGE_LIST, OFF_STAGES, BUDGET_FLAGS, SCRIPT_DIR, BASE, HEAD, PROD_FILES,
+#        TEST_FILES, FINDINGS_FILE
+# Sets: STAGE_LIST, STAGES_OUT
+plan_stages() {
+  local entry name budget pair kept="" slot ask ref out
+  for entry in $STAGE_LIST; do
+    name="${entry%%=*}"; budget="${entry#*=}"
+    case " $OFF_STAGES " in *" $name "*) continue ;; esac
+    for pair in $BUDGET_FLAGS; do [ "${pair%%=*}" = "$name" ] && budget="${pair#*=}"; done
+    kept="$kept $name=$budget"
+  done
+  STAGE_LIST="${kept# }"
+  STAGES_OUT=""
+  for entry in $STAGE_LIST; do
+    name="${entry%%=*}"; budget="${entry#*=}"
+    IFS=$'\t' read -r slot ask ref <<< "$(stage_info "$name")"
+    STAGES_OUT="${STAGES_OUT}  $name: slot $slot, budget $budget, ask $ask, ref $ref
+"
+    [ -x "$SCRIPT_DIR/stages/$name.sh" ] || continue
+    # shellcheck disable=SC2086
+    out=$(FACTS_PROD=$(printf '%s\n' $PROD_FILES | sed '/^$/d') FACTS_TESTS=$(printf '%s\n' $TEST_FILES | sed '/^$/d') \
+      STAGE_FINDINGS="${FINDINGS_FILE:-}" "$SCRIPT_DIR/stages/$name.sh" --base "$BASE" --head "$HEAD" --budget "$budget" 2>&1) \
+      || out="error: stages/$name.sh failed — $(printf '%s' "$out" | tail -1)"
+    [ -n "$out" ] && STAGES_OUT="${STAGES_OUT}$(printf '%s\n' "$out" | sed 's/^/    /')
+"
+  done
   return 0
 }

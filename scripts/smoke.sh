@@ -673,6 +673,10 @@ for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
     | sort -u | comm -23 - <(printf '%s\n' "$CONTRACT_KEYS"))
   expect "docs/contracts.md lists every plan key of $log" "" "$unknown"
 done
+check "review-plan.sh refuses --off with an unknown stage" 1 \
+  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --off nosuch"
+check "review-plan.sh refuses --budget without a number" 1 \
+  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --budget rounds=x"
 
 echo "== past PRs"
 # Only docs/retrospective.md cites a past PR or issue. The fixture PRs of plan-baseline.sh
