@@ -4,6 +4,40 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-09 — Self-review: web-components #13312, PDF viewer print
+
+The branch `feat/pdf-viewer-print` adds `print()`, the print button, `printButtonHidden` and
+the `printing` state. Head `d13fa73`, feature, scale `full`, 536 production lines in 17 files.
+The run used two rounds of three opus passes, the report and 15 mutants. It found 41 findings:
+16 B, 22 C, 3 accepted, no A. Verdict: ready for PR.
+
+- The plan printed `notes: ... (not written ...)` in both rounds. A `context-notes.md` from the
+  Nov 6 `feat-pdf-viewer-sidebar` run was still on disk. Line 277 of `review-plan.sh` prints the
+  status without checking the file. The notes path is the same for every branch. An
+  orchestrator that skips the notes file sends passes the facts of another branch.
+  → open. The plan should delete a stale notes file, or scope the path to the branch.
+- Round 2 on the same head found 19 new findings, 9 of them B. Two were logic defects that
+  round 1 missed: `isInside()` walks from a removed element, and `_printing` clears before
+  the synchronous `print()`. This confirms the 2026-11-02 dry run. → no change.
+- The round 2 change pass read `PdfViewerI18n.java` in `../flow-components` without a lead. It
+  found the missing `print` field, the one finding outside this repo. → no change.
+- The change pass cleared the open tooltip report of the reviewer from round 1 by reading the
+  code. The orchestrator moved the cleared lead into the Settled facts for round 2, and no pass
+  raised it again. → no change.
+- 8 of 15 mutants survived. The tests pass had already filed 7 of them as coverage gaps:
+  4 in round 1 and 3 in round 2. The eighth was an equivalent mutant. No mutant found a gap
+  that the passes missed. → no change. The mutants confirmed the test findings.
+- The orchestrator wrote a helper in the scratchpad for each mutant. It ran the tests, restored
+  the file, checked the clean tree and printed `KILLED` or `SURVIVED`. Each mutant took about
+  20 seconds with `--glob="print*"`. → open. A `scripts/mutant.sh` would replace the helper.
+- The repo lint hook reported `no-unused-vars` on 2 mutants that removed the last use of an
+  import. The mutants were restored, so this was noise. → no change.
+- The report template has no finding ids, but the findings file has them. An author who
+  disputes a finding by id at the gate cannot see the id. → open.
+- Cost: about 525k subagent tokens. Round 1: change 92k with 21 calls, code 84k with 12 calls,
+  tests 85k with 9 calls. Round 2: change 93k with 26 calls, code 82k with 13 calls, tests 89k
+  with 15 calls. Each round took about 4 minutes.
+
 ## 2026-11-09 — PR review 10: flow-components #10597, PDF viewer download API
 
 One production file, `PdfViewer.java`, +59, and 5 new tests in `PdfViewerTest.java`. The PR
