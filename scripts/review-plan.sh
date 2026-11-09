@@ -78,6 +78,8 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
 # shellcheck source=lib/lanes.sh
 . "$SCRIPT_DIR/lib/lanes.sh"
+# shellcheck source=lib/owner.sh
+. "$SCRIPT_DIR/lib/owner.sh"
 # shellcheck source=lib/policy.sh
 . "$SCRIPT_DIR/lib/policy.sh"
 # shellcheck source=lib/anchors.sh
@@ -184,6 +186,7 @@ case "$EARLIER_MODE" in
 esac
 [ -n "$FINDINGS_FILE" ] && echo "findings_file: $FINDINGS_FILE"
 echo "conventions_doc: ${CONVENTIONS:-none}"
+echo "owner_rules: ${OWNER_RULES:-none}"
 
 if [ "$GUARD" != "ok" ]; then
   echo "passes: none — the guard refused this run"

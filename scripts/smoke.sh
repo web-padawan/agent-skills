@@ -718,6 +718,14 @@ mv "$WORK/config/fixture-owner/facts/contract.sh" "$WORK/config/other-owner/fact
   --head "$(git rev-parse HEAD)") > "$WORK/owner-gate.log" 2>&1
 expect "diff-facts.sh does not run the pack of another owner" \
   "fact_packs: none" "$(grep '^fact_packs:' "$WORK/owner-gate.log")"
+printf '# Owner rules: fixture-owner\n\n## From agents/code-reviewer.md\n\n- A fixture rule.\n' > "$WORK/config/fixture-owner/rules.md"
+(cd "$FX" && REVIEW_SKILLS_CONFIG_DIR="$WORK/config" "$SCRIPTS/review-plan.sh" --mode self --no-context --fresh --type fix) \
+  > "$WORK/owner-rules.log" 2>&1
+expect "review-plan.sh names the rules of the owner directory" \
+  "owner_rules: $WORK/config/fixture-owner/rules.md" "$(grep '^owner_rules:' "$WORK/owner-rules.log")"
+expect "review-plan.sh quotes the owner rules in the context file" \
+  "### Owner rules (fixture-owner)|#### From agents/code-reviewer.md|5| - A fixture rule." \
+  "$(grep -E '^### Owner rules|^#### From|^5\| ' "$FX_DIR/context.md" | paste -sd '|' -)"
 
 echo "== past PRs"
 # Only docs/retrospective.md cites a past PR or issue. The fixture PRs of plan-baseline.sh

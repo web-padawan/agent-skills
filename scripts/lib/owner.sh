@@ -1,4 +1,4 @@
-# owner.sh: sourced by diff-facts.sh and pr-screen.sh. The owner of a
+# owner.sh: sourced by review-plan.sh, diff-facts.sh and pr-screen.sh. The owner of a
 # repository, and the owner directory that holds its fact packs (facts/*.sh), its
 # screening config (screening.json) and its rules (rules.md).
 #
