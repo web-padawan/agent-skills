@@ -36,13 +36,15 @@ REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "error: not a g
 cd "$REPO_ROOT"
 
 # ── Lanes ─────────────────────────────────────────────────────────────
-# Same test-path rule as review-plan.sh, so both scripts split the lanes alike.
-TEST_RE='(^|/)(test|tests|__tests__|it)/|\.(test|spec)\.[cm]?[jt]sx?$|Test\.java$|IT\.java$|Tests?\.kt$'
-CHANGED=$(git diff --name-only --no-renames "$BASE..$HEAD" 2>/dev/null) || { echo "error: git cannot diff $BASE..$HEAD" >&2; exit 1; }
-BINARY=$(git diff --numstat "$BASE..$HEAD" | awk -F'\t' '$1 == "-" { print $3 }')
-TEXT=$(printf '%s\n' "$CHANGED" | grep -vxF -f <(printf '%s\n' "$BINARY" | sed '/^$/d'; echo '//none//') || true)
-PROD=$(printf '%s\n' "$TEXT" | grep -vE "$TEST_RE" | sed '/^$/d' || true)
-TESTS=$(printf '%s\n' "$TEXT" | grep -E "$TEST_RE" | sed '/^$/d' || true)
+# The lanes of lib/lanes.sh, so both scripts split the lanes alike. One path per line.
+git diff --name-only --no-renames "$BASE..$HEAD" >/dev/null 2>&1 || { echo "error: git cannot diff $BASE..$HEAD" >&2; exit 1; }
+# shellcheck source=lib/lanes.sh
+. "$SCRIPT_DIR/lib/lanes.sh"
+lanes_split
+# shellcheck disable=SC2086
+PROD=$(printf '%s\n' $PROD_FILES | sed '/^$/d')
+# shellcheck disable=SC2086
+TESTS=$(printf '%s\n' $TEST_FILES | sed '/^$/d')
 
 # Diff noise: changed production lines whose trimmed text appears on both sides. A moved
 # block or a reindent inflates the diff without a change in behavior.
