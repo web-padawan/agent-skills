@@ -11,7 +11,7 @@
 # Usage:
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
 #                  [--type fix|feature|refactor|chore]
-#                  [--rounds N] [--fresh] [--no-coverage] [--report-dir <path>]
+#                  [--fresh] [--no-coverage] [--report-dir <path>]
 #                  [--off <stage>] [--budget <stage>=<n>]
 #                  [--no-context] [--context-out <path>] [--no-write]
 #
@@ -50,7 +50,6 @@ REPORT_DIR=""
 WANT_CONTEXT=true
 CONTEXT_OUT=""
 NO_WRITE=false
-ROUNDS_FLAG=""
 FRESH=false
 OFF_STAGES=""
 BUDGET_FLAGS=""
@@ -60,7 +59,6 @@ while [[ $# -gt 0 ]]; do
     --mode) MODE="${2:?--mode requires a value}"; shift 2 ;;
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
     --type) TYPE_FLAG="${2:?--type requires a value}"; shift 2 ;;
-    --rounds) ROUNDS_FLAG="${2:?--rounds requires a value}"; shift 2 ;;
     --fresh) FRESH=true; shift ;;
     --no-coverage) COVERAGE="off"; shift ;;
     --report-dir) REPORT_DIR="${2:?--report-dir requires a value}"; shift 2 ;;
@@ -76,9 +74,6 @@ done
 
 case "$MODE" in self|pr) ;; *) echo "error: --mode must be self or pr" >&2; exit 1 ;; esac
 case "$TYPE_FLAG" in ""|fix|feature|refactor|chore) ;; *) echo "error: --type must be fix, feature, refactor or chore" >&2; exit 1 ;; esac
-if [ -n "$ROUNDS_FLAG" ] && ! [[ "$ROUNDS_FLAG" =~ ^[1-9][0-9]*$ ]]; then
-  echo "error: --rounds takes a number of 1 or more" >&2; exit 1
-fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
@@ -216,7 +211,6 @@ if [ "$MUTANTS" -gt 0 ] 2>/dev/null; then
     echo "mutant_pool: ~$MUTANT_POOL non-styling source lines"
   fi
 fi
-echo "round: $ROUND of $ROUNDS (rounds budget: $ROUNDS_SOURCE)"
 case "$EARLIER_MODE" in
   same)
     if [ "$EARLIER_COUNT" -eq 0 ]; then echo "earlier_findings: same head — the earlier review of this head had no finding"

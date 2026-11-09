@@ -29,6 +29,7 @@ Every finding goes in the report as `confirmed` or `accepted`.
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the script-written context file and your notes file, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering, deep-block severities |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
+| [`references/rounds.md`](references/rounds.md) | Step 5: the `rounds` stage, one more fan-out on the same head |
 | [`references/mutation.md`](references/mutation.md) | Step 7: mutant selection, restore safety, survivors as findings |
 | [`references/finalize.md`](references/finalize.md) | Steps 6 and 8: the gate, the FINDINGS.md template, the verdict rubric |
 
@@ -42,7 +43,7 @@ resolve from this file. If a read fails, use
 1. **Plan.** Resolve the plugin root to a literal path. Then run the plan script in one call:
    `${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode self` plus the flags that the user
    passed (`--fix|--feature|--refactor|--chore` → `--type`,
-   `--rounds N`, `--fresh`, `--no-coverage`). If the output has a `guard: refuse:` line, say the reason in one line and
+   `--rounds N` → `--budget rounds=N`, `--fresh`, `--no-coverage`). If the output has a `guard: refuse:` line, say the reason in one line and
    stop. Record `base`, `head` and `head0` as literal SHAs. When the user gave `$0`, fetch it
    with `gh`.
 
@@ -70,16 +71,9 @@ resolve from this file. If a read fails, use
    findings.
 
    The context, notes and patch files live in the git directory, so they never appear here. Leave every pre-existing untracked file alone.
-5. **Roll call, triage, then the next round.** Do the roll call and triage per pipeline.md,
-   in that order. Then read the `round: <k> of <n>` line of the plan:
-   - When k is less than n and this round added a confirmed A or B finding, write the
-     findings file per finalize.md. Re-run the plan with the same flags, then repeat steps 3
-     to 5 with its new prompts.
-   - Otherwise, go on to the gate.
-
-   The re-run plan lists the findings of the earlier rounds in the skeleton, so that the
-   passes look for what those rounds missed. Keep the notes file. The frozen list grows by
-   the new findings of each round.
+5. **Roll call and triage.** Do the roll call and triage per pipeline.md, in that order.
+   Then run each stage of the `stages:` block of the plan with the slot `after-triage`, per
+   the reference file that its line names. The `rounds` stage can send you back to step 3.
 
    The `earlier_findings:` line of the first plan tells you whether an earlier run left
    findings. On a newer head, the passes reconcile them, and triage applies their status.
