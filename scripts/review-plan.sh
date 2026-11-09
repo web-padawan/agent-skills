@@ -185,7 +185,7 @@ case "$EARLIER_MODE" in
   *) echo "earlier_findings: $EARLIER_MODE" ;;
 esac
 [ -n "$FINDINGS_FILE" ] && echo "findings_file: $FINDINGS_FILE"
-echo "conventions_doc: ${CONVENTIONS:-none}"
+echo "conventions_doc: $([ -n "$CONVENTIONS" ] && printf '%s' "$CONVENTIONS" | sed 's/ /, /g' || echo none)"
 echo "owner_rules: ${OWNER_RULES:-none}"
 
 if [ "$GUARD" != "ok" ]; then

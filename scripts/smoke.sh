@@ -554,9 +554,17 @@ expect "review-plan.sh quotes a conventions doc of 300 lines whole" \
 awk 'BEGIN { print "# Conventions"; print "## Testing"; for (i = 1; i <= 160; i++) print "Test rule " i; print "## Components"; for (i = 1; i <= 160; i++) print "Code rule " i; print "## Release"; for (i = 1; i <= 170; i++) print "Release rule " i }' > "$FX/CONVENTIONS.md"
 fx_plan fx-conv500.log --fresh --type fix
 expect "review-plan.sh names a conventions doc of 500 lines and does not quote it" \
-  "Source: \`CONVENTIONS.md\`, not quoted (494 lines, over 400)." \
+  "Source: \`CONVENTIONS.md\`, not quoted (494 lines, the total is over 400)." \
   "$(grep '^Source: `CONVENTIONS' "$FX_DIR/context.md")"
 rm -f "$FX/CONVENTIONS.md"
+printf '# Contributing\n\nRun the tests.\n' > "$FX/CONTRIBUTING.md"
+printf '# Claude\n\nUse two spaces.\n' > "$FX/CLAUDE.md"
+fx_plan fx-docs.log --fresh --type fix
+expect "review-plan.sh names every conventions doc in lookup order" \
+  "conventions_doc: CLAUDE.md, CONTRIBUTING.md" "$(grep '^conventions_doc:' "$WORK/fx-docs.log")"
+expect "review-plan.sh quotes every conventions doc that fits" \
+  "### CLAUDE.md|### CONTRIBUTING.md" "$(grep -E '^### (CLAUDE|CONTRIBUTING)' "$FX_DIR/context.md" | paste -sd '|' -)"
+rm -f "$FX/CONTRIBUTING.md" "$FX/CLAUDE.md"
 mkdir -p "$FX_DIR"
 fx_findings() {  # fx_findings <extra jq fields> — a findings file of the fixture head
   jq -n --arg head "$FX_HEAD" "{branch: \"topic\", head: \$head, round: 1, findings: [] $1}" > "$FX_DIR/topic-findings.json"

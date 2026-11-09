@@ -60,7 +60,8 @@ The script wrote the skeleton. The skeleton already holds these parts:
   `path:line`, first line
 - the earlier findings, when the last self-review of the branch left a findings file, and on a
   newer head the line ranges changed since
-- the conventions excerpt: the whole doc up to 400 lines. A longer doc is named only
+- the conventions excerpt: the conventions docs of the repository, quoted whole while their
+  total stays at 400 lines or less. A doc that does not fit is named only
 - the comment policy, when the diff touches a comment
 - the severity rubric
 - the rules of the mode

@@ -141,13 +141,22 @@ section_conventions() {
   block "$PLUGIN_ROOT/references/skeleton-blocks.md" conventions-header
   echo
   if [ -n "$CONVENTIONS" ]; then
-    if [ "$(wc -l < "$CONVENTIONS")" -le "$CONVENTIONS_WHOLE_MAX" ]; then
-      echo "Source: \`$CONVENTIONS\`, quoted whole ($(wc -l < "$CONVENTIONS" | tr -d ' ') lines)."
-    else
-      echo "Source: \`$CONVENTIONS\`, not quoted ($(wc -l < "$CONVENTIONS" | tr -d ' ') lines, over $CONVENTIONS_WHOLE_MAX)."
-    fi
-    echo
-    conventions_excerpt "$CONVENTIONS"
+    # Quote the docs in lookup order while the total stays at the budget. Name the others.
+    local doc n total=0 sep=""
+    for doc in $CONVENTIONS; do
+      n=$(wc -l < "$doc" | tr -d ' ')
+      printf '%s' "$sep"; sep=$'\n'
+      echo "### $doc"
+      echo
+      if [ $((total + n)) -le "$CONVENTIONS_WHOLE_MAX" ]; then
+        total=$((total + n))
+        echo "Source: \`$doc\`, quoted whole ($n lines)."
+        echo
+        conventions_excerpt "$doc" | sed 's/^###/####/'
+      else
+        echo "Source: \`$doc\`, not quoted ($n lines, the total is over $CONVENTIONS_WHOLE_MAX)."
+      fi
+    done
   else
     echo "(no conventions doc found in this repo)"
   fi

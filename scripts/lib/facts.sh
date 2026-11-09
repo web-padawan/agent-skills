@@ -8,10 +8,13 @@
 
 plan_facts() {
   # ── Conventions doc (named in the plan, quoted into the context)
+  # Every doc that exists, in lookup order. The context file quotes them while the total
+  # stays at CONVENTIONS_WHOLE_MAX lines or less, and names the others.
   CONVENTIONS=""
   CONVENTIONS_WHOLE_MAX=400
-  for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTIONS.md CLAUDE.md AGENTS.md; do
-    if [ -f "$f" ]; then CONVENTIONS="$f"; break; fi
+  for f in .github/review-instructions.md .github/copilot-instructions.md CONVENTIONS.md CLAUDE.md \
+    AGENTS.md CONTRIBUTING.md CODING_STANDARDS.md; do
+    if [ -f "$f" ]; then CONVENTIONS="${CONVENTIONS:+$CONVENTIONS }$f"; fi
   done
 
   # ── Owner rules: the rules of the owner directory (lib/owner.sh), for every repository
@@ -72,7 +75,9 @@ plan_facts() {
   else
     CMD_SOURCE="no root manifest"
   fi
-  CMD_SOURCE="$CMD_SOURCE; take a per-package or a missing command from ${CONVENTIONS:-CLAUDE.md or AGENTS.md}"
+  local docs="CLAUDE.md or AGENTS.md"
+  [ -z "$CONVENTIONS" ] || docs=$(printf '%s' "$CONVENTIONS" | sed 's/ /, /g')
+  CMD_SOURCE="$CMD_SOURCE; take a per-package or a missing command from $docs"
 
   AFFECTED=""
   if [ -n "$CHANGED" ]; then

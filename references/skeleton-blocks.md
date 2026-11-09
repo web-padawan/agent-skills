@@ -121,8 +121,9 @@ nits after the passes report them.
 <!-- /block -->
 
 <!-- block:conventions-header -->
-> This is the conventions doc of the repository. A doc of more than 400 lines is named, not
-> quoted. Do not open the conventions doc unless
+> These are the conventions docs of the repository, in lookup order. The excerpt quotes the
+> docs while their total stays at 400 lines or less, and names the others. Do not open a
+> conventions doc unless
 > a finding of yours needs a rule that this file does not quote. If you had to open it, say
 > so in the finding. Each quoted line starts with its line number in the doc. Cite a rule as
 > `src:<doc>:<that number>`, not as a line of this file.

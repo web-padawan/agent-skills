@@ -40,7 +40,7 @@ effort_per_pass    the tool call ceiling of each pass
 stages             the stages of the run, indented, or none
 earlier_findings   none, ignored, unreadable, same, delta or rewritten
 findings_file      self mode: the path of the findings file
-conventions_doc    the conventions doc, or none
+conventions_doc    the conventions docs in lookup order, comma-separated, or none
 owner_rules        the rules.md of the owner directory, or none
 passes             the passes with agent, model and lane, indented, or none
 agents             the number of passes
