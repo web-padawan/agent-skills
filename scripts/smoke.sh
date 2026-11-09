@@ -241,6 +241,35 @@ check "post-review.sh refuses a run where every finding confirms a thread" 2 \
 post_json nonblocking '[{"file": "a", "line": 1, "message": "**suggestion (logic, non-blocking):** x"}]'
 check "post-review.sh refuses --blocking-only when no finding is blocking" 2 \
   "$SCRIPTS/post-review.sh" --head "$POST_HEAD" --findings "$WORK/post-nonblocking.json" --dry-run --blocking-only
+# A fake gh: PR 1 at $POST_HEAD, no threads, src/a.js with the hunks 1-4 and 21-25 and a
+# binary file without a patch.
+mkdir -p "$WORK/fakegh"
+cat > "$WORK/fakegh/gh" <<'GH'
+#!/usr/bin/env bash
+jqx=""; prev=""
+for a in "$@"; do [ "$prev" = --jq ] && jqx=$a; prev=$a; done
+case "$*" in
+  "pr view"*) out="{\"id\": \"PR_1\", \"number\": 1, \"headRefOid\": \"$FAKE_HEAD\", \"url\": \"https://github.com/o/r/pull/1\"}" ;;
+  *pulls/1/files*) out='[{"filename": "src/a.js", "patch": "@@ -1,3 +1,4 @@\n a\n+b\n c\n d\n@@ -20,2 +21,5 @@ x\n e\n+f\n+g\n+h\n i"}, {"filename": "shot.png"}]' ;;
+  *pulls/1/comments*) out='[]' ;;
+  *) echo "fake gh: unexpected call: $*" >&2; exit 1 ;;
+esac
+if [ -n "$jqx" ]; then printf '%s' "$out" | jq -r "$jqx"; else printf '%s\n' "$out"; fi
+GH
+chmod +x "$WORK/fakegh/gh"
+post_fake() {  # post_fake <name> — a dry run of post-review.sh against the fake gh
+  PATH="$WORK/fakegh:$PATH" FAKE_HEAD="$POST_HEAD" "$SCRIPTS/post-review.sh" --head "$POST_HEAD" \
+    --findings "$WORK/post-$1.json" --dry-run
+}
+post_json inhunk '[{"file": "src/a.js", "line": 22, "message": "**issue (logic):** x"}, {"file": "shot.png", "line": 1, "message": "**nitpick:** y"}]'
+check "post-review.sh takes a line anchor in a hunk, and a file without a patch" 0 post_fake inhunk
+post_json outside '[{"file": "src/a.js", "line": 10, "message": "**issue (logic):** x"}, {"file": "src/b.js", "line": 3, "message": "**issue (logic):** y"}]'
+check "post-review.sh refuses a line anchor outside the hunks of the diff" 2 post_fake outside
+expect "post-review.sh names the hunks of a refused line anchor" \
+  "  finding 0: src/a.js:10 is outside the hunks (1-4, 21-25)|  finding 1: src/b.js:3 is in no file of the diff" \
+  "$(grep '^  finding' "$WORK/last.log" | paste -sd'|' -)"
+post_json summaryonly '[{"file": "src/a.js", "line": 10, "message": "**issue (logic):** x", "summary_only": true}]'
+check "post-review.sh takes a line outside the hunks for a summary-only finding" 0 post_fake summaryonly
 printf '# Review context\n\n- mode: self\n- head: `%s`\n' "$(printf 'a%.0s' {1..40})" > "$WORK/self-context.md"
 check "pr-refresh.sh refuses a run without --at" 2 "$SCRIPTS/pr-refresh.sh" --context "$WORK/self-context.md"
 check "pr-refresh.sh refuses a run without --context" 2 "$SCRIPTS/pr-refresh.sh" --at gate

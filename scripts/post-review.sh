@@ -41,6 +41,12 @@
 # --blocking-only posts only the findings whose label carries `blocking`, and lists the rest.
 # It refuses the run when no finding is blocking.
 #
+# A line finding must sit on a line of a hunk of the PR diff, context lines included.
+# GitHub moves a thread on any other line to the file, so the script refuses the batch
+# before anything posts, also in a dry run. Re-anchor such a finding, or set
+# "summary_only": true. A file that the PR diff shows without a patch (a binary or a very
+# large file) is not checked.
+#
 # A line finding within two lines of an existing thread root on the same file is
 # skipped and listed. Triage the thread first (pipeline.md §5.2), then reply into it with
 # `post-comment.sh --reply <id>`, or set "allow_nearby": true when the claim is genuinely different.
@@ -195,6 +201,45 @@ fi
 # Thread roots already on the PR, for the nearby guard.
 ROOTS=$(gh api "repos/$REPO_SLUG/pulls/$PR_NUMBER/comments" --paginate \
   --jq '.[] | select(.in_reply_to_id == null) | [.id, .path, (.line // .original_line // 0)] | @tsv' 2>/dev/null || true)
+
+# ── Every line anchor sits in a hunk of the PR diff ──────────────────
+# GitHub takes a line thread only on a line of a diff hunk. On any other line, the thread
+# moves to the file, and the author reads an anchor that the review did not mean
+# (flow-components #10597).
+if [ "$BODY_ONLY" != true ]; then
+  HUNKS=$(gh api "repos/$REPO_SLUG/pulls/$PR_NUMBER/files" --paginate --jq '
+    .[] | .filename as $f
+    | if .patch == null then "\($f)\t-\t-"
+      else .patch | [scan("@@ -[0-9]+(?:,[0-9]+)? \\+([0-9]+)(?:,([0-9]+))? @@")][] | "\($f)\t\(.[0])\t\(.[1] // "1")"
+      end' 2>/dev/null) || HUNKS=""
+  if [ -z "$HUNKS" ]; then
+    echo "warn: could not read the diff hunks of the PR, so the line anchors are not checked" >&2
+  else
+    OUTSIDE=""
+    for ((i = 0; i < N; i++)); do
+      [ "${DISP[i]}" = thread ] || continue
+      [ "$(field "$i" summary_only)" = true ] && continue
+      file=$(field "$i" file); line=$(field "$i" line)
+      [ -n "$file" ] && [ -n "$line" ] || continue
+      where_in=$(printf '%s\n' "$HUNKS" | awk -F'\t' -v p="$file" -v l="$line" '
+        $1 == p {
+          seen = 1
+          if ($2 == "-") { ok = 1; exit }
+          if ($3 > 0 && l >= $2 && l < $2 + $3) { ok = 1; exit }
+          if ($3 > 0) r = r (r == "" ? "" : ", ") $2 "-" ($2 + $3 - 1)
+        }
+        END { if (ok) print "ok"; else if (!seen) print "in no file of the diff"; else print "outside the hunks (" r ")" }')
+      [ "$where_in" = ok ] || OUTSIDE="$OUTSIDE  finding $i: $file:$line is $where_in
+"
+    done
+    if [ -n "$OUTSIDE" ]; then
+      echo "error: GitHub would move these line anchors to the file:" >&2
+      printf '%s' "$OUTSIDE" >&2
+      echo "re-anchor each one on a line of a hunk, or set \"summary_only\": true (pipeline.md §5.6); nothing posted" >&2
+      exit 2
+    fi
+  fi
+fi
 
 nearby() {  # nearby <path> <line> — ids of thread roots within two lines
   printf '%s\n' "$ROOTS" | awk -F'\t' -v p="$1" -v l="$2" '
