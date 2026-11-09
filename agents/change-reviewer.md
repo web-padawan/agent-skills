@@ -72,7 +72,7 @@ those.
 A hunk is a **significant change** when it matches any of these five rules:
 
 - **(1) public surface**: adds or alters an export, public property, attribute, method, event,
-  slot, CSS custom property, CSS part, or `.d.ts` entry.
+  styling hook, or type declaration.
 - **(2) new module**: a mixin, controller, class or helper that others will import.
 - **(3) control flow**: a new branch, altered condition, changed default, changed early return,
   changed lifecycle timing.
@@ -94,7 +94,7 @@ budget top-down.
 
 ```
 ### <file>:<line-range>[ + <file>:<line-range> …] — <short name>
-Boundary: <public API | package export | event contract | mixin/host contract | data shape | DOM structure | CSS part or custom property | storage/wire format | internal>
+Boundary: <public API | package export | event contract | mixin/host contract | data shape | DOM structure | styling hook | storage/wire format | internal>
 Compatibility: <additive | breaking | semantic — signature kept, meaning changed>
 Consumers: <named, found by search — sibling components, applications, downstream packages; "none yet" is a valid and important answer>
 Promise: <what a consumer can now rely on, stated from their side — including internals that just became part of the informal contract>
@@ -151,7 +151,7 @@ result gets truncated from the end, so the findings must never sit behind the pr
 - **Source.** When the proof of a claim lies outside the anchored hunk, append
   ` | src:<file>:<line>`: the consumer, the caller, the convention, or the pre-change line as
   `src:<BASE>:<path>:<line>`. A claim about code outside the hunk without `src:` counts as
-  unverified. Example: "crud inherits the new margin" cites the crud selector that inherits it.
+  unverified. Example: "the sibling dialog inherits the new margin" cites the dialog selector that inherits it.
 - **Owned leads.** Every Open lead in the notes file tagged with your pass ends in your
   output. It ends as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
   after the findings. A lead that ends in neither counts as not worked, and triage treats it
