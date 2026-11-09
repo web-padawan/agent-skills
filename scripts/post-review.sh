@@ -156,7 +156,9 @@ fi
 PR_ARGS=()
 [ -n "$PR" ] && PR_ARGS+=("$PR")
 PR_JSON=$(gh pr view ${PR_ARGS[@]+"${PR_ARGS[@]}"} --json id,number,headRefOid,url 2>/dev/null) || {
-  echo "error: failed to resolve the PR — pass --pr <number-or-url>, or check gh authentication" >&2; exit 1
+  echo "error: failed to resolve the PR — pass --pr <number-or-url>, or check gh authentication" >&2
+  echo "hint: a --pr URL selects the repository; a number uses the repository of the current directory" >&2
+  exit 1
 }
 PR_ID=$(printf '%s' "$PR_JSON" | jq -r .id)
 PR_NUMBER=$(printf '%s' "$PR_JSON" | jq -r .number)
