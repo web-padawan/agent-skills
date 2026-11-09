@@ -5,16 +5,16 @@
 #   smoke.sh
 #
 # Builds a git repository under ${TMPDIR:-/tmp}/smoke-<time> with a main branch and a feature
-# branch of three commits. Then runs ab.sh, fixup-into.sh and float-to-tip.sh against it and
-# checks their exit codes and their effect on the tree. Runs dev-server.sh and `ab.sh --port`
-# against a fake web-dev-server (a python3 http.server) and checks that they return through a
-# pipe, restore on SIGTERM, and leave no shell behind. Checks the review-plan.sh report dir
-# and earlier-findings list, the post-review.sh refusals, the pr-refresh.sh usage
-# refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the web component property
-# facts of diff-facts.sh in a Flow fixture, the workflow-facts.sh facts and the dropped
-# tests pass on a workflow-only change, the plan fixtures (a PNG, two conventions docs,
-# findings files on the same head, a dirty tree), and the bash-guard.py decisions. Also checks that
-# every script in this directory answers --help with exit 0.
+# branch of three commits. Then runs ab.sh, mutant.sh, fixup-into.sh and float-to-tip.sh
+# against it and checks their exit codes and their effect on the tree. Runs dev-server.sh and
+# `ab.sh --port` against a fake web-dev-server (a python3 http.server) and checks that they
+# return through a pipe, restore on SIGTERM, and leave no shell behind. Checks the
+# review-plan.sh report dir and earlier-findings list, the post-review.sh refusals, the
+# pr-refresh.sh usage refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the web
+# component property facts of diff-facts.sh in a Flow fixture, the workflow-facts.sh facts and
+# the dropped tests pass on a workflow-only change, the plan fixtures (a PNG, two conventions
+# docs, findings files on the same head, a dirty tree), and the bash-guard.py decisions. Also
+# checks that every script in this directory answers --help with exit 0.
 #
 # Exit codes: 0 all checks passed · 1 a check failed.
 set -uo pipefail
@@ -125,6 +125,32 @@ expect "ab.sh names the untracked file" 0 "$?"
 expect "ab.sh kept the untracked file" "mine" "$(cat d/b.txt)"
 rm d/b.txt
 git checkout -q feature && git branch -q -D ab-files ab-ref
+
+echo "== mutant.sh"
+MH=$(git rev-parse HEAD)
+check "mutant.sh baseline is green on the clean tree" 0 \
+  "$SCRIPTS/mutant.sh" --head "$MH" --baseline --log "$WORK/mut-base.log" -- grep -q three a.txt
+printf 'one\ntwo\n' > a.txt
+check "mutant.sh reports a killed mutant" 0 \
+  "$SCRIPTS/mutant.sh" --head "$MH" --file a.txt --log "$WORK/mut-k.log" -- grep -q three a.txt
+expect "mutant.sh prints KILLED" "RESULT: KILLED (exit 1)" "$(grep '^RESULT:' "$WORK/last.log")"
+expect "mutant.sh restored a killed mutant" "" "$(git status --porcelain)"
+printf 'uno\ntwo\nthree\n' > a.txt
+check "mutant.sh reports a surviving mutant" 1 \
+  "$SCRIPTS/mutant.sh" --head "$MH" --file a.txt --log "$WORK/mut-s.log" -- grep -q three a.txt
+expect "mutant.sh restored a surviving mutant" "" "$(git status --porcelain)"
+check "mutant.sh refuses a file without a mutant" 2 \
+  "$SCRIPTS/mutant.sh" --head "$MH" --file a.txt -- true
+printf 'uno\n' > a.txt && printf 'y\n' > b.txt
+check "mutant.sh refuses a second dirty file" 2 \
+  "$SCRIPTS/mutant.sh" --head "$MH" --file a.txt -- true
+check "mutant.sh refuses a baseline on a dirty tree" 2 \
+  "$SCRIPTS/mutant.sh" --head "$MH" --baseline -- true
+git checkout -q -- a.txt b.txt
+printf 'uno\n' > a.txt
+check "mutant.sh refuses a HEAD other than head0" 2 \
+  "$SCRIPTS/mutant.sh" --head "$(git rev-parse HEAD~1)" --file a.txt -- true
+git checkout -q -- a.txt
 
 echo "== dev-server.sh"
 if command -v python3 >/dev/null; then

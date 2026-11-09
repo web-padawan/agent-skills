@@ -64,7 +64,7 @@ another plugin:
 - `scripts/review-plan.sh`, `scripts/get-pr-context.sh`, `scripts/gh-context.sh`,
   `scripts/diff-facts.sh`, `scripts/workflow-facts.sh`, `scripts/pr-screen.sh`,
   `scripts/pr-refresh.sh`, `scripts/post-review.sh`, `scripts/post-comment.sh`,
-  `scripts/ab.sh`, `scripts/dev-server.sh`, `scripts/lib/`
+  `scripts/ab.sh`, `scripts/mutant.sh`, `scripts/dev-server.sh`, `scripts/lib/`
 - the review sections of `scripts/smoke.sh`
 
 These files are optional. Copy them only to review a Vaadin repository:
@@ -97,6 +97,7 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `probe.cjs` | A probe module against a dev page, per theme and direction |
 | `probe-compare.cjs` | A diff of two probe result files |
 | `ab.sh` | One command on the current tree and on paths from another ref, then a diff |
+| `mutant.sh` | The tests against one mutant, then the restore and a clean tree check |
 | `fixup-into.sh` | Folds changes into an earlier branch commit |
 | `float-to-tip.sh` | Moves one branch commit to the tip |
 | `visual-diffstat.cjs` | Pixel metrics and a contact sheet for failed screenshots |
