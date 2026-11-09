@@ -56,9 +56,12 @@ Restart the session so that the skills load.
 packs, owner directories, stages, the findings file and the prompt block. The rest of `docs/` holds the
 design history. No skill loads it.
 
-The review core works on a repository of any owner. Rules, facts and screening labels for
-the repositories of one owner live in an owner directory (see Config). `owners/vaadin/` holds
-those of Vaadin.
+The review core works on a repository of any owner. It reads these docs of the repository
+as its conventions, in this order: `.github/review-instructions.md`,
+`.github/copilot-instructions.md`, `CONVENTIONS.md`, `CLAUDE.md`, `AGENTS.md`,
+`CONTRIBUTING.md` and `CODING_STANDARDS.md`. The context file quotes them while their total
+stays at 400 lines or less. Rules, facts and screening labels for the repositories of one
+owner live in an owner directory (see Config). `owners/vaadin/` holds those of Vaadin.
 
 Other skills share files with the review pipeline. `comment-cleanup` reads
 `references/comments.md`, and `work-summary` calls `gh-context.sh`.
