@@ -46,7 +46,7 @@ Restart the session so that the skills load.
 
 `self-review` and `pr-review` share one pipeline:
 
-- `scripts/review-plan.sh` resolves the profile in `references/profiles.md` into a plan.
+- `scripts/review-plan.sh` resolves the profile in `scripts/lib/policy.sh` into a plan.
   It also writes the context file that every pass reads.
 - The three agents in `agents/` run in parallel: change, code and tests.
 - `references/pipeline.md` describes the plan, the fan-out, the roll call and the triage.

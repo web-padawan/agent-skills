@@ -3,8 +3,7 @@
 # change type, the scale tier, the pass list with its agents and read lanes, the
 # mutant and deep-block budgets, the guards, and the report paths.
 #
-# The matrix it resolves lives in references/profiles.md — this script parses that
-# file, so the tables are never restated in a skill.
+# The policy it resolves lives in scripts/lib/policy.sh, so no skill restates it.
 #
 # Usage:
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
@@ -77,9 +76,9 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
 # shellcheck source=lib/lanes.sh
 . "$SCRIPT_DIR/lib/lanes.sh"
-PROFILES="$PLUGIN_ROOT/references/profiles.md"
-[ -f "$PROFILES" ] || { echo "error: profile matrix not found at $PROFILES" >&2; exit 1; }
-# The plugin name prefixes each agent in profiles.md and names the fork marker directory.
+# shellcheck source=lib/policy.sh
+. "$SCRIPT_DIR/lib/policy.sh"
+# The plugin name prefixes each agent of lib/policy.sh and names the fork marker directory.
 PLUGIN_NAME=$(jq -r '.name // empty' "$PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null || true)
 [ -n "$PLUGIN_NAME" ] || { echo "error: no plugin name in $PLUGIN_ROOT/.claude-plugin/plugin.json" >&2; exit 1; }
 # The fork marker: scripts/hooks/bash-guard.py reads it and holds the reviewer passes to
@@ -344,126 +343,8 @@ elif [ -n "$OVERRIDES" ]; then
   SCALE_REASON="size (risk override also applies: $OVERRIDES)"
 fi
 
-# ── Resolve the matrix row ────────────────────────────────────────────
-matrix_row() {
-  awk -F'|' -v mode="$1" -v type="$2" -v scale="$3" '
-    /^## Matrix/ { in_matrix = 1; next }
-    /^## / { in_matrix = 0 }
-    !in_matrix || NF < 8 { next }
-    {
-      for (i = 2; i <= 8; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
-      if ($2 == "mode" || $2 ~ /^-+$/) next
-      if ($2 == mode && $3 == type && ($4 == scale || $4 == "any")) { print $5 "\t" $6 "\t" $7 "\t" $8; exit }
-    }
-  ' "$PROFILES"
-}
-
-pass_agent() {  # pass_agent <id> — the agent with the plugin prefix, the reads, the prompt adds
-  awk -F'|' -v id="$1" -v plugin="$PLUGIN_NAME" '
-    /^## Passes/ { in_passes = 1; next }
-    /^## / { in_passes = 0 }
-    !in_passes || NF < 6 { next }
-    {
-      for (i = 2; i <= 5; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
-      if ($2 == id) { print plugin ":" $3 "\t" $4 "\t" $5; exit }
-    }
-  ' "$PROFILES"
-}
-
-# Model per pass by scale — references/profiles.md, "Pass model". The header row names
-# the pass columns, so a new pass is a new column, not a script change.
-pass_model() {  # pass_model <scale> <id>
-  awk -F'|' -v scale="$1" -v id="$2" '
-    /^## Pass model/ { in_tbl = 1; next }
-    /^## / { in_tbl = 0 }
-    !in_tbl || NF < 4 { next }
-    {
-      for (i = 2; i < NF; i++) { gsub(/^[ \t]+|[ \t]+$/, "", $i) }
-      if ($2 == "scale") { for (i = 3; i < NF; i++) if ($i == id) col = i; next }
-      if ($2 ~ /^-+$/) next
-      if ($2 == scale && col) { print $col; exit }
-    }
-  ' "$PROFILES"
-}
-
-# `undetermined` is a matrix row in pr mode (the base passes still apply) but not in self
-# mode, where the type picks the whole profile: the caller resolves it from the diff shape
-# and re-runs with --type rather than getting a silently chosen profile.
-LOOKUP_TYPE="$TYPE"
-
-ROW=$(matrix_row "$MODE" "$LOOKUP_TYPE" "$SCALE")
-PASS_TOKENS=""
-MUTANTS=0
-DEEP_ROW=0
-if [ -n "$ROW" ]; then
-  PASS_TOKENS=$(printf '%s' "$ROW" | cut -f1)
-  MUTANTS=$(printf '%s' "$ROW" | cut -f2)
-  DEEP_ROW=$(printf '%s' "$ROW" | cut -f3)
-  ROUNDS=$(printf '%s' "$ROW" | cut -f4)
-fi
-
-# The tests pass has no subject when no test, no code and no baseline changed: a workflow,
-# a config or a doc change. The risk override still raises the scale for the other passes.
-PASSES_DROPPED=""
-if [ -n "$CHANGED" ] && [ -z "$TEST_FILES" ] && [ -z "$BINARY_FILES" ] \
-  && ! printf '%s\n' $PROD_FILES | grep -qE "$CODE_RE" \
-  && [[ " $PASS_TOKENS " == *" tests "* ]]; then
-  PASS_TOKENS=$(printf '%s\n' $PASS_TOKENS | grep -vx tests | tr '\n' ' ' | sed 's/ $//')
-  PASSES_DROPPED="tests (no test, code or binary file changed)"
-fi
-
-# Rounds budget: the row's number, capped by the scale tier; --rounds N overrides outright.
-# A small diff gives a pass little to miss, so only the full tier repeats the fan-out.
-case "${ROUNDS:-}" in ''|*[!0-9]*) ROUNDS=1 ;; esac
-case "$SCALE" in trivial|lite) [ "$ROUNDS" -gt 1 ] && ROUNDS=1 ;; esac
-ROUNDS_SOURCE="matrix, capped by scale"
-[ -n "$ROUNDS_FLAG" ] && { ROUNDS="$ROUNDS_FLAG"; ROUNDS_SOURCE="--rounds flag"; }
-
-# Effective mutant budget: the row's number, capped by the scale tier.
-case "$MUTANTS" in ''|*[!0-9]*) MUTANTS=0 ;; esac
-case "$SCALE" in trivial) CAP=3 ;; lite) CAP=8 ;; *) CAP=999 ;; esac
-[ "$MUTANTS" -gt "$CAP" ] && MUTANTS="$CAP"
-[ "$COVERAGE" = "off" ] && MUTANTS=0
-[ "$MODE" != "self" ] && MUTANTS=0
-
-# Effective deep-block budget for the change pass: the row's number, capped by the
-# scale tier.
-case "$DEEP_ROW" in ''|*[!0-9]*) DEEP_ROW=0 ;; esac
-case "$SCALE" in trivial) DCAP=1 ;; lite) DCAP=2 ;; *) DCAP=999 ;; esac
-[ "$DEEP_ROW" -gt "$DCAP" ] && DEEP_ROW="$DCAP"
-DEEP_SOURCE="matrix, capped by scale"
-
-# Deep candidates — what the diff actually offers a boundary block: `.d.ts` files,
-# new exports, added public (non-underscore) methods at class indentation. A fix with
-# none of these gets one block for its top change instead of three surveys.
-CAND_DTS=0; CAND_EXPORTS=0; CAND_METHODS=0
-if [ -n "$BASE" ] && [ -n "$PROD_FILES" ]; then
-  CAND_DTS=$(printf '%s\n' $PROD_FILES | grep -c '\.d\.ts$' || true)
-  CAND_EXPORTS=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | grep -cE '^\+[[:space:]]*export ' || true)
-  CAND_METHODS=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | awk '
-    /^\+\+\+ b\// { file = substr($0, 7); next }
-    /^\+/ {
-      if (file !~ /\.[cm]?[jt]sx?$/ || file ~ /\.d\.ts$/) next
-      body = substr($0, 2)
-      if (body !~ /^    (static |async |get |set )?[A-Za-z$][A-Za-z0-9$]*[ \t]*\(/) next
-      name = body; sub(/^    (static |async |get |set )?/, "", name); sub(/[ \t]*\(.*$/, "", name)
-      if (name ~ /^(if|for|while|switch|catch|return|super|constructor|render|connectedCallback|disconnectedCallback|attributeChangedCallback|firstUpdated|willUpdate|updated|requestUpdate|performUpdate)$/) next
-      n++
-    }
-    END { print n + 0 }' || echo 0)
-fi
-DEEP_CANDIDATES=$((CAND_DTS + CAND_EXPORTS + CAND_METHODS))
-if [ "$DEEP_ROW" -gt 0 ]; then
-  CAND_CAP=$DEEP_CANDIDATES; [ "$CAND_CAP" -lt 1 ] && CAND_CAP=1
-  if [ "$DEEP_ROW" -gt "$CAND_CAP" ]; then DEEP_ROW="$CAND_CAP"; DEEP_SOURCE="matrix, capped by scale and by $DEEP_CANDIDATES deep candidates"; fi
-fi
-
-# Per-pass effort ceiling from the scale tier — references/profiles.md, "Pass effort".
-case "$SCALE" in
-  trivial) EFFORT=10 ;;
-  lite) EFFORT=20 ;;
-  *) EFFORT=30 ;;
-esac
+# ── Policy: passes, budgets, models, effort (lib/policy.sh) ──────────
+plan_policy
 
 # ── Conventions doc (named in the plan, quoted into the context) ──────
 CONVENTIONS=""
@@ -1016,7 +897,7 @@ fi
 if [ "$LOOKUP_TYPE" = "undetermined" ] && [ -z "$PASS_TOKENS" ]; then
   echo "passes: none — resolve the type from the diff shape (references/pipeline.md step 1) and re-run with --type"
 elif [ -z "$PASS_TOKENS" ]; then
-  echo "passes: none — no matrix row for $MODE/$LOOKUP_TYPE/$SCALE (check references/profiles.md)"
+  echo "passes: none — no matrix row for $MODE/$LOOKUP_TYPE/$SCALE (check scripts/lib/policy.sh)"
 else
   echo "passes:"
   COUNT=0
@@ -1024,7 +905,7 @@ else
     INFO=$(pass_agent "$token")
     AGENT=$(printf '%s' "$INFO" | cut -f1)
     READS=$(printf '%s' "$INFO" | cut -f2)
-    [ -z "$AGENT" ] && AGENT="(no agent in references/profiles.md for '$token')"
+    [ -z "$AGENT" ] && AGENT="(no agent in scripts/lib/policy.sh for '$token')"
     MODEL=$(pass_model "$SCALE" "$token")
     COUNT=$((COUNT + 1))
     printf '  %-7s %-28s model: %-7s reads: %s\n' \
