@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # diff-facts.sh — the facts of a diff that git alone can answer, for the passes. The core
-# prints the moved or reindented share of the diff and the new test files. Each fact pack in
-# scripts/facts/ adds the facts of one kind of repository.
+# prints the moved or reindented share of the diff and the new test files. Each fact pack
+# adds the facts of one kind of repository.
 #
 # Usage:
 #   diff-facts.sh --base <sha> --head <sha>
@@ -9,12 +9,15 @@
 # Run it from inside the target repository. review-plan.sh calls it in both modes and
 # quotes the lines under Settled facts. pr-screen.sh takes `reach_max` for its verdict.
 #
-# A fact pack is an executable scripts/facts/<name>.sh. The core runs every pack from the
-# repository root with --base <sha> --head <sha>, and exports the lanes as FACTS_PROD and
-# FACTS_TESTS (one path per line). A pack that does not apply to the repository prints
-# nothing. Otherwise it prints `<key>: <value>` lines. A `rule: <sentence>` line tells the
-# passes how to judge the fact lines above it. A pack may print `reach_max: <n>`, the most
-# other packages that import one changed module. The default is 0.
+# A fact pack is an executable scripts/facts/<name>.sh, or <owner dir>/facts/<name>.sh for
+# the owner of the repository (lib/owner.sh). The core runs every pack from the repository
+# root with --base <sha> --head <sha>. It exports the lanes as FACTS_PROD and FACTS_TESTS
+# (one path per line), FACTS_OWNER, and the FACTS_MODE, FACTS_PR and FACTS_OFFLINE that
+# review-plan.sh sets. A pack that does not apply to the repository prints nothing.
+# Otherwise it prints `<key>: <value>` lines. A `rule: <sentence>` line tells the passes
+# how to judge the fact lines above it. A pack may print `reach_max: <n>`, the most other
+# packages that import one changed module. The default is 0. The line `fact_packs:` names
+# each pack that printed a line, or `none`. docs/contracts.md holds the provider contract.
 #
 # Exit codes: 0 ok · 1 git could not answer · 2 usage error.
 set -euo pipefail
@@ -74,18 +77,30 @@ for f in $(git diff --name-only --diff-filter=A "$BASE..$HEAD" -- $TESTS 2>/dev/
 done
 
 # ── Fact packs ────────────────────────────────────────────────────────
-PACKS=""
-export FACTS_PROD="$PROD" FACTS_TESTS="$TESTS"
-for pack in "$SCRIPT_DIR"/facts/*.sh; do
+# shellcheck source=lib/owner.sh
+. "$SCRIPT_DIR/lib/owner.sh"
+OWNER=$(owner_of_repo)
+OWNER_DIR=$(owner_dir "$(dirname "$SCRIPT_DIR")" "$OWNER")
+PACKS=""; PACK_NAMES=""
+export FACTS_PROD="$PROD" FACTS_TESTS="$TESTS" FACTS_OWNER="$OWNER"
+export FACTS_MODE="${FACTS_MODE:-self}" FACTS_PR="${FACTS_PR:-}" FACTS_OFFLINE="${FACTS_OFFLINE:-}"
+PACK_FILES=("$SCRIPT_DIR"/facts/*.sh)
+[ -n "$OWNER_DIR" ] && PACK_FILES+=("$OWNER_DIR"/facts/*.sh)
+for pack in "${PACK_FILES[@]}"; do
   [ -x "$pack" ] || continue
   out=$("$pack" --base "$BASE" --head "$HEAD" 2>&1) \
     || out="error: $(basename "$pack") failed — $(printf '%s' "$out" | tail -1)"
-  [ -n "$out" ] && PACKS="${PACKS}${out}
+  [ -n "$out" ] || continue
+  PACKS="${PACKS}${out}
 "
+  name=$(basename "$pack" .sh)
+  case "$pack" in "$OWNER_DIR"/*) [ -n "$OWNER_DIR" ] && name="$OWNER/$name" ;; esac
+  PACK_NAMES="${PACK_NAMES:+$PACK_NAMES, }$name"
 done
 
 # ── Print ─────────────────────────────────────────────────────────────
 echo "=== DIFF_FACTS ==="
 echo "diff_noise: $NOISE_N of $NOISE_TOTAL changed production lines are moved or reindented (the same text on both sides)"
 echo "new_test_files: ${NEW_TESTS:-none}${NEW_TESTS:+ for $PROD_LINES changed production lines}"
+echo "fact_packs: ${PACK_NAMES:-none}"
 printf '%s' "$PACKS"

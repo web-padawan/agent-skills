@@ -11,6 +11,8 @@ and how to install and use the plugin. Do not repeat that content here.
 - `hooks/`: the plugin hooks. `hooks.json` runs `scripts/hooks/bash-guard.py` before each Bash call.
 - `references/`: the pipeline documents that the review skills share. They are tuned prompts.
 - `docs/`: the design history of the pipeline. No skill loads it.
+- `owners/<owner>/`: the fact packs, screening config and rules of one GitHub owner, for example `owners/vaadin/`.
+  `scripts/lib/owner.sh` finds the directory of the repository under review.
 - `scripts/`: shell helpers that the skills call through `${CLAUDE_PLUGIN_ROOT}`, plus a few
   manual git helpers. `scripts/smoke.sh` checks the ones that rewrite a tree, and the guards
   of the review scripts.

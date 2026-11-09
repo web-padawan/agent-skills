@@ -14,8 +14,9 @@
 #   verdict. The default is full.
 # --meta reads the GraphQL answer from a file instead of gh, and team membership from the
 #   allowlist only. The smoke test uses it.
-# --config names the screening config. The default is config/screening/<owner>.json of the
-#   plugin, when that file exists. Without a config, only the generic rules apply.
+# --config names the screening config. The default is screening.json in the owner directory
+#   of the PR owner (scripts/lib/owner.sh), when that file exists. Without a config, only the
+#   generic rules apply.
 #
 # The config is one JSON object. Each label key holds extended regular expressions, and each
 # one must match a whole label, without regard to case:
@@ -90,7 +91,12 @@ fi
 ORG="${SLUG%%/*}"
 
 # ── Config ────────────────────────────────────────────────────────────
-[ -n "$CONFIG" ] || CONFIG="$(dirname "$SCRIPT_DIR")/config/screening/$ORG.json"
+# shellcheck source=lib/owner.sh
+. "$SCRIPT_DIR/lib/owner.sh"
+if [ -z "$CONFIG" ]; then
+  OWNER_DIR=$(owner_dir "$(dirname "$SCRIPT_DIR")" "$(owner_of_url "$SLUG")")
+  CONFIG="${OWNER_DIR:+$OWNER_DIR/screening.json}"
+fi
 [ -f "$CONFIG" ] || CONFIG=""
 cfg() {  # cfg <key> <separator> <default> — an array joined by the separator, or the default
   if [ -n "$CONFIG" ] && jq -e --arg k "$1" 'has($k)' "$CONFIG" >/dev/null; then

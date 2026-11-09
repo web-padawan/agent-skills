@@ -67,10 +67,9 @@ another plugin:
   `scripts/ab.sh`, `scripts/dev-server.sh`, `scripts/lib/`
 - the review sections of `scripts/smoke.sh`
 
-These files are optional. Copy them only to review a Vaadin repository:
+This directory is optional. Copy it only to review a Vaadin repository:
 
-- `scripts/facts/web-components.sh`, `scripts/facts/flow-components.sh`
-- `config/screening/vaadin.json`
+- `owners/vaadin/`: the fact packs `facts/web-components.sh` and `facts/flow-components.sh`, and `screening.json`
 
 Other skills share three of these files. `comment-cleanup` reads `references/comments.md`,
 `work-summary` calls `gh-context.sh`, and `refactor-component` calls `ab.sh`. Keep a copy of
@@ -89,8 +88,8 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `review-plan.sh` | The review plan and the context file of the pipeline |
 | `pr-screen.sh` | The screening facts of a PR: author, linked issue, labels, verdict hint |
 | `diff-facts.sh` | The git-only facts of a diff: diff noise, new test files, and the facts of each fact pack |
-| `facts/web-components.sh` | Fact pack of a web component monorepo: reach, Flow counterpart, CSS unit assertions, shadow DOM reads |
-| `facts/flow-components.sh` | Fact pack of a Flow repository: the web component declaration of each synced property |
+| `owners/vaadin/facts/web-components.sh` | Fact pack of a web component monorepo: reach, Flow counterpart, CSS unit assertions, shadow DOM reads |
+| `owners/vaadin/facts/flow-components.sh` | Fact pack of a Flow repository: the web component declaration of each synced property |
 | `get-pr-context.sh` | PR metadata, anchor SHAs, CI state and diffs for `review-plan.sh` |
 | `dev-server.sh` | Start, check, restart or stop `web-dev-server` on one port |
 | `test-summary.sh` | One line per test suite, with the names of failing tests |
@@ -104,9 +103,15 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 
 ## Config
 
-`config/screening/<owner>.json` holds the screening labels and the team allowlist of one
-GitHub owner. `pr-screen.sh --help` lists the keys. Without a config for the owner, only the
-generic screening rules apply.
+An owner directory holds what applies only to the repositories of one GitHub owner:
+
+- `facts/*.sh`: fact packs that `diff-facts.sh` runs, per the provider contract in `docs/contracts.md`
+- `screening.json`: the screening labels and the team allowlist. `pr-screen.sh --help` lists the keys
+
+The owner is the owner of the `upstream` remote, else of `origin`. The lookup reads
+`$REVIEW_SKILLS_CONFIG_DIR/<owner>/` first. The default of that variable is
+`~/.config/agent-skills`. Then it reads `owners/<owner>/` of this plugin. Without an owner
+directory, only the generic facts and screening rules apply.
 
 ## Hooks
 

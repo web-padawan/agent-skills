@@ -96,14 +96,27 @@ A stage script runs from the repository root:
 
 ## Fact provider
 
-A fact pack is an executable `scripts/facts/<name>.sh`. `scripts/diff-facts.sh` runs it.
+A fact pack is an executable `scripts/facts/<name>.sh`, or `<owner dir>/facts/<name>.sh`.
+`scripts/diff-facts.sh` runs it.
 
 - It runs from the repository root with `--base <sha> --head <sha>`.
 - The env holds `FACTS_PROD` and `FACTS_TESTS`, one path per line.
+- The env holds `FACTS_MODE` (`self` or `pr`), `FACTS_PR` (the PR argument, or empty), `FACTS_OFFLINE` (`1` with `--no-context`, else empty) and `FACTS_OWNER`.
 - A pack that does not apply to the repository prints nothing.
 - Otherwise it prints `<key>: <value>` lines.
 - A `rule: <sentence>` line tells the passes how to judge the fact lines above it.
 - A pack may print `reach_max: <n>`, the most other packages that import one changed module. The default is 0.
+- `diff-facts.sh` prints `fact_packs: <name>, ...` for the packs that printed a line, or `fact_packs: none`. A pack of an owner directory is named `<owner>/<name>`.
+
+## Owner directory
+
+`scripts/lib/owner.sh` finds the owner directory of a repository.
+
+- The owner is the owner of the `upstream` remote, else of `origin`, in lowercase. `pr-screen.sh` takes it from the PR.
+- The directory is `<config dir>/<owner>/`, else `<plugin root>/owners/<owner>/`.
+- The config dir is `REVIEW_SKILLS_CONFIG_DIR`, else `${XDG_CONFIG_HOME:-~/.config}/<plugin name>`.
+- It holds `facts/*.sh`, `screening.json` and `rules.md`. Each one is optional.
+- The packs of an owner run only in the repositories of that owner.
 
 ## Findings file
 
