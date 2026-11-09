@@ -72,7 +72,7 @@ those.
 A hunk is a **significant change** when it matches any of these five rules:
 
 - **(1) public surface**: adds or alters an export, public property, attribute, method, event,
-  styling hook, or type declaration.
+  slot, styling hook, or type declaration.
 - **(2) new module**: a mixin, controller, class or helper that others will import.
 - **(3) control flow**: a new branch, altered condition, changed default, changed early return,
   changed lifecycle timing.
