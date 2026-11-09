@@ -519,6 +519,18 @@ expect "review-plan.sh prefixes each agent with the plugin name" \
   "$R" \
   "$(awk '$1 == "change" && /reads:/ { print $2 }' "$WORK/prefix-plan.log")"
 
+echo "== lanes"
+LANES=$( . "$SCRIPTS/lib/lanes.sh"
+  for p in pkg/x_test.go app/test_views.py app/views_test.py lib/a_spec.rb src/AppTests.cs src/a.test.ts \
+    src/a.go src/lib.rs app/views.py src/App.vue; do
+    if printf '%s\n' "$p" | grep -qE "$TEST_RE"; then printf 'test:%s ' "$p"
+    elif printf '%s\n' "$p" | grep -qE "$CODE_RE"; then printf 'code:%s ' "$p"
+    else printf 'other:%s ' "$p"; fi
+  done)
+expect "lib/lanes.sh sorts the test and code files of several languages" \
+  "test:pkg/x_test.go test:app/test_views.py test:app/views_test.py test:lib/a_spec.rb test:src/AppTests.cs test:src/a.test.ts code:src/a.go code:src/lib.rs code:app/views.py code:src/App.vue " \
+  "$LANES"
+
 echo "== review-plan.sh fixtures"
 # Fixtures that pin the plan output of edge paths: a changed PNG, conventions docs of 300
 # and 500 lines, findings files on the same head, and a dirty tracked file.
