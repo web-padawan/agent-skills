@@ -9,6 +9,26 @@ This is the one step that writes to a tracked file, and the only carve-out of th
 the no-edit rule. Every mutant is temporary. Restore each mutant before the next. Never stage
 a mutant.
 
+## Gate question
+
+The plan lists the stage as `coverage: slot after-gate, budget <n>, ask yes`. The budget is
+the `mutants:` line under it. The gate of finalize.md asks this question:
+
+**Q2, header `Coverage`**: "Run the coverage check? It temporarily mutates source lines and
+restores each one."
+- `Yes — run it` *(Recommended)* · `Skip it`
+
+When the plan prints `mutant_pool: 0`, swap the recommendation to `Skip it`
+(description: the prod diff has no mutable source lines). Still offer the run, because the
+pool is a heuristic.
+
+Rules:
+
+- Do not ask Q2 when the `mutants:` budget is 0 (chore), or when the plan lists no
+  `coverage` stage (`--no-coverage`).
+- On a **fix**, say that the coverage skip also skips the whole-fix revert. That revert is
+  the one check that a bug fix most needs, because it proves that a regression test exists.
+
 ## Preconditions
 
 - `git status --porcelain --untracked-files=no` is empty.

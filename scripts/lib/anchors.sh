@@ -109,7 +109,7 @@ plan_anchors() {
       "") GUARD="refuse: detached HEAD — check out the branch first" ;;
     esac
     if [ "$GUARD" = "ok" ] && [ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ]; then
-      GUARD="refuse: tracked files are dirty — commit or stash first (the coverage stage restores mutants against the index)"
+      GUARD="refuse: tracked files are dirty — commit or stash first"
     fi
   fi
   if [ "$GUARD" = "ok" ] && [ -z "$BASE" ]; then

@@ -11,7 +11,7 @@
 # Usage:
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
 #                  [--type fix|feature|refactor|chore]
-#                  [--fresh] [--no-coverage] [--report-dir <path>]
+#                  [--fresh] [--report-dir <path>]
 #                  [--off <stage>] [--budget <stage>=<n>]
 #                  [--no-context] [--context-out <path>] [--no-write]
 #
@@ -45,7 +45,6 @@ set -euo pipefail
 MODE="self"
 PR=""
 TYPE_FLAG=""
-COVERAGE="on"
 REPORT_DIR=""
 WANT_CONTEXT=true
 CONTEXT_OUT=""
@@ -60,7 +59,6 @@ while [[ $# -gt 0 ]]; do
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
     --type) TYPE_FLAG="${2:?--type requires a value}"; shift 2 ;;
     --fresh) FRESH=true; shift ;;
-    --no-coverage) COVERAGE="off"; shift ;;
     --report-dir) REPORT_DIR="${2:?--report-dir requires a value}"; shift 2 ;;
     --no-context) WANT_CONTEXT=false; shift ;;
     --context-out) CONTEXT_OUT="${2:?--context-out requires a value}"; shift 2 ;;
@@ -120,29 +118,6 @@ plan_facts
 plan_store
 plan_stages
 
-# Mutant candidate pool — advisory, not a budget: non-styling source lines the
-# coverage stage could mutate (mutation.md skips styling), so a styling-only diff
-# reports 0 instead of sending the stage looking for work that does not exist.
-MUTANT_POOL=0
-if [ -n "$PROD_FILES" ] && [ -n "$BASE" ]; then
-  MUTANT_POOL=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | awk '
-    /^\+\+\+ b\// { file = substr($0, 7); next }
-    /^\+/ {
-      if (file !~ /\.[cm]?[jt]sx?$/) next          # source code only
-      if (file ~ /(^|\/)styles\// || file ~ /-styles\.[cm]?[jt]s$/) next   # styling by construction
-      body = substr($0, 2)
-      sub(/^[ \t]+/, "", body)
-      if (body == "") next
-      if (body ~ /^(import|export[ \t]+\{|export[ \t]+\*)/) next
-      if (body ~ /^(\/\/|\/\*|\*|\*\/)/) next
-      if (body ~ /^[)}\]`;,]+$/) next
-      if (body ~ /^-{0,2}[_a-z][-_a-z0-9]*:[ \t]/) next   # CSS declaration, custom properties included
-      if (body ~ /^[.:&#@[$]/ || body ~ /^[a-z-]+[ \t]*\{$/) next   # CSS selector, at-rule, interpolated selector
-      if (body ~ /^(var|color-mix|calc|light-dark|oklch|linear-gradient)\(/) next   # wrapped CSS value
-      n++
-    }
-    END { print n + 0 }' || echo 0)
-fi
 
 
 # ── Context file (lib/context.sh) ────────────────────────────────────
@@ -198,19 +173,6 @@ echo "deep: $DEEP_ROW (source: $DEEP_SOURCE)"
 echo "deep_candidates: $DEEP_CANDIDATES (.d.ts files $CAND_DTS, new exports $CAND_EXPORTS, new public methods $CAND_METHODS)"
 echo "effort_per_pass: ~$EFFORT tool calls (scale $SCALE)"
 if [ -n "$STAGE_LIST" ]; then echo "stages:"; printf '%s' "$STAGES_OUT"; else echo "stages: none"; fi
-if [ "$MODE" = "pr" ]; then
-  echo "coverage: n/a (pr mode — the coverage stage is self-review only)"
-else
-  echo "coverage: $COVERAGE"
-fi
-echo "mutants: $MUTANTS"
-if [ "$MUTANTS" -gt 0 ] 2>/dev/null; then
-  if [ "$MUTANT_POOL" -eq 0 ]; then
-    echo "mutant_pool: 0 — no non-styling source lines in the prod diff; the coverage stage has nothing to mutate"
-  else
-    echo "mutant_pool: ~$MUTANT_POOL non-styling source lines"
-  fi
-fi
 case "$EARLIER_MODE" in
   same)
     if [ "$EARLIER_COUNT" -eq 0 ]; then echo "earlier_findings: same head — the earlier review of this head had no finding"

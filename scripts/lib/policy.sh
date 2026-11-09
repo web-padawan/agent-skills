@@ -4,8 +4,8 @@
 # restates it. Why the numbers look like this: docs/rationale.md.
 #
 # Reads: MODE, TYPE, SCALE, PLUGIN_NAME, BASE, HEAD, CHANGED, PROD_FILES, TEST_FILES,
-#        BINARY_FILES, CODE_RE, COVERAGE
-# Sets: LOOKUP_TYPE, PASS_TOKENS, PASSES_DROPPED, MUTANTS, DEEP_ROW, DEEP_SOURCE,
+#        BINARY_FILES, CODE_RE
+# Sets: LOOKUP_TYPE, PASS_TOKENS, PASSES_DROPPED, DEEP_ROW, DEEP_SOURCE,
 #       CAND_DTS, CAND_EXPORTS, CAND_METHODS, DEEP_CANDIDATES, EFFORT,
 #       STAGE_LIST
 
@@ -60,14 +60,13 @@ plan_policy() {
   LOOKUP_TYPE="$TYPE"
   STAGE_LIST=""
 
-  local row rounds=""
+  local row rounds="" mutants=0
   row=$(policy_row "$MODE" "$LOOKUP_TYPE")
   PASS_TOKENS=""
-  MUTANTS=0
   DEEP_ROW=0
   if [ -n "$row" ]; then
     PASS_TOKENS=$(printf '%s' "$row" | cut -f1)
-    MUTANTS=$(printf '%s' "$row" | cut -f2)
+    mutants=$(printf '%s' "$row" | cut -f2)
     DEEP_ROW=$(printf '%s' "$row" | cut -f3)
     rounds=$(printf '%s' "$row" | cut -f4)
   fi
@@ -89,13 +88,13 @@ plan_policy() {
   case "$SCALE" in trivial|lite) [ "$rounds" -gt 1 ] && rounds=1 ;; esac
   [ "$MODE" = self ] && STAGE_LIST="${STAGE_LIST:+$STAGE_LIST }rounds=$rounds"
 
-  # Effective mutant budget: the row's number, capped by the scale tier.
+  # Stage coverage, self mode only: the mutant budget of the row, capped by the scale tier.
+  # The skill maps --no-coverage to --off coverage.
   local cap
-  case "$MUTANTS" in ''|*[!0-9]*) MUTANTS=0 ;; esac
+  case "$mutants" in ''|*[!0-9]*) mutants=0 ;; esac
   case "$SCALE" in trivial) cap=3 ;; lite) cap=8 ;; *) cap=999 ;; esac
-  [ "$MUTANTS" -gt "$cap" ] && MUTANTS="$cap"
-  [ "$COVERAGE" = "off" ] && MUTANTS=0
-  [ "$MODE" != "self" ] && MUTANTS=0
+  [ "$mutants" -gt "$cap" ] && mutants="$cap"
+  [ "$MODE" = self ] && STAGE_LIST="${STAGE_LIST:+$STAGE_LIST }coverage=$mutants"
 
   # Effective deep-block budget for the change pass: the row's number, capped by the
   # scale tier.
@@ -152,6 +151,7 @@ plan_policy() {
 stage_info() {  # stage_info <name> — the slot, the ask flag and the reference, tab-separated
   case "$1" in
     rounds) printf 'after-triage\tno\tskills/self-review/references/rounds.md\n' ;;
+    coverage) printf 'after-gate\tyes\tskills/self-review/references/mutation.md\n' ;;
   esac
 }
 
