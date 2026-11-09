@@ -15,7 +15,8 @@ The run used two rounds of three opus passes, the report and 15 mutants. It foun
   Nov 6 `feat-pdf-viewer-sidebar` run was still on disk. Line 277 of `review-plan.sh` prints the
   status without checking the file. The notes path is the same for every branch. An
   orchestrator that skips the notes file sends passes the facts of another branch.
-  → open. The plan should delete a stale notes file, or scope the path to the branch.
+  → the plan deletes the notes file and the patches of an earlier context when it writes a
+  new one. A smoke check pins it (`392968d`).
 - Round 2 on the same head found 19 new findings, 9 of them B. Two were logic defects that
   round 1 missed: `isInside()` walks from a removed element, and `_printing` clears before
   the synchronous `print()`. This confirms the 2026-11-02 dry run. → no change.
@@ -29,11 +30,13 @@ The run used two rounds of three opus passes, the report and 15 mutants. It foun
   that the passes missed. → no change. The mutants confirmed the test findings.
 - The orchestrator wrote a helper in the scratchpad for each mutant. It ran the tests, restored
   the file, checked the clean tree and printed `KILLED` or `SURVIVED`. Each mutant took about
-  20 seconds with `--glob="print*"`. → open. A `scripts/mutant.sh` would replace the helper.
+  20 seconds with `--glob="print*"`. → `scripts/mutant.sh` runs a baseline or one mutant,
+  restores the file and checks the clean tree. mutation.md calls it (`0c1f68e`, `72c40bc`).
 - The repo lint hook reported `no-unused-vars` on 2 mutants that removed the last use of an
   import. The mutants were restored, so this was noise. → no change.
 - The report template has no finding ids, but the findings file has them. An author who
-  disputes a finding by id at the gate cannot see the id. → open.
+  disputes a finding by id at the gate cannot see the id. → the gate, the report lines and
+  the follow-ups show the id of the findings file (`ebfe072`).
 - Cost: about 525k subagent tokens. Round 1: change 92k with 21 calls, code 84k with 12 calls,
   tests 85k with 9 calls. Round 2: change 93k with 26 calls, code 82k with 13 calls, tests 89k
   with 15 calls. Each round took about 4 minutes.
