@@ -391,7 +391,9 @@ if [ -n "$CHANGED" ]; then
   printf '%s\n' "$CHANGED" | grep -qE '^(\.github/|\.circleci/|Jenkinsfile|azure-pipelines|\.gitlab-ci)' && add_override "CI or build infra touched"
   printf '%s\n' "$CHANGED" | grep -qiE '(^|/)(release|publish)[^/]*\.(sh|js|mjs|yml|yaml)$' && add_override "release tooling touched"
 fi
-if [ -n "$BASE" ] && git diff --unified=0 "$BASE..$HEAD" 2>/dev/null | grep -qE '^\+[[:space:]]*export '; then
+# grep -c reads the whole diff: an early exit of grep -q kills git with SIGPIPE, and
+# pipefail then hides the match on a large diff.
+if [ -n "$BASE" ] && [ "$(git diff --unified=0 "$BASE..$HEAD" 2>/dev/null | grep -cE '^\+[[:space:]]*export ' || true)" -gt 0 ]; then
   add_override "a new export added"
 fi
 
