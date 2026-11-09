@@ -56,7 +56,7 @@ The script wrote the skeleton. The skeleton already holds these parts:
   - a whole numbered head file, when a file is small and touched in several places
   - patch paths otherwise
 - the diffstat and the file lanes
-- the Settled facts that the script can prove (CI digest, image dimensions)
+- the Settled facts that the script can prove (CI digest, diff facts, workflow facts)
 - the comments already on the PR: thread id, author, bot or human, open or resolved,
   `path:line`, first line
 - the earlier findings, when the last self-review of the branch left a findings file, and on a

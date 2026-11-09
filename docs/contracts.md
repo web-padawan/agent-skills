@@ -44,7 +44,6 @@ round              the round of this run and the rounds budget
 earlier_findings   none, ignored, unreadable, same, delta or rewritten
 findings_file      self mode: the path of the findings file
 conventions_doc    the conventions doc, or none
-binary_dims        a PNG changed: the counts, then one indented line per file
 passes             the passes with agent, model and lane, indented, or none
 agents             the number of passes
 passes_dropped     a pass that the diff gives no subject
