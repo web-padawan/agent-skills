@@ -30,8 +30,8 @@ at most. Name the unverified part in the claim. Impact decides the tier only aft
 confirms the claim. A claim about code outside the hunk with no `src:` line counts as
 unverified until triage reads that code.
 
-**CI is authoritative on a PR scope.** The `ci:` digest of the plan settles lint and test
-state for the head. A green check means that no pass may report that failure.
+**CI is authoritative on a PR scope.** The `ci:` digest of the plan settles lint, test and
+visual-baseline state for the head. A green check means that no pass may report that failure.
 No pass should re-run the command locally to prove one. A prettier or test run that contradicts
 a green check is a local-environment finding, not a PR finding.
 
@@ -62,7 +62,8 @@ The change type shifts where the A line sits. Apply these rules on top of the ru
 A tests finding can read as both "lets a real bug through" (A) and "coverage gap away from the
 core" (B). The type-aware line wins, except when the unpinned path is what the branch exists
 to deliver. In that case the tier is A (on a **fix**, always). Tie-break: pinned anywhere else
-(another suite) → B.
+(another suite) → B. A stale-but-passing baseline is B when the whole fix is to regenerate it.
+The report must still say that the committed baseline does not match the code.
 
 ## Slop and comments
 

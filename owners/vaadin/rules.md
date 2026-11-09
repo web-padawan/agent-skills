@@ -13,8 +13,7 @@ The review plan quotes these rules into the context file of each review of a vaa
 
 ## From references/severity.md
 
-- CI: the `ci:` digest also settles the state of the visual baselines for the head.
 - Tests tie-break: a path that another theme pins is pinned elsewhere, so the finding is B.
-- A stale but passing visual baseline is B when the whole fix is to regenerate it. The report must still say that the committed baseline does not match the code.
 - A process step can be a `.d.ts` entry, a dev page, or a companion PR in vaadin/flow-components.
-- A routed question names the theme to check. A parity question names the Flow wrapper API that the change must match.
+- The configuration to check in a routed `(design)` question is the theme.
+- A `(parity)` question names the wrapper API that the change must match, for example of Flow or React.
