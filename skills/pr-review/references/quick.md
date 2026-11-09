@@ -14,7 +14,7 @@ In this path you are the reviewer, so read the file that the passes read. Read t
 file of the plan once. It holds these parts:
 
 - the diff, inline or as the patch files that it names
-- the conventions excerpt, each line with its number in the doc
+- the conventions excerpt, each line with its number in the doc, and the owner rules
 - the diff facts, with their `rule:` lines
 - the comments already on the PR
 
@@ -25,7 +25,8 @@ shows as already made or addressed.
 If the plan wrote no context file, read the diff with the literal SHAs of the plan:
 `git diff <base>..<head> -- <prod_files> <test_files>`. For a dirty branch, first follow the
 `hint:` lines of `get-pr-context.sh`. On a fork PR, read the post-change files with
-`git show <head>:<path>`. Read the `conventions_doc:` of the plan before you flag a convention.
+`git show <head>:<path>`. Read the `conventions_doc:` and the `owner_rules:` files of the plan before you flag a
+convention.
 
 ## Review
 
@@ -56,5 +57,5 @@ the line that proves it, the same as `src:` in pipeline.md §3.
 
 ## Triage and present
 
-Apply the Triage filter of SKILL.md and the tiers of severity.md. Then continue with Present
-and Post.
+Apply the Triage filter of SKILL.md, the tiers of severity.md and the `owner_rules:` file
+(pipeline.md §5). Then continue with Present and Post.
