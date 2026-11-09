@@ -12,7 +12,8 @@
 # and earlier-findings list, the post-review.sh refusals, the pr-refresh.sh usage
 # refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the web component property
 # facts of diff-facts.sh in a Flow fixture, the workflow-facts.sh facts and the dropped
-# tests pass on a workflow-only change, and the bash-guard.py decisions. Also checks that
+# tests pass on a workflow-only change, the plan fixtures (a PNG, two conventions docs,
+# findings files on the same head, a dirty tree), and the bash-guard.py decisions. Also checks that
 # every script in this directory answers --help with exit 0.
 #
 # Exit codes: 0 all checks passed · 1 a check failed.
@@ -522,6 +523,71 @@ expect "bash-guard.py leaves a reviewer of another plugin alone" allow "$(guard 
 expect "review-plan.sh prefixes each agent with the plugin name" \
   "$R" \
   "$(awk '$1 == "change" && /reads:/ { print $2 }' "$WORK/prefix-plan.log")"
+
+echo "== review-plan.sh fixtures"
+# Fixtures that pin the plan output of edge paths: a changed PNG, conventions docs of 300
+# and 500 lines, findings files on the same head, and a dirty tracked file.
+FX="$WORK/fixture"
+git init -q -b main "$FX"
+git -C "$FX" config user.email smoke@example.com
+git -C "$FX" config user.name smoke
+git -C "$FX" config commit.gpgsign false
+mkdir -p "$FX/src"
+printf 'export function a() {\n  return 1;\n}\n' > "$FX/src/a.js"
+git -C "$FX" add -A && git -C "$FX" commit -q -m "base"
+git -C "$FX" remote add origin "$FX" && git -C "$FX" fetch -q origin main
+git -C "$FX" checkout -q -b topic
+printf 'export function a() {\n  return 2;\n}\n' > "$FX/src/a.js"
+printf '\211PNG\r\n\032\n\000\000\000\rIHDR\000\000\000\020\000\000\000\010\010\006\000\000\000' > "$FX/shot.png"
+git -C "$FX" add -A && git -C "$FX" commit -q -m "fix: return two"
+FX_HEAD=$(git -C "$FX" rev-parse HEAD)
+FX_DIR=$(git -C "$FX" rev-parse --path-format=absolute --git-path self-review)
+fx_plan() {  # fx_plan <log> [flags] — a self-mode plan of the fixture
+  local log="$1"; shift
+  (cd "$FX" && "$SCRIPTS/review-plan.sh" --mode self --no-context "$@") > "$WORK/$log" 2>&1
+}
+fx_plan fx-png.log --fresh --type fix
+expect "review-plan.sh lists a changed PNG under binary_files" \
+  "binary_files: shot.png " "$(grep '^binary_files:' "$WORK/fx-png.log")"
+expect "review-plan.sh prints the size of a changed PNG" \
+  "binary_dims: 1 png — 1 new, 0 removed, 0 resized, 0 same size (per-file WxH beside each binary in the skeleton)" \
+  "$(grep '^binary_dims:' "$WORK/fx-png.log")"
+awk 'BEGIN { print "# Conventions"; for (c = 1; c <= 3; c++) { print "## Chapter " c; for (i = 1; i <= 98; i++) print "Rule " c "." i } }' > "$FX/CONVENTIONS.md"
+fx_plan fx-conv300.log --fresh --type fix
+expect "review-plan.sh quotes a conventions doc of 300 lines whole" \
+  "Source: \`CONVENTIONS.md\`, quoted whole (298 lines)." \
+  "$(grep '^Source: `CONVENTIONS' "$FX_DIR/context.md")"
+awk 'BEGIN { print "# Conventions"; print "## Testing"; for (i = 1; i <= 160; i++) print "Test rule " i; print "## Components"; for (i = 1; i <= 160; i++) print "Code rule " i; print "## Release"; for (i = 1; i <= 170; i++) print "Release rule " i }' > "$FX/CONVENTIONS.md"
+fx_plan fx-conv500.log --fresh --type fix
+expect "review-plan.sh names the chapters of a conventions doc of 500 lines" \
+  "Source: \`CONVENTIONS.md\`. Chapters selected by signals: src ." \
+  "$(grep '^Source: `CONVENTIONS' "$FX_DIR/context.md")"
+rm -f "$FX/CONVENTIONS.md"
+mkdir -p "$FX_DIR"
+fx_findings() {  # fx_findings <extra jq fields> — a findings file of the fixture head
+  jq -n --arg head "$FX_HEAD" "{branch: \"topic\", head: \$head, round: 1, findings: [] $1}" > "$FX_DIR/topic-findings.json"
+}
+fx_findings ', verdict: "clean"'
+fx_plan fx-verdict.log --type fix
+expect "review-plan.sh counts a further round on a head with a verdict" \
+  "round: 2 of 1 (rounds budget: matrix, capped by scale)" "$(grep '^round:' "$WORK/fx-verdict.log")"
+fx_findings ''
+fx_plan fx-noverdict.log --type fix
+expect "review-plan.sh counts a further round on a head without a verdict" \
+  "round: 2 of 1 (rounds budget: matrix, capped by scale)" "$(grep '^round:' "$WORK/fx-noverdict.log")"
+fx_findings ', schema: 2'
+fx_plan fx-schema.log --type fix
+expect "review-plan.sh reads a findings file of schema 2" \
+  "earlier_findings: same head — the earlier review of this head had no finding" \
+  "$(grep '^earlier_findings:' "$WORK/fx-schema.log")"
+rm -f "$FX_DIR/topic-findings.json"
+printf 'export function a() {\n  return 3;\n}\n' > "$FX/src/a.js"
+check "review-plan.sh refuses a dirty tracked file in self mode" 2 \
+  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --type fix"
+expect "review-plan.sh names the dirty tracked files" \
+  "guard: refuse: tracked files are dirty — commit or stash first (the coverage stage restores mutants against the index)" \
+  "$(grep '^guard:' "$WORK/last.log")"
+git -C "$FX" checkout -q -- src/a.js
 
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"
