@@ -110,7 +110,8 @@ A fact pack is an executable `scripts/facts/<name>.sh`. `scripts/diff-facts.sh` 
 self-review writes the findings file at the `findings_file:` path of the plan, per
 `skills/self-review/references/finalize.md`. The plan reads it with `jq`.
 
-- Top-level fields: `branch`, `head`, `base`, `date`, `round`, `verdict`, `findings`.
+- Top-level fields: `schema`, `branch`, `head`, `base`, `date`, `round`, `verdict`, `findings`.
+- `schema` is 1. The plan reads a file without `schema` as schema 1. It prints `earlier_findings: unreadable (schema <n>)` for a higher schema.
 - A file without `verdict` is the record of a run that did not finish.
 - Each finding holds `id`, `round`, `category`, `tier`, `status`, `file`, `line`, `claim`, `fix`, `verified` and `merged`.
 - `status` is one of `open`, `accepted`, `fixed`, `partially_fixed`, `fixed_wrongly`, `not_fixed`, `obsolete` and `disputed`.

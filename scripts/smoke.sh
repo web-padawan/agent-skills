@@ -652,8 +652,8 @@ expect "review-plan.sh counts a further round on a head without a verdict" \
   "round: 2 of 1 (rounds budget: matrix, capped by scale)" "$(grep '^round:' "$WORK/fx-noverdict.log")"
 fx_findings ', schema: 2'
 fx_plan fx-schema.log --type fix
-expect "review-plan.sh reads a findings file of schema 2" \
-  "earlier_findings: same head — the earlier review of this head had no finding" \
+expect "review-plan.sh does not read a findings file of schema 2" \
+  "earlier_findings: unreadable (schema 2)" \
   "$(grep '^earlier_findings:' "$WORK/fx-schema.log")"
 rm -f "$FX_DIR/topic-findings.json"
 printf 'export function a() {\n  return 3;\n}\n' > "$FX/src/a.js"

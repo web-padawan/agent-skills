@@ -41,6 +41,9 @@ plan_store() {
       EARLIER_MODE="unreadable (jq not found)"
     elif ! jq -e '.findings | type == "array"' "$FINDINGS_FILE" >/dev/null 2>&1; then
       EARLIER_MODE="unreadable (no findings array)"
+    elif ! jq -e '(.schema // 1) == 1' "$FINDINGS_FILE" >/dev/null 2>&1; then
+      # A file without `schema` is schema 1. A higher schema comes from a newer plugin.
+      EARLIER_MODE="unreadable (schema $(jq -r '.schema' "$FINDINGS_FILE"))"
     else
       EARLIER_HEAD=$(jq -r '.head // empty' "$FINDINGS_FILE")
       EARLIER_COUNT=$(jq '.findings | length' "$FINDINGS_FILE")
