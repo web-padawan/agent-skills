@@ -15,7 +15,9 @@ CI green, scale `lite`. Full review with three passes. Posted 4 threads (1 quest
   packages/upload/src/vaadin-upload-file-mixin.js:50`. The lookup matched a property of
   another package in the bundle. The real declaration is in web-components #13301, which the
   pinned alpha5 does not contain. The orchestrator corrected it in the Settled facts.
-  → no change yet. The lookup should search only the package of the component.
+  → the lookup reads only the package of the component (`2bf045f`). Re-run on #10597, the
+  line shows `fileName -> not in @vaadin/pdf-viewer@25.4.0-alpha5, declared after it at
+  origin/main` (`b1ea863`).
 - The plan printed `gate_default: Full review`. The orchestrator recommended `Quick review`
   in the chat but listed `Full review` first without a mark. The reviewer chose
   `Full review`. → no change.
@@ -25,10 +27,16 @@ CI green, scale `lite`. Full review with three passes. Posted 4 threads (1 quest
 - The tests pass did not read the notes file, because no lead named it. It then filed the
   `EnableFeatureFlagExtension` as unverified noise. A Settled fact already explained it:
   `onAttach` checks the flag, and the download test attaches the viewer. Triage dropped it.
-  → no change yet. Every pass must read Settled facts, also when it owns no lead.
+  → the prompt block tells every pass to read the notes file, also with no lead, and to end
+  with `notes: <n> settled, <m> leads`. The roll call compares that line with the notes file
+  (`f8cd97e`, `1e0472f`).
 - The change pass again filed the client error of the pinned alpha before the version bump.
   The PR note and a Settled fact both said so. Triage dropped it, as in review 9.
-  → no change yet. This is the second run with the same drop.
+  This is the second run with the same drop. → the Flow fact pack prints a `wc_method` line
+  for each `callJsFunction` call. It marks an API that is newer than the pinned version as
+  `declared after it`, with a rule that a client error at the pinned version is not a
+  finding. Re-run on #10597, it names `download()`, `fileName` and `downloadButtonHidden`
+  (`b1ea863`).
 - The change pass rated the queued `download()` on a detached viewer as a B behavior issue.
   `callJsFunction` queues by Flow design, and the queue also lets a call before `add()` work.
   Triage posted it as `question (design)`.
@@ -37,8 +45,9 @@ CI green, scale `lite`. Full review with three passes. Posted 4 threads (1 quest
 - The orchestrator anchored the design question at line 224. It read the line from
   `sed -n` piped to `cat -n`, which numbers the output from 1. The method is at line 217, and
   the hunk ends at line 223. The dry run of `post-review.sh` did not flag it. The post demoted
-  the thread to a file thread. → no change yet. The dry run could check each line against
-  the hunks of the diff.
+  the thread to a file thread. → `post-review.sh` refuses a line outside the hunks of the PR
+  diff, also in a dry run. Replayed on #10597, it refuses line 224 and names the hunk
+  159-223 (`7522ed1`).
 - Two orchestrator Bash calls failed on `echo =====`. In zsh, a word that starts with `=`
   expands to a command path. → no change. Use `echo '---'` as a separator.
 - Cost: about 118k subagent tokens (change 48k with 11 calls in 97 seconds, code 33k with
