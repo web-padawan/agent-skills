@@ -269,7 +269,7 @@ section_notes() {
   echo
   echo "## Orchestrator notes — \`$NOTES_PATH\`"
   echo
-  echo "The orchestrator writes that file after this skeleton when it has something to add: Settled facts it verified (authoritative, under the same rule as above), Open leads with one owner pass each, and corrections to this skeleton. Read it once, after this file, if it exists. Nothing is ever appended here. An Open lead tagged with your pass is yours to close: it ends as a finding line or as a \`lead cleared: <lead> — <how>\` line after your findings, never in silence."
+  echo "The orchestrator writes that file after this skeleton, before any pass starts: Settled facts it verified (authoritative, under the same rule as above), Open leads with one owner pass each, and corrections to this skeleton. Read it once, after this file, if it exists. Nothing is ever appended here. An Open lead tagged with your pass is yours to close: it ends as a finding line or as a \`lead cleared: <lead> — <how>\` line after your findings, never in silence."
   echo
   return 0
 }
