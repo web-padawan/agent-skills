@@ -12,13 +12,15 @@ synchronization registration of `htmlValue`. Unit tests and ITs cover `EAGER` an
 Team PR, CI green, scale `lite`, head `19823fb`. Quick review at the gate, so no pass ran.
 Kept 0 findings, dropped 5, posted nothing.
 
-- The plan printed `gate_default: Full review`. The reviewer picked `Quick review` for a
+- The screening printed `gate_default: Full review`. The reviewer picked `Quick review` for a
   38-line fix by a team author with green CI. In review 10, the reviewer picked
   `Full review` for a `lite` team PR of 59 lines. → no change.
 - The plan printed `affected_packages: none` and `diff_prod: inline`, so the diff exception
   of `understand.md` applied to a Java fix. The exception names workflow, config and tooling
-  changes. In flow-components, `affected_packages` is always none, so every small PR reads
-  the diff before the gate. Here the read was useful. → no change.
+  changes. `affected_packages` counts only `packages/*`, so in a repo without that directory
+  every small PR read the diff before the gate. Here the read was useful, but by accident.
+  → the plan prints `prod_source`, the production files under `src_glob`. The exception
+  applies when it counts none (`f529a47`, `15aadb6`).
 - The orchestrator skipped `gh-context.sh` in Understand. The plan already held the title,
   the body, CI and 0 threads, and no issue was linked. → no change.
 - The fix depends on Flow internals outside the diff. The orchestrator read
@@ -41,8 +43,10 @@ Kept 0 findings, dropped 5, posted nothing.
   name this case. → no change.
 - Four orchestrator Bash calls failed in zsh. Two failed on `echo ====` again, after the
   review 10 note to use `echo '---'`. Two failed with `no matches found` on an unquoted glob
-  (`--include=*Test.java`, `*sources.jar`). A note did not stop the repeat. → open: the Bash
-  guard can warn on an unquoted `=word` or glob argument.
+  (`--include=*Test.java`, `*sources.jar`). A note did not stop the repeat. → no plugin
+  change. `bash-guard.py` acts only on the reviewer agents, and a denial costs the same call
+  as the zsh error. The fix is in the user environment: run the Bash tool under bash, or
+  `setopt NO_NOMATCH NO_EQUALS`.
 - Cost: no subagents, about 25 tool calls in the main context.
 
 ## 2026-11-09 — Self-review: web-components #13312, PDF viewer print
