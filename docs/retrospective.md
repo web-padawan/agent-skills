@@ -4,6 +4,47 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-10 — PR review 11: flow-components #10623, RTE Delta sync
+
+One production file, `RichTextEditor.java`, 38 lines. The PR removes the private
+`@Synchronize("value-changed")` getter `getDeltaValue()`. `asDelta()` adds `value` to the
+synchronization registration of `htmlValue`. Unit tests and ITs cover `EAGER` and `ON_BLUR`.
+Team PR, CI green, scale `lite`, head `19823fb`. Quick review at the gate, so no pass ran.
+Kept 0 findings, dropped 5, posted nothing.
+
+- The plan printed `gate_default: Full review`. The reviewer picked `Quick review` for a
+  38-line fix by a team author with green CI. In review 10, the reviewer picked
+  `Full review` for a `lite` team PR of 59 lines. → no change.
+- The plan printed `affected_packages: none` and `diff_prod: inline`, so the diff exception
+  of `understand.md` applied to a Java fix. The exception names workflow, config and tooling
+  changes. In flow-components, `affected_packages` is always none, so every small PR reads
+  the diff before the gate. Here the read was useful. → no change.
+- The orchestrator skipped `gh-context.sh` in Understand. The plan already held the title,
+  the body, CI and 0 threads, and no issue was linked. → no change.
+- The fix depends on Flow internals outside the diff. The orchestrator read
+  `AbstractSinglePropertyField.doSetSynchronizedEvent` from the `flow-server` sources jar in
+  `~/.m2`. It confirmed that `setValueChangeMode()` replaces the registration, so the second
+  `synchronizeDeltaValue()` call is necessary. The `flow-data` sources jar was not in `~/.m2`,
+  so `ValueChangeMode.eventForMode(null)` stayed unread. The unit test
+  `asDelta_setValueChangeModeNull_noSynchronization` covered it.
+- The local web-components checkout cleared one candidate. `vaadin-rich-text-editor-mixin.js:358`
+  debounces `value` by 200ms, so the `EAGER` IT that types 3 keys is not flaky. Line 580
+  flushes the debounce only on `focusout`, which fires after `blur`. The `ON_BLUR` IT waits
+  for `htmlValue` before it blurs for that reason. The stale value on a fast blur existed
+  before the PR, so it went to the chat as a side note. The checkout was not compared with
+  the pinned `25.4.0-alpha5`.
+- Triage dropped 5 candidates: 2 pre-existing, 2 unverified, and 1 rigor that the codebase
+  does not follow. Ten unit tests in other modules already read `ElementListenerMap`
+  expressions. The findings file holds all 5 as `dropped`.
+- All three post options would post nothing, and `present.md` drops such options. Only
+  `No — chat only` stayed, so the orchestrator asked no post question. `present.md` does not
+  name this case. → no change.
+- Four orchestrator Bash calls failed in zsh. Two failed on `echo ====` again, after the
+  review 10 note to use `echo '---'`. Two failed with `no matches found` on an unquoted glob
+  (`--include=*Test.java`, `*sources.jar`). A note did not stop the repeat. → open: the Bash
+  guard can warn on an unquoted `=word` or glob argument.
+- Cost: no subagents, about 25 tool calls in the main context.
+
 ## 2026-11-09 — Self-review: web-components #13312, PDF viewer print
 
 The branch `feat/pdf-viewer-print` adds `print()`, the print button, `printButtonHidden` and
