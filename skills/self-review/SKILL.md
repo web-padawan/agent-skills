@@ -60,14 +60,15 @@ resolve from this file. If a read fails, use
    diff, the script also writes the patch files that `diff_prod:` and `diff_tests:` name.
    **Never redirect a `git diff` yourself.** The diff must not pass through your context.
 2. **Write the notes file.** Write it with Write at the `notes:` path from the plan, per
-   pipeline.md §2. It holds:
+   pipeline.md §2, in a message of its own. It holds:
    - Settled facts that you verified beyond the skeleton, at a call or two each. Examples are
      the behavior of a helper, pre-change source, or a consumer elsewhere.
    - Open leads, with one owner pass each.
    - A one-line summary of `$0` when the user gave one.
 
-   Skip the file when you have nothing to add.
-3. **Fan out.** Send one message with one Agent call per pass. Use the `subagent_type`,
+   A section with nothing to add reads `- none`. Write the file also when every section is
+   empty.
+3. **Fan out.** In the next message, send one Agent call per pass. Use the `subagent_type`,
    `model` and prompt from the `=== PROMPTS ===` block of the plan, verbatim. Pass no `name`
    (delivery.md). The block already carries the lane of each pass, the deep budget and the
    effort ceiling. A budget of `0` skips the blocks, never the pass.
