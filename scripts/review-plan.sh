@@ -212,7 +212,7 @@ else
   done
   echo "agents: $COUNT"
   [ -n "$PASSES_DROPPED" ] && echo "passes_dropped: $PASSES_DROPPED"
-  echo "launch: one message · one Agent call per pass · subagent_type, model and prompt from === PROMPTS === verbatim · no name (references/delivery.md)"
+  echo "launch: the notes file already written, in an earlier message · one message · one Agent call per pass · subagent_type, model and prompt from === PROMPTS === verbatim · no name (references/delivery.md)"
 fi
 
 echo "prod_files: ${PROD_FILES:-none}"
@@ -242,7 +242,7 @@ elif [ -n "$REPORT_DIR" ]; then
 fi
 if [ -n "$CONTEXT_PATH" ]; then
   echo "context: $CONTEXT_PATH (written, $CONTEXT_LINES lines — never Edit it; every pass reads it first)"
-  echo "notes: $NOTES_PATH (not written — Write it once before fan-out with your Settled facts, Open leads and corrections; skip it when you have none)"
+  echo "notes: $NOTES_PATH (not written — Write it in a message of its own before the fan-out, with your Settled facts, Open leads and corrections; a section with nothing reads \`- none\`; hooks/notes-guard.py denies a pass while the file does not exist)"
   echo "diff_prod: $PROD_DIFF_WHERE"
   echo "diff_tests: $TESTS_DIFF_WHERE"
 else
