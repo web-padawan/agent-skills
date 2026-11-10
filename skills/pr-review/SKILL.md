@@ -81,8 +81,8 @@ makes a code comment premature. If the reviewer asks about the goal first, stay 
 
 ### Fan out
 
-Write the notes file first. Follow pipeline.md §2 and §3, and the launch rules of
-delivery.md. The deep blocks of the change pass are evidence for Triage. Never post them.
+Write the notes file in a message of its own. Then launch the passes in the next message.
+Follow pipeline.md §2 and §3, and the launch rules of delivery.md. The deep blocks of the change pass are evidence for Triage. Never post them.
 
 ### Triage
 
