@@ -5,7 +5,7 @@ what is different about that skill. This file is the shared part.
 
 ```
 1 plan      run scripts/review-plan.sh — anchors, type, scale, budgets, pass list; writes the context skeleton
-2 context   write the notes file — Settled facts and Open leads, nothing else
+2 context   write the notes file in its own message — Settled facts and Open leads, nothing else
 3 fan out   paste the plan's prompts, one agent each; delivery.md decides whether findings arrive
 4 roll call delivery.md's roll call, then escalate anything that delivered nothing
 5 triage    verify · dedup · tier · one-line suggested fix · label · freeze
@@ -73,8 +73,11 @@ the diff to check it, spends what the skeleton exists to save.
 You write one file, at the `notes:` path of the plan. Use the Write tool, because Edit needs
 a Read first, and that Read pulls the inline diff through your context.
 
-The last section of the skeleton points every pass at the notes file. Write it only when you
-have something to add. The notes file has three sections, in this order:
+The last section of the skeleton points every pass at the notes file. Always write it, in a
+message of its own before the fan-out message. A Write and an Agent call in one message can
+merge into one invalid call. A section with nothing to add reads `- none`.
+`hooks/notes-guard.py` denies the launch of a pass while the file does not exist. The notes
+file has three sections, in this order:
 
 - **Settled facts**: facts that you verified and that a pass would otherwise derive. For
   example, what a shared helper does, pre-change behavior, a consumer in another repo, the
