@@ -625,6 +625,15 @@ expect "review-plan.sh asks each pass to count the notes file" \
   "yes" "$([ "$PASS_N" -gt 0 ] && [ "$PASS_N" = "$(grep -c '^End your reply with one line that counts that file: `notes:' "$WORK/fx-png.log")" ] && echo yes)"
 expect "review-plan.sh lists a changed PNG under binary_files" \
   "binary_files: shot.png " "$(grep '^binary_files:' "$WORK/fx-png.log")"
+expect "review-plan.sh counts no source file without a src_glob" \
+  "prod_source: unknown (no src_glob)" "$(grep '^prod_source:' "$WORK/fx-png.log")"
+printf '{}\n' > "$FX/package.json"
+mkdir -p "$FX/.github" && printf 'x\n' > "$FX/.github/ci.yml"
+git -C "$FX" add .github && git -C "$FX" commit -q -m "ci: add a workflow"
+fx_plan fx-src.log --fresh --type fix
+expect "review-plan.sh counts the production files under src_glob" \
+  "prod_source: 1 of 2 production files under src_glob" "$(grep '^prod_source:' "$WORK/fx-src.log")"
+git -C "$FX" reset -q --hard HEAD~1 && rm -f "$FX/package.json"
 expect "review-plan.sh lists a changed PNG under the binary lane of the skeleton" \
   "- shot.png" "$(sed -n '/^binary (never diffed):$/{n;p;}' "$FX_DIR/context.md")"
 awk 'BEGIN { print "# Conventions"; for (c = 1; c <= 3; c++) { print "## Chapter " c; for (i = 1; i <= 98; i++) print "Rule " c "." i } }' > "$FX/CONVENTIONS.md"

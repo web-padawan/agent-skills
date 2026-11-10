@@ -58,6 +58,7 @@ notes              the path of the notes file of the orchestrator, deleted by ea
 diff_prod          inline, none, or the patch path of the production lane
 diff_tests         inline, none, or the patch path of the test lane
 commands           the lint and test commands and their source
+prod_source        the production files under src_glob, as <n> of <m>, or unknown
 affected_packages  the packages/* directories that the diff touches
 risk_check_manual  a test file changed: the check that the script cannot do
 ```

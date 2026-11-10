@@ -1,9 +1,9 @@
 # facts.sh: sourced by review-plan.sh. The conventions doc, the diff facts and their fact
 # packs, the screening facts, the workflow facts, the command map and the affected packages.
 #
-# Reads: MODE, PR, WANT_CONTEXT, SCRIPT_DIR, BASE, HEAD, CHANGED, SCALE
+# Reads: MODE, PR, WANT_CONTEXT, SCRIPT_DIR, BASE, HEAD, CHANGED, SCALE, PROD_FILES
 # Sets: CONVENTIONS, CONVENTIONS_WHOLE_MAX, DIFF_FACTS, REACH_MAX, SCREENING, WORKFLOW_FACTS,
-#       LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, AFFECTED
+#       LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, PROD_SOURCE, AFFECTED
 
 plan_facts() {
   # ── Conventions doc (named in the plan, quoted into the context)
@@ -63,6 +63,18 @@ plan_facts() {
     CMD_SOURCE="no root manifest"
   fi
   CMD_SOURCE="$CMD_SOURCE; take a per-package or a missing command from ${CONVENTIONS:-CLAUDE.md or AGENTS.md}"
+
+  # ── Production files under src_glob. A production lane with none of them is a workflow,
+  # config or tooling change, and pr-review reads its diff before the gate.
+  PROD_SOURCE="unknown (no src_glob)"
+  if [ -n "$SRC_GLOB" ]; then
+    local src_re n_all n_src
+    src_re=$(printf '%s' "$SRC_GLOB" | sed -e 's/[.+?()|^$]/\\&/g' -e 's#\*\*/#@D@#g' -e 's#\*\*#@A@#g' \
+      -e 's#\*#[^/]*#g' -e 's#@D@#(.*/)?#g' -e 's#@A@#.*#g')
+    n_all=$(printf '%s\n' $PROD_FILES | grep -c . || true)
+    n_src=$(printf '%s\n' $PROD_FILES | grep -cE "^$src_re\$" || true)
+    PROD_SOURCE="$n_src of $n_all production files under src_glob"
+  fi
 
   AFFECTED=""
   if [ -n "$CHANGED" ]; then

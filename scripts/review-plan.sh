@@ -246,6 +246,7 @@ else
   echo "context: ${CONTEXT_NOTE:-not written}"
 fi
 echo "commands: lint=${LINT_CMD:-unknown} test=${TEST_CMD:-unknown} src_glob=${SRC_GLOB:-unknown} (source: $CMD_SOURCE)"
+echo "prod_source: $PROD_SOURCE"
 echo "affected_packages: ${AFFECTED:-none}"
 if [ -n "$TEST_FILES" ]; then
   echo "risk_check_manual: a deleted or weakened assertion in an existing test also forces the full tier — this script cannot detect it, so check the test hunks yourself"
