@@ -4,6 +4,50 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-10 — PR review 12: web-components #13381, checkbox empty space click
+
+Three production files, 33 lines. `CheckboxMixin` adds a host `click` listener. It forwards
+clicks on the `label` part or the `*-container` element to `inputElement.click()`.
+`_shouldSetActive` uses the same check. Draft team PR by the `totally-not-ai` bot for Legioth,
+CI green, scale `lite`, head `9498a15`. Full review with three passes. Posted 1 review with
+2 threads: 1 non-blocking issue and 1 nitpick.
+
+- In Understand, the orchestrator read `field-base-styles.js:86`. That rule sets
+  `[class$='container'] { display: contents; }`. The orchestrator concluded that the Lumo fix
+  is dead, because the empty space would hit the host. It offered this at the gate as a likely
+  A and wrote it to the notes file as a Settled fact. A browser probe showed that the Lumo
+  container computes `display: grid`, and that a real click right of the label toggles. The
+  reason that the base rule does not apply in Lumo was not checked. A CSS inference across
+  themes went into the Settled facts without a runtime check. → no change.
+- The same probe found the one kept issue. In Lumo, a click in column 1 of the helper row,
+  under the checkbox square, hits the container and toggles `checked`. The PR body says that
+  helper text clicks are not affected. The probe paid for itself twice: it removed a false A
+  and it found a real B. → no change. pipeline.md already prefers a browser probe for CSS and
+  shadow DOM claims.
+- The probe was a temporary WTR test in `packages/checkbox/test/`. It imported the Lumo CSS
+  like the visual tests do, and it was deleted after each run. The first run printed nothing.
+  macOS has no `timeout`, and `grep` hid the error. `console.log` output did not reach the
+  filtered output either. Then the test put the values into a failing `expect(...).to.equal()`,
+  and the assertion diff printed them. → no change.
+- The Write call of the notes file and the Agent call of the change pass merged into one
+  invalid call, twice (`InputValidationError: unexpected parameter subagent_type`). The code
+  and tests passes launched in the same message before the notes file existed, so both
+  printed `notes: none`. The notes file was then written by Bash, and the change pass launched
+  alone. After the probe, `SendMessage` corrected the wrong Settled fact for the running change
+  pass. The pass used the correction and cleared its lead. → no change. Write the notes file in
+  its own message before the fan-out message.
+- Triage kept 2 of 10 findings. Change pass: 4, kept 1 (the helper row toggle). The grid
+  drag-select `preventDefault` claim was dropped. The label-less grid checkbox has a zero-width
+  `label` part, so the click cannot land on it. Code pass: 2, kept 0. The suffix selector has
+  a precedent in `field-base-styles.js:86`. Tests pass: 4, kept 1 as a reworded nitpick. The
+  `elementFromPoint` test hits the `label` part in base styles, which another test already
+  clicks.
+- `post-review.sh --dry-run` refused the status `dropped: <reason>`. It accepts `dropped <reason>`
+  without a colon. The dry run caught it before any network call. → no change.
+- One zsh `echo =====` failed again, as in reviews 10 and 11. → no change.
+- Cost: about 123k subagent tokens. Change 46k with 12 calls in 117 seconds, code 41k with
+  3 calls, tests 36k with 9 calls. The main context used about 30 tool calls, with 3 probe runs.
+
 ## 2026-11-10 — PR review 11: flow-components #10623, RTE Delta sync
 
 One production file, `RichTextEditor.java`, 38 lines. The PR removes the private
