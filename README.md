@@ -121,6 +121,10 @@ acts only on the three reviewer agents. It denies commands that write. While a f
 runs, it allows read commands only. `review-plan.sh` writes the fork marker for a fork PR.
 The marker expires after 3 hours, and a review of a same-repo PR removes it.
 
+`hooks/hooks.json` also registers `scripts/hooks/notes-guard.py` before every Agent call. The
+guard acts only on a prompt of the plan. It denies the launch of a pass while the notes file
+of that prompt does not exist. A pass that starts earlier reviews without the Settled facts.
+
 ## Update a skill
 
 The plugin runs from a cached copy of one commit. Commit the change, run

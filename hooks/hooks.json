@@ -1,5 +1,5 @@
 {
-  "description": "Hold the reviewer passes of the review skills to read-only Bash commands, and to read commands only in a fork review.",
+  "description": "Hold the reviewer passes of the review skills to read-only Bash commands, and to read commands only in a fork review. Hold each pass until its notes file exists.",
   "hooks": {
     "PreToolUse": [
       {
@@ -8,6 +8,16 @@
           {
             "type": "command",
             "command": "python3 -I \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/bash-guard.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"${CLAUDE_PLUGIN_ROOT}/scripts/hooks/notes-guard.py\"",
             "timeout": 10
           }
         ]

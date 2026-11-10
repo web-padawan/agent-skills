@@ -13,8 +13,9 @@
 # pr-refresh.sh usage refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the web
 # component property facts of diff-facts.sh in a Flow fixture, the workflow-facts.sh facts and
 # the dropped tests pass on a workflow-only change, the plan fixtures (a PNG, two conventions
-# docs, findings files on the same head, a dirty tree), and the bash-guard.py decisions. Also
-# checks that every script in this directory answers --help with exit 0.
+# docs, findings files on the same head, a dirty tree), and the bash-guard.py and
+# notes-guard.py decisions. Also checks that every script in this directory answers --help
+# with exit 0.
 #
 # Exit codes: 0 all checks passed · 1 a check failed.
 set -uo pipefail
@@ -626,6 +627,22 @@ expect "review-plan.sh deletes the notes file and patches of an earlier context"
 PASS_N=$(grep -c '^Context file:' "$WORK/fx-png.log")
 expect "review-plan.sh asks each pass to count the notes file" \
   "yes" "$([ "$PASS_N" -gt 0 ] && [ "$PASS_N" = "$(grep -c '^End your reply with one line that counts that file: `notes:' "$WORK/fx-png.log")" ] && echo yes)"
+# notes-guard.py reads the context line of a real prompt of the plan.
+NOTES_GUARD="$SCRIPTS/hooks/notes-guard.py"
+FX_PROMPT=$(awk '/^--- change ·/ { f = 1; next } /^--- / { f = 0 } f' "$WORK/fx-png.log")
+notes_guard() {  # notes_guard <tool> <prompt> — prints deny or allow
+  jq -cn --arg t "$1" --arg p "$2" '{tool_name: $t, tool_input: {subagent_type: "x", prompt: $p}}' \
+    | python3 -I "$NOTES_GUARD" | grep -q '"permissionDecision": "deny"' && echo deny || echo allow
+}
+expect "notes-guard.py denies a pass before the notes file exists" deny "$(notes_guard Agent "$FX_PROMPT")"
+grep -q "Write it in a message of its own" <<< "$(jq -cn --arg p "$FX_PROMPT" '{tool_name: "Agent", tool_input: {prompt: $p}}' | python3 -I "$NOTES_GUARD")"
+expect "notes-guard.py names the fix in its denial" 0 "$?"
+echo "## Settled facts" > "$FX_DIR/context-notes.md"
+expect "notes-guard.py allows a pass when the notes file exists" allow "$(notes_guard Agent "$FX_PROMPT")"
+expect "notes-guard.py reads the Task tool name too" allow "$(notes_guard Task "$FX_PROMPT")"
+rm -f "$FX_DIR/context-notes.md"
+expect "notes-guard.py leaves an Agent call without the context line alone" allow "$(notes_guard Agent 'Find the tests')"
+expect "notes-guard.py leaves other tools alone" allow "$(notes_guard Bash "$FX_PROMPT")"
 expect "review-plan.sh lists a changed PNG under binary_files" \
   "binary_files: shot.png " "$(grep '^binary_files:' "$WORK/fx-png.log")"
 expect "review-plan.sh counts no source file without a src_glob" \
