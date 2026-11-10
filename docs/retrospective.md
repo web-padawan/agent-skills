@@ -34,8 +34,11 @@ CI green, scale `lite`, head `9498a15`. Full review with three passes. Posted 1 
   and tests passes launched in the same message before the notes file existed, so both
   printed `notes: none`. The notes file was then written by Bash, and the change pass launched
   alone. After the probe, `SendMessage` corrected the wrong Settled fact for the running change
-  pass. The pass used the correction and cleared its lead. → no change. Write the notes file in
-  its own message before the fan-out message.
+  pass. The pass used the correction and cleared its lead. → `notes-guard.py` denies the
+  launch of a pass while its notes file does not exist. The notes file is required, and the
+  plan, pipeline.md and both skills put its Write in a message of its own (`c851bf1`,
+  `d9b19ab`, `db6e5e7`, `f82d387`, `bd084f1`, `0c9e66c`). The rounds stage writes the notes
+  file again after each re-run of the plan (`9296339`).
 - Triage kept 2 of 10 findings. Change pass: 4, kept 1 (the helper row toggle). The grid
   drag-select `preventDefault` claim was dropped. The label-less grid checkbox has a zero-width
   `label` part, so the click cannot land on it. Code pass: 2, kept 0. The suffix selector has
