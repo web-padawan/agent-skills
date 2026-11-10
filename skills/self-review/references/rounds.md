@@ -25,9 +25,10 @@ Read the `round: <k> of <n>` line of the plan:
 
 - When k is less than n and this round added a confirmed A or B finding, write the findings
   file per finalize.md, without `verdict`. Re-run the plan with the same flags. Then repeat
-  steps 3 to 5 of the skill with its new prompts.
+  steps 2 to 5 of the skill with its new prompts.
 - Otherwise, continue to the gate.
 
 The re-run plan lists the findings of the earlier rounds in the skeleton, so that the passes
-look for what those rounds missed. Keep the notes file. The frozen list grows by the new
-findings of each round.
+look for what those rounds missed. The re-run plan deletes the notes file, so write it again
+in step 2. Keep its Settled facts, and add each lead that a pass cleared. The frozen list
+grows by the new findings of each round.
