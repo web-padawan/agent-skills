@@ -11,8 +11,8 @@ Learn what the PR is for and why, fast. The goal is to save review time, so be c
   script accepts an issue number or URL.
 - Take the shape of the change from the plan: `prod_files`, `test_files`, `scale_counts` and
   `commits`. Do not read the diff in this step.
-- Exception: if the plan says `affected_packages: none` and `diff_prod: inline`, read the
-  diff. A workflow, config or tooling change has no other explanation.
+- Exception: if the plan says `prod_source: 0 of <n>` or `unknown`, and `diff_prod: inline`,
+  read the diff. A workflow, config or tooling change has no other explanation.
 - If the plan has a `workflow:` block, read each `uses:` action at its ref. The diff calls
   that code, and the code decides what the workflow does.
 
