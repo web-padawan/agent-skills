@@ -106,8 +106,29 @@ check "ab.sh identical when the command ignores the path" 0 \
 check "ab.sh refuses an unknown ref" 2 \
   "$SCRIPTS/ab.sh" --ref nope --path a.txt -- cat a.txt
 printf 'dirty\n' >> a.txt
-check "ab.sh refuses a dirty path" 2 \
+check "ab.sh compares a dirty path with HEAD" 1 \
+  "$SCRIPTS/ab.sh" --ref HEAD --path a.txt --out-dir "$WORK/ab-dirty" -- cat a.txt
+expect "ab.sh side A has the HEAD file" "one two three" "$(tr '\n' ' ' < "$WORK/ab-dirty/A.log" | sed 's/ $//')"
+expect "ab.sh side B has the dirty file" "one two three dirty" "$(tr '\n' ' ' < "$WORK/ab-dirty/B.log" | sed 's/ $//')"
+expect "ab.sh kept the uncommitted change" "one two three dirty" "$(tr '\n' ' ' < a.txt | sed 's/ $//')"
+expect "ab.sh deleted the snapshot ref" "" "$(git rev-parse --verify --quiet refs/worktree/ab-snapshot)"
+git add a.txt
+check "ab.sh compares a staged path with main" 1 \
   "$SCRIPTS/ab.sh" --ref main --path a.txt -- cat a.txt
+expect "ab.sh kept the staged change" "M  a.txt" "$(git status --porcelain)"
+git reset -q -- a.txt
+"$SCRIPTS/ab.sh" --ref main --path a.txt -- sleep 60 > "$WORK/ab-term.log" 2>&1 & AB=$!
+for _ in $(seq 1 120); do grep -q '^== A:' "$WORK/ab-term.log" 2>/dev/null && break; sleep 0.25; done
+kill "$AB" 2>/dev/null
+wait "$AB"
+expect "ab.sh exits 130 on SIGTERM during A" 130 "$?"
+expect "ab.sh restored the dirty path on SIGTERM" " M a.txt" "$(git status --porcelain)"
+expect "ab.sh restored the dirty content on SIGTERM" "one two three dirty" "$(tr '\n' ' ' < a.txt | sed 's/ $//')"
+git update-ref refs/worktree/ab-snapshot HEAD
+check "ab.sh refuses while a snapshot ref is left" 2 \
+  "$SCRIPTS/ab.sh" --ref main --path a.txt -- cat a.txt
+expect "ab.sh kept the dirty path after the refusal" " M a.txt" "$(git status --porcelain)"
+git update-ref -d refs/worktree/ab-snapshot
 git checkout -q -- a.txt
 # Two side branches: d/b.txt exists only in ab-ref, d/c.txt exists only in ab-files.
 git checkout -q -b ab-ref
