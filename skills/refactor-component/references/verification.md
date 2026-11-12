@@ -68,8 +68,8 @@ belongs in the pull request body.
 
 A stash of a path that holds no uncommitted change creates no stash entry. The run then measures
 the committed code and reports a false pass. Do not use `git stash` for the isolation. The
-`ab.sh` script swaps with `git checkout <ref> -- <path>` and restores on every exit. It
-refuses when a path holds uncommitted work.
+`ab.sh` script swaps with `git restore --source=<ref> --worktree -- <path>`. On every exit, it
+restores the uncommitted state of each path from a snapshot.
 
 A `git checkout HEAD -- <path>` discards uncommitted work in that path. Commit first.
 
