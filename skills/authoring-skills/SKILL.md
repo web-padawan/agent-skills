@@ -60,7 +60,7 @@ lines and one gotcha.
 |---|---|---|
 | **Inline technique** (<80 lines, no subfolders) | A single self-contained procedure | `screenshot-diff` (no subfolders) |
 | **Phase / reference-table workflow** | A multi-step process where each step has depth | `self-review` |
-| **Deep reference + guardrails** | A tool or engine with many footguns, budgets, caveats | `refactor-component` |
+| **Deep reference + guardrails** | A tool or engine with many footguns, budgets, caveats | `comment-cleanup` |
 
 Do not build a `references/` tree before you need it.
 

@@ -1,6 +1,6 @@
 ---
 name: comment-cleanup
-description: Delete, rewrite and shorten comments against a DROP / REWRITE / RETAIN policy - drops restated behavior, history, closed tickets and decision records, border conditions the code already shows, and invariants the types already state. Converts prose docblocks on private and protected members to `@param` and `@return` tags, moves an inline override note into the docblock leading line, expands a `#NNNN` shorthand to a full link, and rewrites each kept comment to its shortest form. Scopes to a branch diff, one commit, the index, the working tree, one file, or one package. Use when asked to clean up comments, de-slop comments, strip AI slop or AI-written comments, remove comment noise, drop redundant or obsolete comments, convert JSDoc prose to tags, or trim the comments a branch added. Edits comment lines only and never changes code. Not for code slop such as duplication, dead code or wrappers, which is ai-slop-cleaner. Not for a review that reports and does not edit, which is self-review or pr-review. Not for a structural refactor, which is refactor-component. Not for a general cleanup of an uncommitted diff, which is simplify.
+description: Delete, rewrite and shorten comments against a DROP / REWRITE / RETAIN policy - drops restated behavior, history, closed tickets and decision records, border conditions the code already shows, and invariants the types already state. Converts prose docblocks on private and protected members to `@param` and `@return` tags, moves an inline override note into the docblock leading line, expands a `#NNNN` shorthand to a full link, and rewrites each kept comment to its shortest form. Scopes to a branch diff, one commit, the index, the working tree, one file, or one package. Use when asked to clean up comments, de-slop comments, strip AI slop or AI-written comments, remove comment noise, drop redundant or obsolete comments, convert JSDoc prose to tags, or trim the comments a branch added. Edits comment lines only and never changes code. Not for code slop such as duplication, dead code or wrappers, which is ai-slop-cleaner. Not for a review that reports and does not edit, which is self-review or pr-review. Not for a general cleanup of an uncommitted diff, which is simplify.
 argument-hint: "[--diff|--commit <sha>|--staged|--working|--all <path>|--package <name>] [path]"
 allowed-tools: Read, Edit, Glob, Grep, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(cp:*), Bash(diff:*), Bash(*/scripts/list-comments.sh:*)
 ---
@@ -30,7 +30,6 @@ that marks a comment for a DROP or a REWRITE.
 
 - You want a report and no edit. Use `self-review`.
 - You want to remove code slop: duplication, dead code, wrappers. Use `ai-slop-cleaner`.
-- You want to move code. Use `refactor-component`.
 - You want a general cleanup of an uncommitted diff. Use `simplify`.
 
 ## Gotchas

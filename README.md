@@ -9,7 +9,6 @@ single-plugin marketplace. You install it from a local path. Nothing is publishe
 | --- | --- |
 | `pr-review` | A PR from someone else. Explains it, checks the screening facts, reviews it after you confirm with the agent passes or in one context, then posts only what you select. |
 | `self-review` | Your own branch before you open or update a PR. Three agent passes, A / B / C findings, a `FINDINGS.md` report. Never edits code. |
-| `refactor-component` | A structural refactor of web component sources without a behavior change. |
 | `comment-cleanup` | Deletes and shortens comments in a diff, a file or a package. Edits comment lines only. |
 | `screenshot-diff` | Classifies visual test screenshot diffs. Never updates a baseline. |
 | `work-summary` | A manager summary of your merged PRs for a period. |
@@ -37,7 +36,6 @@ Restart the session so that the skills load.
 /agent-skills:self-review --fix --no-coverage   # force type, skip the coverage check
 /agent-skills:self-review --rounds 3            # up to 3 rounds, stops when one adds no new A or B
 /agent-skills:self-review --fresh               # ignore the findings file of the last run
-/agent-skills:refactor-component packages/<name>
 /agent-skills:comment-cleanup --commit HEAD
 /agent-skills:screenshot-diff packages/button
 /agent-skills:work-summary menu-bar --since 2026-08-01 --until 2026-09-30
@@ -73,9 +71,8 @@ This directory is optional. Copy it only to review a Vaadin repository:
 
 - `owners/vaadin/`: the fact packs `facts/web-components.sh` and `facts/flow-components.sh`, and `screening.json`
 
-Other skills share three of these files. `comment-cleanup` reads `references/comments.md`,
-`work-summary` calls `gh-context.sh`, and `refactor-component` calls `ab.sh`. Keep a copy of
-each one in this plugin.
+Other skills share two of these files. `comment-cleanup` reads `references/comments.md`, and
+`work-summary` calls `gh-context.sh`. Keep a copy of each one in this plugin.
 
 ## Scripts
 

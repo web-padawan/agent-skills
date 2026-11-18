@@ -30,9 +30,8 @@ most measurable impact on output quality. Invest the effort in them.
 ### 3. Code transformation
 Changes production source and keeps the behavior. Writes code, not a report. This
 is the only category that edits the files that the other categories read.
-- In this repo: `refactor-component` (structural refactor of component
-  sources, from the mixin chain outward), `comment-cleanup` (deletes and
-  shortens the comments that a diff added).
+- In this repo: `comment-cleanup` (deletes and shortens the comments that a
+  diff added).
 - Boundary against category 2: a transformation skill rewrites production code. A
   verification skill adds tests or proves behavior.
 - Boundary against category 1: a transformation skill edits. A review skill reports
