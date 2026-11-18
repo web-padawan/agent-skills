@@ -47,6 +47,11 @@ through. Never report a percentage and never write "add more tests".
 - Reuse existing test helpers when available, rather than manual assertions
 - Cross-component behavior placed in the matching file of the existing integration suite
 - A style change pinned only by `getComputedStyle` in a unit test, when the testing guideline of the repo asks for visual tests
+- A `getBoundingClientRect` check of where CSS places an element, such as in RTL, when the repo
+  has visual tests
+- A stable element queried again in each test, instead of once in `beforeEach`
+- Cleanup that several tests need, in `try`/`finally` or in each nested suite, instead of one
+  top-level `afterEach`
 
 ### Over-testing
 
