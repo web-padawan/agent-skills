@@ -630,6 +630,18 @@ git -C "$DC" commit -q -am "feat: open"
 expect "review-plan.sh counts a public method of a plain class as a deep candidate" \
   "deep_candidates: 1 (.d.ts files 0, new exports 0, new public methods 1)" "$(grep '^deep_candidates:' "$WORK/deep.log")"
 
+echo "== lanes"
+# The lanes hold JavaScript, TypeScript and Java. A file of another language is neither.
+LANES=$( . "$SCRIPTS/lib/lanes.sh"
+  for p in src/a.test.ts src/FooTest.java src/FooIT.java src/a.ts src/Foo.java app/views.py src/a.go; do
+    if printf '%s\n' "$p" | grep -qE "$TEST_RE"; then printf 'test:%s ' "$p"
+    elif printf '%s\n' "$p" | grep -qE "$CODE_RE"; then printf 'code:%s ' "$p"
+    else printf 'other:%s ' "$p"; fi
+  done)
+expect "lib/lanes.sh sorts JavaScript, TypeScript and Java files only" \
+  "test:src/a.test.ts test:src/FooTest.java test:src/FooIT.java code:src/a.ts code:src/Foo.java other:app/views.py other:src/a.go " \
+  "$LANES"
+
 echo "== review-plan.sh fixtures"
 # Fixtures that pin the plan output of edge paths: a changed PNG, conventions docs of 300
 # and 500 lines, findings files on the same head, and a dirty tracked file.

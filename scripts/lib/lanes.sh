@@ -12,7 +12,8 @@
 # paying for it. See the lanes of pass_agent in lib/policy.sh.
 TEST_RE='(^|/)(test|tests|__tests__|it)/|\.(test|spec)\.[cm]?[jt]sx?$|Test\.java$|IT\.java$|Tests?\.kt$'
 # A file that a test can cover. The plan drops the tests pass when the diff has none.
-CODE_RE='\.([cm]?[jt]sx?|java|kt|css|scss|html|py|sh)$'
+# The review skills support JavaScript, TypeScript and Java (with Kotlin) projects.
+CODE_RE='\.([cm]?[jt]sx?|java|kt|css|scss|html|sh)$'
 
 lanes_split() {  # lanes_split — CHANGED, BINARY_FILES, TEST_FILES and PROD_FILES of BASE..HEAD
   CHANGED=""
