@@ -45,7 +45,7 @@ plan_prompts() {
           ;;
         code)
           echo "Your diff: $(lane_prod)."
-          [ -n "$COMMENT_FILES" ] && echo "Comment-adjacent files for the \`comments\` category: $COMMENT_FILES"
+          [ -n "$COMMENT_FILES" ] && echo "Comment-adjacent files for the \`comments\` category: the \`comment-adjacent\` list of the \`## Changed files\` section of the context file."
           [ "$MODE" = "pr" ] && [ "$FORK" != "true" ] && echo "No reuse/maintainability nits."
           ;;
         tests)

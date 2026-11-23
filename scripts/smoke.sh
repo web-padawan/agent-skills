@@ -764,6 +764,28 @@ expect "review-plan.sh names the dirty tracked files" \
   "$(grep '^guard:' "$WORK/last.log")"
 git -C "$FX" checkout -q -- src/a.js
 
+echo "== comment-adjacent files"
+# The code prompt points to the comment-adjacent list of the context file. A diff with many
+# commented files must not make the prompt grow.
+CF="$WORK/comment-fixture"
+git init -q -b main "$CF"
+git -C "$CF" config user.email smoke@example.com
+git -C "$CF" config user.name smoke
+git -C "$CF" config commit.gpgsign false
+mkdir -p "$CF/src"
+printf '// one\nexport const a = 1;\n' > "$CF/src/a.js"
+git -C "$CF" add -A && git -C "$CF" commit -q -m "base"
+git -C "$CF" remote add origin "$CF" && git -C "$CF" fetch -q origin main
+git -C "$CF" checkout -q -b topic
+printf '// one\nexport const a = 2;\n' > "$CF/src/a.js"
+git -C "$CF" add -A && git -C "$CF" commit -q -m "fix: two"
+(cd "$CF" && "$SCRIPTS/review-plan.sh" --mode self --type fix --context-out "$WORK/cf-context.md") > "$WORK/cf-plan.log" 2>&1
+expect "review-plan.sh lists the comment-adjacent files in the context file" \
+  "- src/a.js" "$(awk '/^comment-adjacent / { f = 1; next } f && /^- / { print; exit }' "$WORK/cf-context.md")"
+expect "review-plan.sh keeps the file list out of the code prompt" \
+  "Comment-adjacent files for the \`comments\` category: the \`comment-adjacent\` list of the \`## Changed files\` section of the context file." \
+  "$(grep '^Comment-adjacent files' "$WORK/cf-plan.log")"
+
 echo "== contracts"
 # Every key that the plan prints is in the plan key list of docs/contracts.md.
 CONTRACT_KEYS=$(awk '/^## Plan keys/ { s = 1; next } /^## / { s = 0 } s && /^```/ { c = !c; next } s && c && NF { print $1 }' \

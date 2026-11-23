@@ -129,6 +129,10 @@ section_changed_files() {
   echo; echo "binary (never diffed):"
   for f in $BINARY_FILES; do echo "- $f"; done
   [ -z "$BINARY_FILES" ] && echo "- none"
+  if [ -n "$COMMENT_FILES" ]; then
+    echo; echo "comment-adjacent (the input of the \`comments\` category of the code pass):"
+    for f in $COMMENT_FILES; do echo "- $f"; done
+  fi
   echo
   echo "$(git diff --shortstat "$BASE..$HEAD" 2>/dev/null | sed 's/^ *//')"
   return 0
