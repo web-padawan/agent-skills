@@ -4,6 +4,58 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-23 — PR review 14: flow-components #10726, grid ITs in strict CSP mode
+
+Two POM files, 4 production lines. The PR moves `csp.mode=strict` to `vaadin-grid-flow-parent`
+and migrates 16 IT views to declared JavaScript. Team PR by mcollovati, CI green, head
+`c6c841f`. Full review with three Opus passes. Kept 1 question, dropped 2 nitpicks, posted
+nothing.
+
+- The plan printed scale `full` for 4 production lines. `classify.sh` counted production
+  lines but every file for the tiers. The 16 IT views made 18 files, more than 8. So the code
+  and tests passes also ran on Opus. → The tiers count production files
+  only. `scale_counts` prints both file counts. This PR is now `trivial` (`d30e663`).
+- The orchestrator wrote a Settled fact with a directive: "a strict-mode claim is NOT retired
+  by CI". The change pass and the tests pass both reported the CI gap as a B finding. →
+  pipeline.md §2: a Settled fact states only the fact (`34142f8`).
+- Triage kept the CI gap as `question (impact)`: "did the grid ITs pass in a local strict
+  run?" The change pass said that the gap exists for every strict module. So the gap was
+  pre-existing, and the question asked about the process of the author, not the code. The
+  reviewer judged it not relevant. → pr-review SKILL.md drops process questions and CI or
+  tooling gaps that existed before the PR (`34e0b3e`).
+- The repository fact behind the gap took about 3 calls in this review and again in
+  review 13. `scripts/mergeITs.js` builds one merged IT app. That app uses the root
+  `csp.mode=off`, so a module property does not reach CI. → no change. A fact pack line is a
+  candidate if the fact comes back.
+- The code pass cleared a lead with `../flow` at its working tree, 3 weeks behind
+  `origin/main`. flow-components builds against `25.4-SNAPSHOT`, which is Flow `main`. There,
+  the client runs `stopPropagation()` as a built-in, which the PR body claimed. The verdict was
+  right, but the evidence was stale. → no change. A plan line with the Flow ref is a candidate.
+- `pr-screen.sh` printed `title_type: other` for a `test:` title. It maps only `feat`, `fix`
+  and `refactor`. The plan type `chore` was correct. → no change.
+- Cost: about 214k subagent tokens for 1 kept question. Change 59k with 10 calls, code 71k
+  with 16 calls, tests 84k with 12 calls.
+
+## 2026-11-23 — PR review 13: flow-components #10722, spreadsheet JsDefinition
+
+Three production files, 60 lines. The PR moves two `executeJs(String)` calls of `Spreadsheet`
+to a `SpreadsheetJs` interface and sets `csp.mode=strict`. Team PR by mcollovati, CI green,
+scale `lite`, head `5199344`. Quick review at the gate, so no pass ran. Kept 0 new findings,
+confirmed 1 open thread, posted nothing.
+
+- The open thread said that strict mode breaks the spreadsheet charts. The orchestrator
+  confirmed it before the gate. `ChartDataToVaadinConfigWriter.java:166` sets a string tooltip
+  formatter, and Charts throws `CspViolationException` for it in strict mode. CI was green
+  only because the merged IT app ignores `csp.mode`. → no change.
+- The result printed "Needs attention" above a census of 0 issues. The only issue was
+  `already raised`, and the head did not fix it. present.md does not say if such an issue
+  counts for the result. → no change.
+- Each option of the Post question would post nothing, because a `confirms` finding never
+  posts. present.md drops such options but does not say what follows when none remain. The
+  orchestrator offered a reply into the thread in chat. → no change.
+- The first findings file anchored a dropped finding at line 708, a line of the context file.
+  `post-review.sh` checks only the findings that it posts. → no change.
+
 ## 2026-11-10 — PR review 12: web-components #13381, checkbox empty space click
 
 Three production files, 33 lines. `CheckboxMixin` adds a host `click` listener. It forwards
