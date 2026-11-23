@@ -99,7 +99,7 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 An owner directory holds what applies only to the repositories of one GitHub owner:
 
 - `facts/*.sh`: fact packs that `diff-facts.sh` runs, per the provider contract in `docs/contracts.md`
-- `screening.json`: the screening labels and the team allowlist. `pr-screen.sh --help` lists the keys
+- `screening.json`: the screening labels, the team allowlist and the advisory CI checks. `pr-screen.sh --help` lists the screening keys. `get-pr-context.sh --help` describes `advisory_checks`
 - `rules.md`: review rules. The context file quotes them for the passes, and triage reads them
 
 The owner is the owner of the `upstream` remote, else of `origin`. The lookup reads

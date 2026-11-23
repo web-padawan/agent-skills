@@ -13,6 +13,11 @@
 # the DIFFS section is skipped so the caller can ask the user first.
 #
 # ANCHORS also prints `fork: true|false` and `head_repo: <owner/name>`.
+#
+# CI_STATUS reads the `advisory_checks` key of the screening.json of the PR owner
+# (scripts/lib/owner.sh). Each entry is an extended regular expression that matches a whole
+# check name, without regard to case. A failing advisory check prints as
+# `failing (advisory)`, without the A-tier hint.
 # Output sections are separated by markers for easy parsing.
 set -euo pipefail
 
@@ -38,6 +43,12 @@ elif [ "$DIFF_SOURCE" != "local" ] && [ "$DIFF_SOURCE" != "remote" ]; then
   echo "error: --diff-source must be 'local' or 'remote' (got '$DIFF_SOURCE')" >&2
   exit 1
 fi
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=lib/owner.sh
+. "$SCRIPT_DIR/lib/owner.sh"
+# shellcheck source=lib/ci.sh
+. "$SCRIPT_DIR/lib/ci.sh"
 
 # Diffs and instruction-file checks are repo-root-relative; do not depend on the caller's cwd.
 cd "$(git rev-parse --show-toplevel)"
@@ -238,8 +249,10 @@ else
     echo "checks:"
     printf '%s\n' "$CHECKS" | awk -F'\t' '{printf "  %s: %s\n", $1, $2}'
     if [ "$CHECK_FAIL" != "0" ]; then
-      echo "hint: a failing check is an A-tier finding on its own — name the check in the claim"
-      printf '%s\n' "$CHECKS" | awk -F'\t' '$2=="fail" {printf "  failing: %s — %s\n", $1, $4}'
+      PR_SLUG=$(printf '%s' "$PR_JSON" | jq -r '.url // empty' 2>/dev/null \
+        | sed -n 's|^https://[^/]*/\([^/]*/[^/]*\)/pull/.*|\1|p' || true)
+      OWNER_DIR=$(owner_dir "$(dirname "$SCRIPT_DIR")" "$(owner_of_url "$PR_SLUG")")
+      ci_failing "$CHECKS" "$(advisory_pattern "${OWNER_DIR:+$OWNER_DIR/screening.json}")"
     fi
   fi
 fi

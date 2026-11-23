@@ -482,6 +482,23 @@ expect "pr-screen.sh applies only the generic rules without a config" \
   "issue_flags: none|verdict_hint: take" \
   "$(grep '^issue_flags:' "$WORK/screening-generic.log")|$(grep '^verdict_hint:' "$WORK/screening-generic.log")"
 
+echo "== ci.sh"
+# shellcheck source=lib/ci.sh
+. "$SCRIPTS/lib/ci.sh"
+CI_CFG="$WORK/ci-screening.json"
+printf '{"advisory_checks": ["sonarcloud code analysis"]}\n' > "$CI_CFG"
+CI_CHECKS=$(printf 'Build\tfail\t1m\thttps://b\nSonarCloud Code Analysis\tfail\t0\thttps://s\nLint\tpass\t1m\thttps://l')
+expect "ci.sh joins the advisory patterns of the owner config" \
+  "sonarcloud code analysis" "$(advisory_pattern "$CI_CFG")"
+expect "ci.sh keeps the A-tier hint for a failing check that is not advisory" \
+  "hint: a failing check is an A-tier finding on its own — name the check in the claim|  failing: Build — https://b|hint: an advisory check of the owner config is not a finding, also when it fails|  failing (advisory): SonarCloud Code Analysis — https://s" \
+  "$(ci_failing "$CI_CHECKS" "$(advisory_pattern "$CI_CFG")" | paste -sd '|' -)"
+expect "ci.sh prints no A-tier hint when only advisory checks fail" \
+  "hint: an advisory check of the owner config is not a finding, also when it fails|  failing (advisory): SonarCloud Code Analysis — https://s" \
+  "$(ci_failing "$(printf '%s\n' "$CI_CHECKS" | grep -v '^Build')" "sonarcloud code analysis" | paste -sd '|' -)"
+expect "ci.sh treats every failing check as A-tier without an owner config" \
+  "2" "$(ci_failing "$CI_CHECKS" "$(advisory_pattern "")" | grep -c '^  failing: ')"
+
 echo "== pr-refresh.sh"
 # A PR commit, then a merge of main into the PR, then a real change. A stub
 # get-pr-context.sh next to a copy of the script prints the current state from a fixture.

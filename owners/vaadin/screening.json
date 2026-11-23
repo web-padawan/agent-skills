@@ -4,5 +4,6 @@
   "low_impact_labels": ["Impact: Low"],
   "a11y_labels": ["a11y", "accessibility"],
   "triaged_labels": ["Severity: [^,]+", "Impact: [^,]+", "known issue", "regression"],
-  "acceptance_criteria": "acceptance criteria"
+  "acceptance_criteria": "acceptance criteria",
+  "advisory_checks": ["SonarCloud Code Analysis"]
 }
