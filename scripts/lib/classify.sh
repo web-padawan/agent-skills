@@ -2,7 +2,7 @@
 #
 # Reads: MODE, PR, TYPE_FLAG, BRANCH, BASE, HEAD, CHANGED, TEST_RE
 # Sets: GH_ARGS, PR_TITLE, TYPE, TYPE_SIGNAL, TYPE_CONFLICT, TITLE_TYPE, COMMIT_TYPE,
-#       BRANCH_TYPE, LINES, TOTAL_LINES, FILES, SCALE, SCALE_REASON, OVERRIDES
+#       BRANCH_TYPE, LINES, TOTAL_LINES, FILES, PROD_FILE_COUNT, SCALE, SCALE_REASON, OVERRIDES
 
 # Map a conventional-commit subject to a type. Only the prefix is read; the rest of
 # the subject is never interpreted.
@@ -102,32 +102,37 @@ plan_classify() {
   fi
 
   # ── Scale
-  # The tiers: trivial is 10 production lines or less in 2 files or less. lite is 150 lines
-  # or less in 8 files or less. full is above. A risk override forces full at any size.
-  # Sized by PRODUCTION lines: tests never enter the mutant or deep budgets, and a
-  # 30-line fix with 80 lines of tests is a lite review, not a full one.
+  # The tiers: trivial is 10 production lines or less in 2 production files or less. lite is
+  # 150 lines or less in 8 production files or less. full is above. A risk override forces
+  # full at any size.
+  # Sized by PRODUCTION lines and files: tests never enter the mutant or deep budgets, and
+  # a 30-line fix with 80 lines of tests is a lite review, not a full one. FILES counts all
+  # files for the scale_counts line only.
   LINES=0
   TOTAL_LINES=0
   FILES=0
+  PROD_FILE_COUNT=0
   if [ -n "$BASE" ]; then
-    read -r LINES TOTAL_LINES FILES <<< "$(git diff --numstat -M "$BASE..$HEAD" 2>/dev/null | awk -F'\t' -v test_re="$TEST_RE" '
+    read -r LINES TOTAL_LINES FILES PROD_FILE_COUNT <<< "$(git diff --numstat -M "$BASE..$HEAD" 2>/dev/null | awk -F'\t' -v test_re="$TEST_RE" '
       {
         p = $3
         if (p ~ /\.lock$/ || p ~ /(^|\/)package-lock\.json$/) next
         if (p ~ /(^|\/)(dist|node_modules|__snapshots__)\//) next
         if (p ~ /\.(png|jpg|jpeg|gif|webp|ico)$/) next
         files++
+        is_test = (p ~ test_re)
+        if (!is_test) prod_files++
         if ($1 == "-" || $2 == "-") next
         total += $1 + $2
-        if (p ~ test_re) next
+        if (is_test) next
         prod += $1 + $2
       }
-      END { printf "%d %d %d\n", prod + 0, total + 0, files + 0 }')"
+      END { printf "%d %d %d %d\n", prod + 0, total + 0, files + 0, prod_files + 0 }')"
   fi
 
   SCALE=""
-  if [ "$LINES" -le 10 ] && [ "$FILES" -le 2 ]; then SCALE="trivial"
-  elif [ "$LINES" -le 150 ] && [ "$FILES" -le 8 ]; then SCALE="lite"
+  if [ "$LINES" -le 10 ] && [ "$PROD_FILE_COUNT" -le 2 ]; then SCALE="trivial"
+  elif [ "$LINES" -le 150 ] && [ "$PROD_FILE_COUNT" -le 8 ]; then SCALE="lite"
   else SCALE="full"; fi
   SCALE_REASON="size"
 

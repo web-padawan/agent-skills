@@ -32,7 +32,7 @@ type               fix, feature, refactor, chore or undetermined
 type_signal        the signal that set the type
 type_conflict      none, or a more demanding lower signal
 scale              trivial, lite or full
-scale_counts       production lines, all lines, files
+scale_counts       production lines, all lines, files, production files
 scale_reason       size, or the risk override
 deep               the deep budget of the change pass and its source
 deep_candidates    the count of .d.ts files, new exports and new public methods

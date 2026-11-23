@@ -4,7 +4,7 @@
 #
 # Reads: MODE, PR, BRANCH, HEAD0, BASE, HEAD, BASE_BRANCH, FORK, HEAD_REPO, GUARD, CTX,
 #        CONTEXT_OUT, NO_WRITE, REPORT_DIR, REPO_ROOT, PLUGIN_ROOT, SCRIPT_DIR, GH_ARGS,
-#        PR_TITLE, TYPE, TYPE_SIGNAL, TYPE_CONFLICT, SCALE, LINES, TOTAL_LINES, FILES,
+#        PR_TITLE, TYPE, TYPE_SIGNAL, TYPE_CONFLICT, SCALE, LINES, TOTAL_LINES, FILES, PROD_FILE_COUNT,
 #        SCALE_REASON, DEEP_ROW, DEEP_SOURCE, EFFORT, BRANCH_COMMITS, PROD_FILES,
 #        TEST_FILES, BINARY_FILES, COMMENT_FILES, CONVENTIONS, CONVENTIONS_WHOLE_MAX,
 #        DIFF_FACTS, WORKFLOW_FACTS, EARLIER_MODE, EARLIER_HEAD, EARLIER_LIST,
@@ -74,7 +74,7 @@ section_identity() {
   fi
   echo "- checked_out: $CHECKED_OUT — the working tree $( [ "$CHECKED_OUT" = yes ] && echo "is the head" || echo "is NOT the head (\`$HEAD0\`); read post-change content with \`git show $HEAD:<path>\`")"
   echo "- type: $TYPE (signal: $TYPE_SIGNAL; type_conflict: $TYPE_CONFLICT)"
-  echo "- scale: $SCALE ($LINES production lines, $TOTAL_LINES with tests, $FILES files; $SCALE_REASON)"
+  echo "- scale: $SCALE ($LINES production lines, $TOTAL_LINES with tests, $FILES files, $PROD_FILE_COUNT production; $SCALE_REASON)"
   echo "- deep budget: $DEEP_ROW ($DEEP_SOURCE)"
   echo "- effort ceiling: ~$EFFORT tool calls per pass"
   if [ -n "${BRANCH_COMMITS:-}" ]; then
