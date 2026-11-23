@@ -104,6 +104,8 @@ Post it as a `question (design)`, or drop it.
 
 - Rigor demands that the codebase does not follow.
 - Pre-existing bugs, generic observations and restatements of the code.
+- A question about the process of the author, for example whether the tests ran locally.
+- A gap in CI or tooling that existed before the PR, also when the PR depends on it.
 
 **Write the frozen list** (pipeline.md §5.7) to the `findings:` path of the plan, in the
 format that `post-review.sh --help` prints. Also write each finding that the filter drops,
