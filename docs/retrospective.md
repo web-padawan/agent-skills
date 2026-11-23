@@ -4,6 +4,63 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-23 — PR review 15: flow-components #10728, ChartFunction for chart options
+
+71 files and 2395 production lines, most of them 53 setter pairs in 55 model classes. The PR
+adds `ChartFunction` and sends each function as a separate argument of a declared `ChartJs`
+call, with its path in the configuration. Team PR by mcollovati, head `a5d7d43`. CI was green
+except the SonarCloud quality gate. Full review with three Opus passes. The passes returned
+22 findings. Triage kept 6. The reviewer posted 4 B threads and dropped the rest.
+
+- The plan printed `hint: a failing check is an A-tier finding on its own` for the SonarCloud
+  quality gate, with 39.5% duplication on new code. The change pass reported it as an A `api`
+  finding on `Tooltip.java:342`. Triage kept it as a summary-only `question (maintainability)`
+  with tier A. The reviewer dropped it. The duplication comes from model boilerplate that the
+  feature needs, and the author cannot fix it in a useful way. `get-pr-context.sh:241` prints
+  the hint for every failing check. severity.md makes only a red lint or test check an A. →
+  An `advisory_checks` list in `owners/vaadin/screening.json` names
+  `SonarCloud Code Analysis`. `get-pr-context.sh` prints such a check as
+  `failing (advisory)`, without the A hint (`740f7e6`).
+- The plan printed `deep_candidates: 0 (new public methods 0)`. The diff adds the public
+  interface `ChartFunction` and 106 public methods. The awk filter in `lib/policy.sh:117`
+  counts only `.js` and `.ts` files, but the review lanes include Java since `6efd2f8`. The
+  deep budget stayed 1, and that was enough here. → proposed: count added Java
+  `public` types and methods as candidates, with a smoke case.
+- The plan printed 38.9 KB, so the tool output went to a file. The `=== PROMPTS ===` block
+  was 30 KB, because the code prompt lists 67 comment-adjacent files on one line. Copying the
+  prompts verbatim took 3 extra calls with `awk` and `cut`. → The context file lists the
+  comment-adjacent files. The code prompt points to that list (`226b64b`, `87e0eb0`).
+- The code pass reported 2 findings on text that the base already had. One was the sentence
+  "a configuration that has a function throws" in the `String` setter Javadoc. The other was
+  `UI.getCurrent().getPage()` in `AbstractChartExample`. Triage dropped both as pre-existing
+  after one `git show <base>` each. → proposed: a text check in `agents/code-reviewer.md`. For
+  a `comments` or `conventions` finding, grep the base version of the file for the quoted
+  text, and do not report it when the base has it.
+- The tests pass returned 10 findings, and triage kept 2. It dropped 3 C findings on taste and
+  5 B findings on test placement, overlapping tests, a classpath scan and IT round trips. The
+  reviewer also dropped the one kept C nitpick at the gate. In review 14, triage dropped 2
+  nitpicks. → proposed: the Post question offers `B and above` as its first option. Also
+  consider dropping C test findings in PR mode.
+- The change pass and the code pass both found the package-private clear hooks in the 5
+  abstract bases, at the same anchor. Both said that the browser keeps the string. Triage
+  checked that the last value set still wins in the browser. Only the getter and the Javadoc
+  promise break. So triage changed `issue` to `suggestion`. → no change. The cross-check and
+  the verification worked.
+- All 4 Open leads came back as a finding or as a `lead cleared:` line. The Settled fact about
+  the design change from issue #10723 stopped every pass from questioning the varargs design.
+  → no change.
+- In Understand, `gh-context.sh 10728` ran with the agent-skills checkout as its working
+  directory. It wrote no file. The orchestrator sent stderr to `/dev/null`, so the error was
+  hidden. understand.md passes a bare number. → proposed: understand.md passes the `pr:` URL of
+  the plan, and the full URL of a linked issue.
+- `post-review.sh` refused the status `dropped: shared script`, because of the colon. The help
+  says "any note after the word". The refusal cost 1 call. → proposed: the help text shows
+  `dropped <reason>` as an example.
+- Bot thread 4640219649 was still open, but the head fixed it. Triage recorded `not reproduced`.
+  The hard rules do not let the skill resolve a thread. → no change.
+- Cost: about 372k subagent tokens for 4 posted threads. Change 123k with 19 calls, code 136k
+  with 13 calls, tests 113k with 12 calls.
+
 ## 2026-11-23 — PR review 14: flow-components #10726, grid ITs in strict CSP mode
 
 Two POM files, 4 production lines. The PR moves `csp.mode=strict` to `vaadin-grid-flow-parent`
