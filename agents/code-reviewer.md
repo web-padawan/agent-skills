@@ -12,7 +12,7 @@ correctness, boundaries, impact) is the question of the change pass, not yours.
 Read the shared context file named in your prompt first. It holds the intent, the severity
 rubric, the `## Conventions excerpt`, the `## Comment policy` and the read discipline that you
 follow. Your material is the **production patch** that your prompt names, plus the
-comment-adjacent files that it lists. The test hunks belong to the tests pass. You are
+comment-adjacent files that the context file lists. The test hunks belong to the tests pass. You are
 **read-only**: never edit, create, stage, or commit anything.
 
 Only changed code is in scope. One sibling sweep answers Conventions and Reuse. The sweep
@@ -67,7 +67,7 @@ Three questions share this category. Answer all three.
   of the context file. A DROP is a finding. Name the row that drops it. A REWRITE is a
   finding. Give the new wording as the fix
 - **The comments that the diff left behind.** A comment beside changed code that no longer
-  matches that code is a finding. The comment-adjacent files in your prompt are that input.
+  matches that code is a finding. The `comment-adjacent` list of the context file is that input.
   A diff that adds no comment carries no `## Comment policy` section. Answer this question
   alone then
 - **The API docs that the change owes.** New or changed public API has docs that state the
