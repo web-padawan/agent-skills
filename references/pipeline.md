@@ -84,7 +84,8 @@ file has three sections, in this order:
   example, what a shared helper does, pre-change behavior, a consumer in another repo, the
   call of a wrapper in another repository. Write one line per claim with its evidence (`file:line`, a SHA,
   the command). Record only what took you a call or two. The passes carry the budget for the
-  rest.
+  rest. State only the fact. Do not tell the passes which claims to report. Example: write
+  "CI does not run the module with its own config", not "CI does not retire such a claim".
 - **Open leads**: suspicions that you deliberately have not resolved. Every lead names exactly
   one owner pass (`[owner: change|code|tests]`). Other passes do not investigate a lead that
   they do not own. Triage inherits the verdict of the owner pass.
