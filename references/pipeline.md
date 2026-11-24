@@ -237,6 +237,13 @@ Navigate to `about:blank`, then build the tree inside `browser_evaluate`.
    `earlier` line as the new status of its finding. An open earlier finding with no
    `earlier` line keeps its status, marked `not checked`. A pass that repeats a `disputed`
    or `accepted` finding gets the repeat dropped.
+
+   Then check against `## Already on related PRs`, when the skeleton has it. The plan lists
+   these PRs as `related_prs:`. A finding that reverses a decision that a reply accepted
+   there gets status `dropped reverses #<pr> <id>` and never posts. Keep it as a
+   `question (design)` only when this diff gives new evidence. A test gap that a child PR
+   closes gets status `dropped closed by #<pr>`. The `tests:` line of that child names its
+   test files. Read the test before you drop the gap.
 3. **Your own findings count.** A finding from your pre-verification that no pass reported
    goes on the list, tagged `[orchestrator]`. An Open lead whose owner pass returned neither
    a finding nor a `lead cleared:` line also goes on the list. Nobody worked that lead, so it
