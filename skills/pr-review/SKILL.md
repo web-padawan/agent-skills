@@ -66,9 +66,11 @@ or `pr_author: <login> (contributor)`, also follow [`references/screening.md`](r
 Before you ask, run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --at gate --context <context file>`.
 Act on each `action:` line.
 
-Ask one `AskUserQuestion` with the header `Review`: "How should I continue?" List first the
-`gate_default:` option of the plan. When you corrected the verdict, list first its option in
-the verdict table of screening.md.
+Give the explanation of Understand as text in a message of its own. In the next message, ask
+one `AskUserQuestion` with the header `Review`. The open dialog can cover the text above it,
+so the question text starts with the **Problem** and **Change** lines, then asks "How should I
+continue?" List first the `gate_default:` option of the plan. When you corrected the verdict,
+list first its option in the verdict table of screening.md.
 
 - `Full review`: Fan out, Triage, Present and Post.
 - `Quick review`: [`references/quick.md`](references/quick.md).
