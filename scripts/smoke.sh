@@ -13,9 +13,9 @@
 # pr-refresh.sh usage refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the web
 # component property facts of diff-facts.sh in a Flow fixture, the workflow-facts.sh facts and
 # the dropped tests pass on a workflow-only change, the plan fixtures (a PNG, two conventions
-# docs, findings files on the same head, a dirty tree), and the bash-guard.py and
-# notes-guard.py decisions. Also checks that every script in this directory answers --help
-# with exit 0.
+# docs, findings files on the same head, a dirty tree), and the bash-guard.py, notes-guard.py
+# and question-guard.py decisions. Also checks that every script in this directory answers
+# --help with exit 0.
 #
 # Exit codes: 0 all checks passed · 1 a check failed.
 set -uo pipefail
@@ -712,6 +712,20 @@ expect "notes-guard.py reads the Task tool name too" allow "$(notes_guard Task "
 rm -f "$FX_DIR/context-notes.md"
 expect "notes-guard.py leaves an Agent call without the context line alone" allow "$(notes_guard Agent 'Find the tests')"
 expect "notes-guard.py leaves other tools alone" allow "$(notes_guard Bash "$FX_PROMPT")"
+QUESTION_GUARD="$SCRIPTS/hooks/question-guard.py"
+question_guard() {  # question_guard <header> <question> — prints deny or allow
+  jq -cn --arg h "$1" --arg q "$2" '{tool_name: "AskUserQuestion", tool_input: {questions: [{header: $h, question: $q, options: []}]}}' \
+    | python3 -I "$QUESTION_GUARD" | grep -q '"permissionDecision": "deny"' && echo deny || echo allow
+}
+expect "question-guard.py denies a Review question without the Problem and Change lines" deny \
+  "$(question_guard Review 'How should I continue?')"
+expect "question-guard.py allows a Review question with the Problem and Change lines" allow \
+  "$(question_guard Review 'Problem: the label hides. Change: the PR shows it. How should I continue?')"
+expect "question-guard.py denies a Post question without the findings" deny \
+  "$(question_guard Post 'Post these as comments on the PR?')"
+expect "question-guard.py allows a Post question with the census and the findings" allow \
+  "$(question_guard Post 'Post these as comments on the PR? 1 nitpick: nitpick `Bar.java:17`.')"
+expect "question-guard.py leaves other questions alone" allow "$(question_guard Report 'Write the findings report?')"
 expect "review-plan.sh lists a changed PNG under binary_files" \
   "binary_files: shot.png " "$(grep '^binary_files:' "$WORK/fx-png.log")"
 expect "review-plan.sh counts no source file without a src_glob" \

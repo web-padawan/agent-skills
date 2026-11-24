@@ -122,6 +122,10 @@ The marker expires after 3 hours, and a review of a same-repo PR removes it.
 guard acts only on a prompt of the plan. It denies the launch of a pass while the notes file
 of that prompt does not exist. A pass that starts earlier reviews without the Settled facts.
 
+`scripts/hooks/question-guard.py` runs before every AskUserQuestion call. It denies the
+`Review` question of pr-review without the Problem and Change lines, and the `Post` question
+without the findings that can post. The open dialog can cover the text above it.
+
 ## Update a skill
 
 The plugin runs from a cached copy of one commit. Commit the change, run
