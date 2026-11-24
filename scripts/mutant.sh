@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # mutant.sh — run the tests against one mutant, restore the file, and check the clean tree.
 # The coverage step of self-review (skills/self-review/references/mutation.md) edits one
-# source file, then calls this script. The restore runs on every exit, including a failure.
-# Only a SIGKILL skips it.
+# source file, then calls this script. The Triage step of pr-review (skills/pr-review/SKILL.md)
+# adds one test method to a test file, then calls it to prove that the test fails (KILLED).
+# The restore runs on every exit, including a failure. Only a SIGKILL skips it.
 #
 # Usage:
 #   mutant.sh --head <sha> --file <path> [--log <path>] -- <test command> [args...]

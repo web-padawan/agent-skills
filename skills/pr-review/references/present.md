@@ -17,6 +17,7 @@ triage kept) as a Conventional Comment:
 [A] `path/to/file.ext:42`
 **issue (behavior, blocking):** <the frozen claim>
 <the one-line fix; verification when not obvious>
+Failing test in `<test file>`: <the test method, in a fenced block>
 
 [B] `path/to/other.ext:17`
 **issue (behavior, non-blocking):** <the frozen claim>
@@ -42,6 +43,10 @@ answered by a green check. Names only, no claims.>
 Every finding carries its decoration. Example: a confirmed B that shows wrong behavior is
 `issue (<category>, non-blocking)`, not a bare `issue (<category>)`. The rendering table in
 severity.md gives the full set.
+
+Show each failing test in full, because the reviewer posts it. If Triage gave a `behavior`,
+`fix`, `logic` or `impact` issue no test, give the reason in one line. Example:
+`no test: the head is not checked out`.
 
 The findings file of Triage holds the detail of each dropped finding. Do not list them in
 the chat.
