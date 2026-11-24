@@ -107,7 +107,7 @@ Then the author gets one notification, not one for each finding. Call
 ```bash
 post-review.sh --pr <number> --head <head SHA of the review> \
   --findings <scratchpad>/pr-<number>-post.json \
-  [--summary <scratchpad>/pr-<number>-summary.md] [--body-only | --blocking-only] [--dry-run]
+  [--summary <scratchpad>/pr-<number>-summary.md] [--body-only] [--dry-run]
 ```
 
 ```json
@@ -123,8 +123,7 @@ post-review.sh --pr <number> --head <head SHA of the review> \
 - A `confirms` verdict never posts. A `contradicts` or `not fixed` verdict posts the message
   as a reply into that thread, in the same review. A `dismissed`, `fixed` or `dropped`
   status never posts.
-- `--blocking-only` posts the blocking findings only. `--body-only` puts every finding in
-  the review body. A reply still goes into its thread.
+- `--body-only` puts every finding in the review body. A reply still goes into its thread.
 - Pass the full head SHA that the review read as `--head`. The plan prints it as `head:`.
 - If the PR head moved after the review and a commented file changed, the script refuses.
   Then re-run the review on the new head.
