@@ -28,7 +28,6 @@ existing_comments  the summary of the threads on the PR
 related_prs        the stack parent, the children and other open PRs of the author on the same files, indented, or none
 screening          pr mode: the screening facts, indented
 diff_facts         the diff facts and the fact packs, indented
-workflow           a workflow file changed: the workflow facts, indented
 type               fix, feature, refactor, chore or undetermined
 type_signal        the signal that set the type
 type_conflict      none, or a more demanding lower signal

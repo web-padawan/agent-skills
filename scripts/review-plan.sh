@@ -15,8 +15,7 @@
 #                  [--off <stage>] [--budget <stage>=<n>]
 #                  [--no-context] [--context-out <path>] [--no-write]
 #
-# When a file under .github/workflows/ changed, it prints the `workflow:` facts of
-# scripts/workflow-facts.sh. When no test, code or binary file changed, it drops the tests pass.
+# When no test, code or binary file changed, it drops the tests pass.
 #
 # It prints the diff facts of scripts/diff-facts.sh and its fact packs in both modes.
 # In pr mode it also prints the screening facts of scripts/pr-screen.sh, and `fork:`. A fork
@@ -114,7 +113,7 @@ plan_classify
 # ── Policy: passes, budgets, models, effort (lib/policy.sh) ──────────
 plan_policy
 
-# ── Facts: conventions, diff, screening, workflow, commands (lib/facts.sh)
+# ── Facts: conventions, diff, screening, commands (lib/facts.sh)
 plan_facts
 
 # ── Report paths and earlier findings (lib/store.sh) ─────────────────
@@ -171,10 +170,6 @@ fi
 if [ -n "$DIFF_FACTS" ]; then
   echo "diff_facts:"
   printf '%s\n' "$DIFF_FACTS" | sed 's/^/  /'
-fi
-if [ -n "$WORKFLOW_FACTS" ]; then
-  echo "workflow:"
-  printf '%s\n' "$WORKFLOW_FACTS" | sed 's/^/  /'
 fi
 echo "type: $TYPE"
 echo "type_signal: $TYPE_SIGNAL"

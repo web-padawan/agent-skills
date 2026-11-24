@@ -1,10 +1,9 @@
 # facts.sh: sourced by review-plan.sh. The conventions doc, the owner rules, the diff facts
-# and their fact packs, the screening facts, the workflow facts, the command map and the
-# affected packages.
+# and their fact packs, the screening facts, the command map and the affected packages.
 #
 # Reads: MODE, PR, WANT_CONTEXT, SCRIPT_DIR, PLUGIN_ROOT, BASE, HEAD, CHANGED, SCALE, PROD_FILES
 # Sets: CONVENTIONS, CONVENTIONS_WHOLE_MAX, OWNER, OWNER_RULES, DIFF_FACTS, REACH_MAX,
-#       SCREENING, WORKFLOW_FACTS, LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, PROD_SOURCE,
+#       SCREENING, LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, PROD_SOURCE,
 #       AFFECTED
 
 plan_facts() {
@@ -46,17 +45,6 @@ plan_facts() {
     SCREENING_ARGS=(--pr "$PR" --reach-max "$REACH_MAX" --scale "$SCALE")
     SCREENING=$("$SCRIPT_DIR/pr-screen.sh" "${SCREENING_ARGS[@]}" 2>&1 | sed '/^=== SCREENING ===$/d') \
       || SCREENING="error: pr-screen.sh failed — $(printf '%s' "$SCREENING" | tail -1)"
-  fi
-
-  # ── Workflow facts
-  # A workflow change depends on the actions it calls, the token of each job and who
-  # triggers the runs. None of that is in the diff (retrospective, PR review 6).
-  WORKFLOW_FACTS=""
-  if [ -n "$BASE" ] && [ -n "$HEAD" ] && printf '%s\n' "$CHANGED" | grep -q '^\.github/workflows/'; then
-    WF_ARGS=(--base "$BASE" --head "$HEAD")
-    [ "$WANT_CONTEXT" = true ] || WF_ARGS+=(--no-gh)
-    WORKFLOW_FACTS=$("$SCRIPT_DIR/workflow-facts.sh" "${WF_ARGS[@]}" 2>&1) \
-      || WORKFLOW_FACTS="error: workflow-facts.sh failed — $(printf '%s' "$WORKFLOW_FACTS" | tail -1)"
   fi
 
   # ── Command map

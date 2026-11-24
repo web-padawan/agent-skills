@@ -7,7 +7,7 @@
 #        PR_TITLE, TYPE, TYPE_SIGNAL, TYPE_CONFLICT, SCALE, LINES, TOTAL_LINES, FILES, PROD_FILE_COUNT,
 #        SCALE_REASON, DEEP_ROW, DEEP_SOURCE, EFFORT, BRANCH_COMMITS, PROD_FILES,
 #        TEST_FILES, BINARY_FILES, COMMENT_FILES, CONVENTIONS, CONVENTIONS_WHOLE_MAX,
-#        DIFF_FACTS, WORKFLOW_FACTS, EARLIER_MODE, EARLIER_HEAD, EARLIER_LIST,
+#        DIFF_FACTS, EARLIER_MODE, EARLIER_HEAD, EARLIER_LIST,
 #        CHANGED_SINCE, FINDINGS_FILE, OWNER, OWNER_RULES
 # Sets: CONTEXT_PATH, CONTEXT_NOTE, NOTES_PATH, PROD_DIFF_WHERE, TESTS_DIFF_WHERE,
 #       CONTEXT_LINES, PR_NUMBER, PR_URL, CI_SECTION, COMMENTS_SECTION, RELATED_SECTION
@@ -200,10 +200,6 @@ section_settled_facts() {
   if [ -n "$DIFF_FACTS" ]; then
     echo "- Diff facts (scripts/diff-facts.sh and its fact packs; a \`rule:\` line tells you how to judge the fact lines above it):"
     printf '%s\n' "$DIFF_FACTS" | sed 's/^/    /'
-  fi
-  if [ -n "$WORKFLOW_FACTS" ]; then
-    echo "- Workflow (scripts/workflow-facts.sh; read each \`uses:\` action at its ref before a claim about its inputs or behavior):"
-    printf '%s\n' "$WORKFLOW_FACTS" | sed 's/^/    /'
   fi
   return 0
 }

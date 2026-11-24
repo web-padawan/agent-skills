@@ -11,7 +11,7 @@
 # return through a pipe, restore on SIGTERM, and leave no shell behind. Checks the
 # review-plan.sh report dir and earlier-findings list, the post-review.sh refusals, the
 # pr-refresh.sh usage refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the web
-# component property facts of diff-facts.sh in a Flow fixture, the workflow-facts.sh facts and
+# component property facts of diff-facts.sh in a Flow fixture,
 # the dropped tests pass on a workflow-only change, the plan fixtures (a PNG, two conventions
 # docs, findings files on the same head, a dirty tree), and the bash-guard.py, notes-guard.py
 # and question-guard.py decisions. Also checks that every script in this directory answers
@@ -609,8 +609,8 @@ printf '=== PR_METADATA ===\nerror: failed to resolve the PR\n' > "$RF/gh-error.
 check "pr-refresh.sh exits 1 when gh cannot read the PR" 1 \
   env REFRESH_FIXTURE="$RF/gh-error.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md"
 
-echo "== workflow-facts.sh"
-# A workflow change only: a new job without permissions that calls an action on a branch.
+echo "== dropped tests pass"
+# A workflow change only: no test, code or binary file.
 WF_REPO="$WORK/workflow"
 git init -q -b main "$WF_REPO"
 (
@@ -626,20 +626,10 @@ git init -q -b main "$WF_REPO"
     >> .github/workflows/ci.yml
   git add . && git commit -q -m change
 )
-(cd "$WF_REPO" && "$SCRIPTS/workflow-facts.sh" --base HEAD~1 --head HEAD --no-gh) > "$WORK/workflow.log" 2>&1
-expect "workflow-facts.sh names a branch ref and where to read the action" \
-  "uses: owner/actions/review@feat/x (branch) read: repos/owner/actions/contents/review/action.yml?ref=feat/x" \
-  "$(grep '^uses:' "$WORK/workflow.log")"
-expect "workflow-facts.sh lists a new job without permissions" \
-  "jobs_without_permissions: .github/workflows/ci.yml: dismiss (new)" \
-  "$(grep '^jobs_without_permissions:' "$WORK/workflow.log")"
 (cd "$WF_REPO" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type chore) > "$WORK/workflow-plan.log" 2>&1
 expect "review-plan.sh drops the tests pass for a workflow-only change" \
   "passes_dropped: tests (no test, code or binary file changed)" \
   "$(grep '^passes_dropped:' "$WORK/workflow-plan.log")"
-expect "review-plan.sh prints the workflow facts" \
-  "  jobs_without_permissions: .github/workflows/ci.yml: dismiss (new)" \
-  "$(grep '^  jobs_without_permissions:' "$WORK/workflow-plan.log")"
 
 echo "== bash-guard.py"
 GUARD="$SCRIPTS/hooks/bash-guard.py"
@@ -902,7 +892,7 @@ ROOT="$SCRIPTS/.."
 OWNER_HITS=$(cd "$ROOT" && grep -rn -i -w -E 'vaadin|lumo|aura' \
   agents references skills/pr-review skills/self-review docs/contracts.md \
   scripts/review-plan.sh scripts/diff-facts.sh scripts/get-pr-context.sh scripts/pr-screen.sh \
-  scripts/pr-refresh.sh scripts/post-review.sh scripts/post-comment.sh scripts/workflow-facts.sh \
+  scripts/pr-refresh.sh scripts/post-review.sh scripts/post-comment.sh \
   scripts/lib scripts/stages scripts/sections scripts/hooks $(ls -d scripts/facts 2>/dev/null) 2>/dev/null \
   | grep -v -i -E 'vaadin/[a-z0-9._-]+' || true)
 expect "the review core names an owner only in an owner/repo citation" "" "$OWNER_HITS"
