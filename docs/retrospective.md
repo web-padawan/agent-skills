@@ -44,6 +44,7 @@ link the issue #10723, and none links #10728.
   `S1` and `L1`, each pass names the last ids, and `notes-guard.py` denies a launch while an
   entry has no id (`e6fe611`, `39f316f`).
 
+## 2026-11-23 — PR review 15: flow-components #10728, ChartFunction for chart options
 
 71 files and 2395 production lines, most of them 53 setter pairs in 55 model classes. The PR
 adds `ChartFunction` and sends each function as a separate argument of a declared `ChartJs`
