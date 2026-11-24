@@ -78,8 +78,7 @@ resolve from this file. If a read fails, use
    The context, notes and patch files live in the git directory, so they never appear here.
    Leave every pre-existing untracked file alone.
 5. **Roll call and triage.** Do the roll call and triage per pipeline.md, in that order.
-   Then follow rounds.md. It reads the `round:` line of the plan, and it can send you back
-   to step 2.
+   Then follow rounds.md. It can tell you to repeat steps 2 to 5.
 
    The `earlier_findings:` line of the plan tells you whether an earlier round on this head
    left findings. The context file lists them, so that no pass repeats them.
