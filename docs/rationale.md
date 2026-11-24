@@ -9,9 +9,8 @@ skill loads that file. Read this file before you drop a rule that looks like cer
 - **Named agents lose their reports.** A named agent ends its turn idle and alive. Its final
   text never returns. Hence no `name`, and the delivery clause as a second channel.
 - **A lost report looks exactly like a clean pass.** Hence the roll call before triage.
-  Hence an escalation ladder that changes the mechanism instead of a retry of the broken
-  channel. Hence the `self-run` marker for findings that the orchestrator had to produce
-  itself.
+  Hence a fallback that launches the pass again once and then changes the mechanism. Hence
+  the `self-run` marker for findings that the orchestrator had to produce itself.
 - **Deep review is a budget, not a fan-out.** Lens agents on the same change converged on
   the same findings. One change pass with a block budget keeps the disagreement and drops
   the duplicate spend.
