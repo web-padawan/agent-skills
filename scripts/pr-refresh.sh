@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # pr-refresh.sh — What changed on a PR since its review plan ran: the head, the tree, CI and
-# the comments. pr-review runs it before the gate question and before triage. A push or a
-# bot review during a run otherwise goes unseen until post-review.sh refuses or skips
-# (retrospective, PR review 7).
+# the comments. pr-review runs it before the gate question, before triage and before it shows
+# the review (Present). A push or a bot review during a run otherwise goes unseen until
+# post-review.sh refuses or skips (retrospective, PR review 7).
 #
 # Usage:
-#   pr-refresh.sh --at gate|triage --context <context file of review-plan.sh>
+#   pr-refresh.sh --at gate|triage|present --context <context file of review-plan.sh>
 #
 # The context file gives the PR (`- pr:`), the head that the plan read (`- head:`) and the
 # ids of the comments under `## Already on the PR`. The script reads the current state with
@@ -37,7 +37,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-case "$AT" in gate|triage) ;; *) echo "error: --at gate|triage is required" >&2; exit 2 ;; esac
+case "$AT" in gate|triage|present) ;; *) echo "error: --at gate|triage|present is required" >&2; exit 2 ;; esac
 [ -n "$CONTEXT" ] || { echo "error: --context is required" >&2; exit 2; }
 [ -f "$CONTEXT" ] || { echo "error: no context file at $CONTEXT" >&2; exit 2; }
 command -v gh >/dev/null 2>&1 || { echo "error: gh CLI not found" >&2; exit 1; }
@@ -88,8 +88,10 @@ own_diff_changes() {
 ACTIONS=()
 if [ "$AT" = gate ]; then
   RERUN="the plan read another diff: re-run review-plan.sh before the gate question"
-else
+elif [ "$AT" = triage ]; then
   RERUN="the plan read another diff: verify each finding at ${NEW:0:7}; a finding that this head fixes gets status \`fixed at ${NEW:0:7}\` and never posts"
+else
+  RERUN="the head moved after triage: before you show the review, check each finding on a file of tree_changed at ${NEW:0:7} and move its line to that head; a finding whose code this head fixes or removes gets status \`fixed at ${NEW:0:7}\` and never posts; post with \`--head $NEW\`"
 fi
 echo "=== REFRESH ==="
 echo "head: $NEW"

@@ -576,6 +576,10 @@ expect "pr-refresh.sh asks to re-run the plan at the gate" \
 expect "pr-refresh.sh asks to verify each finding at triage" \
   "action: the plan read another diff: verify each finding at ${RF_CHANGE:0:7}; a finding that this head fixes gets status \`fixed at ${RF_CHANGE:0:7}\` and never posts" \
   "$(grep '^action: the plan' "$RF/triage.log")"
+(cd "$RF/repo" && REFRESH_FIXTURE="$RF/change.txt" "$RF/bin/pr-refresh.sh" --at present --context "$RF/context.md") > "$RF/present.log" 2>&1
+expect "pr-refresh.sh asks to check the findings on the changed files before Present" \
+  "action: the head moved after triage: before you show the review, check each finding on a file of tree_changed at ${RF_CHANGE:0:7} and move its line to that head; a finding whose code this head fixes or removes gets status \`fixed at ${RF_CHANGE:0:7}\` and never posts; post with \`--head $RF_CHANGE\`" \
+  "$(grep '^action: the head moved' "$RF/present.log")"
 printf '=== PR_METADATA ===\nerror: failed to resolve the PR\n' > "$RF/gh-error.txt"
 check "pr-refresh.sh exits 1 when gh cannot read the PR" 1 \
   env REFRESH_FIXTURE="$RF/gh-error.txt" "$RF/bin/pr-refresh.sh" --at gate --context "$RF/context.md"
