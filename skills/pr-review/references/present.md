@@ -64,8 +64,7 @@ problem, which is false. Give `Looks good` only when every finding is `suggestio
 good.
 
 Before the post gate, say which findings are `summary-only` (pipeline.md §5.6).
-`Yes — post all` puts them in the review body. `Only blocking issues` posts them
-only when their decoration is `blocking`.
+`Yes — post all` puts them in the review body.
 
 On a fork PR, or on a `redirect` verdict, put `One summary review` first. The author then gets
 one list of changes, as in *Replies by verdict* of comment-guidelines.md.
@@ -79,14 +78,12 @@ Post these as comments on the PR? 1 issue (1 blocking), 1 nitpick:
 issue (behavior, blocking) `Foo.java:42`; nitpick `Bar.java:17`.
 ```
 
-Ask it as one `AskUserQuestion` with the header `Post`. Drop an option that would post nothing. Example: drop `Only blocking issues` when the only
-blocking finding is `already raised`. The options:
+Ask it as one `AskUserQuestion` with the header `Post`. Drop an option that would post
+nothing. The options:
 
 - `Yes — post all`: one review, with a thread per finding and the summary of
   comment-guidelines.md in its body.
 - `One summary review`: every finding in the review body, blocking first (`--body-only`).
-- `Only blocking issues`: the `issue (…, blocking)` and `chore (blocking)` lines, and nothing
-  else (`--blocking-only`).
 - `No — chat only`.
 
 With each option, the script posts a `contradicts` or `not fixed` finding as a reply into its
