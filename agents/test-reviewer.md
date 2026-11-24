@@ -112,9 +112,7 @@ tests | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>]
   output. It ends as a finding line, or as `lead cleared: <lead, a few words> — <how, one clause>`
   after the findings. A lead that ends in neither counts as not worked, and triage treats it so.
 - **Earlier findings.** The `## Earlier findings` section of the context file may list the
-  findings of an earlier review. On the same head, never repeat them. On a newer head, write
-  one `earlier <id> | <status> | <how, one clause>` line per open `tests` finding, after the
-  lead lines. The section says which status applies.
+  findings of an earlier round on the same head. Never repeat them.
 - **Already on the PR.** The `## Already on the PR` section of the context file may list a
   thread on the same file whose first line makes your claim. When it does, append ` | dup:<id>`
   to the finding line. Report the finding anyway, so that triage records whether the review
