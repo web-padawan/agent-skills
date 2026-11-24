@@ -77,18 +77,20 @@ a Read first, and that Read pulls the inline diff through your context.
 The last section of the skeleton points every pass at the notes file. Always write it, in a
 message of its own before the fan-out message. A Write and an Agent call in one message can
 merge into one invalid call. A section with nothing to add reads `- none`.
-`hooks/notes-guard.py` denies the launch of a pass while the file does not exist. The notes
-file has three sections, in this order:
+`hooks/notes-guard.py` denies the launch of a pass while the file does not exist, or while
+an entry has no id. The notes file has three sections, in this order:
 
-- **Settled facts**: facts that you verified and that a pass would otherwise derive. For
-  example, what a shared helper does, pre-change behavior, a consumer in another repo, the
-  call of a wrapper in another repository. Write one line per claim with its evidence (`file:line`, a SHA,
-  the command). Record only what took you a call or two. The passes carry the budget for the
-  rest. State only the fact. Do not tell the passes which claims to report. Example: write
-  "CI does not run the module with its own config", not "CI does not retire such a claim".
-- **Open leads**: suspicions that you deliberately have not resolved. Every lead names exactly
-  one owner pass (`[owner: change|code|tests]`). Other passes do not investigate a lead that
-  they do not own. Triage inherits the verdict of the owner pass.
+- **Settled facts**: facts that you verified and that a pass would otherwise derive. Start
+  each entry with its id, `S1`, `S2` and so on, in order. For example, what a shared helper
+  does, pre-change behavior, a consumer in another repo, the call of a wrapper in another
+  repository. Write one line per claim with its evidence (`file:line`, a SHA, the command).
+  Record only what took you a call or two. The passes carry the budget for the rest. State
+  only the fact. Do not tell the passes which claims to report. Example: write "CI does not
+  run the module with its own config", not "CI does not retire such a claim".
+- **Open leads**: suspicions that you deliberately have not resolved. Start each entry with
+  its id, `L1`, `L2` and so on, in order. Every lead names exactly one owner pass
+  (`[owner: change|code|tests]`). Other passes do not investigate a lead that they do not
+  own. Triage inherits the verdict of the owner pass.
 - **Orchestrator notes**: only when the skeleton is wrong (a stale PR description, a
   mis-detected type). A notes file written **after** fan-out reaches only re-spawned agents.
   Every pass reads once, at launch.
@@ -152,13 +154,15 @@ finding of its categories (the `## Earlier findings` section of the skeleton):
 earlier <id> | <fixed|partially_fixed|fixed_wrongly|not_fixed|obsolete> | <how, one clause>
 ```
 
-The last line of every pass counts the notes file. The prompt block asks for it:
+The last line of every pass names the last id of each section of the notes file. The prompt
+block asks for it:
 
 ```
-notes: <n> settled, <m> leads
+notes: S<n> L<m>
 ```
 
-`notes: none` means that the pass found no notes file.
+`S0` or `L0` means that the section reads `- none`. `notes: none` means that the pass found
+no notes file.
 
 Categories, by owner pass:
 
@@ -175,8 +179,9 @@ lines are what triage works on.
 Run the roll call of [`delivery.md`](delivery.md) before triage. It holds the format, the
 markers and the escalation ladder.
 
-Then compare the `notes:` line of each pass with the notes file that you wrote. A missing
-line, `notes: none` or a wrong count means that the pass did not read the Settled facts. In
+Then compare the `notes:` line of each pass with the last ids of the notes file that you
+wrote. A missing line, `notes: none` or a wrong id means that the pass did not read the
+Settled facts. In
 triage, drop each finding of that pass that a Settled fact answers.
 
 ## 5 — Triage
