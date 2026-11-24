@@ -272,8 +272,9 @@ Wording rules, because the report and any comment reuse these lines verbatim:
 
 ## 6 — Deliver
 
-The skill owns this step. Nothing in this pipeline edits code, stages, or commits. One
-carve-out exists. The coverage stage of self-review restores every mutant before the next. A
+The skill owns this step. Nothing in this pipeline edits code, stages, or commits. Two
+carve-outs exist. The coverage stage of self-review restores every mutant before the next.
+The failing tests of pr-review run through `mutant.sh`, which restores the test file. A
 run creates these files:
 
 - the context skeleton
