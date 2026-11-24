@@ -25,9 +25,8 @@ C (taste) — 5
 nothing, so nothing can clear an A finding inside a run. The verdict will be *needs more work*
 whatever the user chooses here.
 
-Then ask a single `AskUserQuestion`. It holds Q1, then one question for each stage of the
-`stages:` block of the plan with `ask yes`. The reference file of the stage holds its
-question and its rules.
+Then ask a single `AskUserQuestion`. It holds Q1, then Q2, the coverage question.
+[`mutation.md`](mutation.md) holds Q2 and its rules.
 
 **Q1, header `Report`**: "Write the findings report?"
 - `Yes — write FINDINGS.md` *(Recommended)*. Name the `report:` path from the plan in the
@@ -42,8 +41,8 @@ Rules:
 - A custom answer ("Other") wins over the presets. Do exactly what it names.
 - Drop nothing either way. `No — chat summary only` relocates the findings and does not
   delete them.
-- When there is nothing to report (no findings, or only `accepted` ones), ask the stage
-  questions alone. When no stage asks, ask Q1 alone.
+- When there is nothing to report (no findings, or only `accepted` ones), ask Q2 alone.
+  When mutation.md says not to ask Q2, ask Q1 alone.
 
 ## End-state checks (step 8)
 
@@ -136,7 +135,7 @@ Fix the A findings, then re-run. Coverage gaps: write the test that each survivo
 - Distinguish "not run" from "ran and lost". Tag `self-run` findings `[self-run]` after the
   status. Head that category with `> pass self-run — no independent agent review`. A
   `missing` category reads `- none delivered — pass not covered`, never `- none`.
-- On a **fix**, when the plan lists no `coverage` stage, put one line under **Tests**:
+- On a **fix**, when the plan prints `mutants: 0`, put one line under **Tests**:
   `regression test: not checked — revert the fix by hand and run its tests to confirm one`.
 - Put the coverage stats line under **Tests**:
   `N mutants, K killed, S survived, skipped: <hunks or none>`. On a **fix**, prefix it with
