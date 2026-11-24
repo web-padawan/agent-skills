@@ -15,22 +15,34 @@ link the issue #10723, and none links #10728.
   API messages of the two `AskUserQuestion` calls held only a thinking block and the tool
   call. In the 7 earlier questions, 2 to 4 KB of text came first in the same message. The run
   followed a `/exit` and a resume. The reviewer answered the Gate blind and declined to post
-  findings that they had not seen. The open dialog can also cover the text above it. → open.
+  findings that they had not seen. The open dialog can also cover the text above it.
+  → the Gate question starts with the Problem and Change lines, and the Post question names
+  the census and each finding. `question-guard.py` denies a `Review` or `Post` question
+  without them (`2420e77`, `8c4ee0e`, `b205d9e`).
 - On #10796, triage kept a blocking finding that asked to make `clearFormatterFunction()`
   package-private. On #10728, the reviewer had asked for `protected` hooks on
   `AbstractDataLabels.java:201`, and the author fixed it in 5921a2ed79. The finding reversed
   an accepted decision. Triage also kept a test gap that #10797 closes with
   `ChartFunctionSettersTest`. The plan printed `existing_comments: none` for #10796, because
   the threads were on other PRs. Nothing in the pipeline looks at the base branch, the PRs
-  stacked on top, or an open PR of the same author with the same files. → open.
+  stacked on top, or an open PR of the same author with the same files. → `related-prs.sh`
+  finds the stack parent, the children and other open PRs of the author on the same files.
+  The plan prints them as `related_prs:`, the context file quotes their threads, and triage
+  drops a finding that reverses an accepted decision there or a test gap that a child closes
+  (`5eed8fe`, `130707a`, `216bc07`, `a9f93a8`). On #10796 it lists #10795, #10797 with
+  `ChartFunctionSettersTest`, and the `protected` thread of #10728.
 - On #10795, the author force-pushed after triage. The review was presented for the old head,
   with a nitpick on an `AlertJs` change that the new head removed. `post-review.sh --dry-run`
   refused with "the PR head moved from 5367352 to 4f5a8a1". The refusal worked, but only after
-  the Present step. `pr-refresh.sh` runs only `--at gate|triage`. → open.
+  the Present step. `pr-refresh.sh` runs only `--at gate|triage`. → `pr-refresh.sh --at
+  present` runs before the review is shown, and asks to re-check each finding on a changed
+  file (`1ae9d92`, `d55b555`).
 - Three passes miscounted the notes file. #10795 tests: `notes: 9 settled, 3 leads` for a
   file with 5 and 3. #10796 code: 6 settled of 7. #10798 tests: 6 settled of 8. The roll call
   of pipeline.md §4 reads a wrong count as "did not read the Settled facts". So triage cannot
-  tell a pass that skipped the file from a pass that counted badly. → open.
+  tell a pass that skipped the file from a pass that counted badly. → the entries carry ids
+  `S1` and `L1`, each pass names the last ids, and `notes-guard.py` denies a launch while an
+  entry has no id (`e6fe611`, `39f316f`).
 
 
 71 files and 2395 production lines, most of them 53 setter pairs in 55 model classes. The PR
