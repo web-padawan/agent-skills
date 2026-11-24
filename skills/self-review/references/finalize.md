@@ -104,11 +104,6 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 ## Not deep-reviewed
 - <file>:<line-range> — <reason it ranked below the line, or `covered by <block name>`>
 
-## Earlier findings   <!-- omit when the plan printed earlier_findings: none -->
-| Id | Status | Finding |
-| --- | --- | --- |
-| F3 | fixed | packages/foo/src/foo.js:42 — <claim> |
-
 ## Follow-ups
 - [B] F13 <file>:<line> — **<label> (<category>, non-blocking):** <one-line claim>
 
@@ -156,14 +151,12 @@ Fix the A findings, then re-run. Coverage gaps: write the test that each survivo
   are not follow-ups. They belong in `## Next steps`.
 - On a **fix**, a finding that the change reverses a behavior that an existing test asserts
   on purpose leads the report. That finding questions the diff, not a line of it.
-- **Earlier findings** lists every finding of the findings file that the plan read, with
-  the status that triage applied. A finding that stays open also appears under its category.
 - Never commit the report. It lives in the git directory, at the path that the plan named.
 
 ## Findings file — at the plan's `findings_file:` path
 
-The next run of this skill starts from this file. It is also the record of the review: the
-head that the run reviewed, and its verdict. The plan script reads it with `jq`. Write it
+A further round on the same head starts from this file. It is also the record of the review:
+the head that the run reviewed, and its verdict. The plan script reads it with `jq`. Write it
 with Write as one JSON object:
 
 ```json
@@ -204,8 +197,8 @@ with Write as one JSON object:
 - `verdict` is the verdict of the run, per the verdict rubric: `ready for PR` or
   `needs more work`. Omit it when you write the file between rounds. A file without
   `verdict` is the record of a run that did not finish.
-- Keep every finding of the earlier file, with its new status. Give a new finding the next
-  free id. Never reuse an id.
+- Keep every finding of an earlier file of the same head. Give a new finding the next free
+  id. Never reuse an id.
 - When triage merges a finding into another one (pipeline.md §5.2), add it to the `merged`
   list of the kept finding. Give each entry its `file`, `line` and `claim`. The plan lists
   the entries with the kept finding, so a later round does not report them again. Example:
@@ -214,17 +207,9 @@ with Write as one JSON object:
 - `status` is one of these values:
   - `open`: real and not fixed. Every new `confirmed` finding starts here.
   - `accepted`: needs no action, a false positive or a deliberate choice.
-  - `fixed`, `partially_fixed`, `fixed_wrongly`, `not_fixed`, `obsolete`: from an `earlier`
-    line of a pass.
-  - `disputed`: the author says that the code is correct. No later run reports it again.
+  - `disputed`: the author says that the code is correct. No later round on this head
+    reports it again.
 - When the author disputes a finding at the gate, by id or by claim, set it to `disputed`.
-  The author can also edit the file by hand between runs.
-
-## Earlier findings and the verdict
-
-An earlier A finding with status `open`, `not_fixed`, `partially_fixed` or `fixed_wrongly`
-counts as a confirmed A. A `not checked` earlier finding keeps its status, and the report
-says that no pass checked it.
 
 ## Verdict rubric
 
