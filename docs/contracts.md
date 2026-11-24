@@ -35,7 +35,9 @@ scale_counts       production lines, all lines, files, production files
 scale_reason       size, or the risk override
 deep               the deep budget of the change pass and its source
 effort_per_pass    the tool call ceiling of each pass
-stages             the stages of the run, indented, or none
+round              self mode: the round of this run and the round budget, as <k> of <n>
+mutants            self mode: the mutant budget of the coverage check
+mutant_pool        self mode, mutants above 0: the source lines that a mutant can change
 earlier_findings   none, ignored, unreadable or same
 findings_file      self mode: the path of the findings file
 conventions_doc    the conventions docs in lookup order, comma-separated, or none
@@ -61,43 +63,6 @@ prod_source        the production files under src_glob, as <n> of <m>, or unknow
 affected_packages  the packages/* directories that the diff touches
 risk_check_manual  a test file changed: the check that the script cannot do
 ```
-
-## Stage
-
-A stage is a step of a skill outside the fan-out, for example a further round or a
-coverage check. A stage adds one entry to the registry and the profiles of
-`scripts/lib/policy.sh`, and it adds files. It changes no core line.
-
-- **Registry**: `stage_info <name>` prints the slot, the ask flag and the reference file of the stage.
-- **Profile**: `plan_policy` adds `<name>=<budget>` to `STAGE_LIST` for each stage of the mode and the change type.
-- **Plan**: the plan prints `stages: none`, or `stages:` and one indented line per stage.
-- **Stage script**: the plan runs `scripts/stages/<name>.sh` when it exists, and indents its output under the line of the stage.
-- **Flags**: `--off <stage>` removes a stage from the run. `--budget <stage>=<n>` sets its budget. An unknown stage or a bad budget exits 1.
-- **Slots**: self-review has the slots `after-triage` and `after-gate`. At each slot, the skill runs every listed stage of that slot, per its reference file.
-- **Gate**: the gate asks one question for each listed stage with `ask yes`. The reference file of the stage holds the question.
-- **Carve-out**: the reference file of a stage can permit an edit of a tracked file. `SKILL.md` names each such stage in its rules.
-- **pr-review**: it has no slot. A stage for pr mode needs a slot in that `SKILL.md` first.
-
-Stage keys. A stage script prints them under the line of its stage, indented by four spaces:
-
-```
-round              rounds: the round of this run and the budget, as <k> of <n>
-mutants            coverage: the mutant budget
-mutant_pool        coverage, budget above 0: the source lines that a mutant can change
-error              a stage script that failed
-```
-
-The line of a stage:
-
-```
-  <name>: slot <slot>, budget <n>, ask <yes|no>, ref <reference file>
-```
-
-A stage script runs from the repository root:
-
-- It takes `--base <sha>`, `--head <sha>` and `--budget <n>`.
-- The env holds `FACTS_PROD` and `FACTS_TESTS`, one path per line, and `STAGE_FINDINGS`, the path of the findings file of self mode. It is empty when the plan did not read that file: with `--fresh`, or when the file is unreadable.
-- It prints `<key>: <value>` lines. A failure prints `error: stages/<name>.sh failed` and the last line of its output.
 
 ## Fact provider
 

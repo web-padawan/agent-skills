@@ -5,14 +5,14 @@
 #
 # The policy it resolves lives in scripts/lib/policy.sh, so no skill restates it.
 # The modules in scripts/lib/ run in this order: anchors, lanes, classify, policy, facts,
-# store, stages (in policy.sh), context, prompts. Each one defines plan_<module>, and its
+# store, context, prompts. Each one defines plan_<module>, and its
 # header names the variables that it reads and sets. docs/contracts.md lists the plan keys.
 #
 # Usage:
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
 #                  [--type fix|feature|refactor|chore]
 #                  [--fresh] [--report-dir <path>]
-#                  [--off <stage>] [--budget <stage>=<n>]
+#                  [--rounds <n>] [--no-coverage]
 #                  [--no-context] [--context-out <path>] [--no-write]
 #
 # When no test, code or binary file changed, it drops the tests pass.
@@ -26,8 +26,8 @@
 #
 # In self mode it also reads the findings file of the last review of the branch
 # (`<report-dir>/<branch>-findings.json`): the same head lists the earlier findings so that
-# no pass repeats them. A file of another head is ignored. `--fresh` ignores the file. The stage
-# `rounds` (scripts/stages/rounds.sh) counts the round.
+# no pass repeats them. A file of another head is ignored. `--fresh` ignores the file.
+# `--rounds <n>` sets the round budget, and `--no-coverage` sets the mutant budget to 0.
 #
 # Prints get-pr-context.sh's PR_METADATA, CI_STATUS and EXISTING_COMMENTS sections (skip
 # with --no-context; the other sections are restated by the plan) then === PLAN ===, and
@@ -50,8 +50,8 @@ WANT_CONTEXT=true
 CONTEXT_OUT=""
 NO_WRITE=false
 FRESH=false
-OFF_STAGES=""
-BUDGET_FLAGS=""
+ROUNDS_FLAG=""
+NO_COVERAGE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -63,8 +63,8 @@ while [[ $# -gt 0 ]]; do
     --no-context) WANT_CONTEXT=false; shift ;;
     --context-out) CONTEXT_OUT="${2:?--context-out requires a value}"; shift 2 ;;
     --no-write) NO_WRITE=true; shift ;;
-    --off) OFF_STAGES="$OFF_STAGES ${2:?--off requires a stage}"; shift 2 ;;
-    --budget) BUDGET_FLAGS="$BUDGET_FLAGS ${2:?--budget requires <stage>=<n>}"; shift 2 ;;
+    --rounds) ROUNDS_FLAG="${2:?--rounds requires a number}"; shift 2 ;;
+    --no-coverage) NO_COVERAGE=true; shift ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
@@ -72,6 +72,7 @@ done
 
 case "$MODE" in self|pr) ;; *) echo "error: --mode must be self or pr" >&2; exit 1 ;; esac
 case "$TYPE_FLAG" in ""|fix|feature|refactor|chore) ;; *) echo "error: --type must be fix, feature, refactor or chore" >&2; exit 1 ;; esac
+[[ "$ROUNDS_FLAG" =~ ^[0-9]*$ ]] || { echo "error: --rounds takes a number, got $ROUNDS_FLAG" >&2; exit 1; }
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
@@ -93,7 +94,6 @@ PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")
 . "$SCRIPT_DIR/lib/context.sh"
 # shellcheck source=lib/prompts.sh
 . "$SCRIPT_DIR/lib/prompts.sh"
-stage_check_flags
 # The plugin name prefixes each agent of lib/policy.sh and names the fork marker directory.
 PLUGIN_NAME=$(jq -r '.name // empty' "$PLUGIN_ROOT/.claude-plugin/plugin.json" 2>/dev/null || true)
 [ -n "$PLUGIN_NAME" ] || { echo "error: no plugin name in $PLUGIN_ROOT/.claude-plugin/plugin.json" >&2; exit 1; }
@@ -118,9 +118,6 @@ plan_facts
 
 # ── Report paths and earlier findings (lib/store.sh) ─────────────────
 plan_store
-plan_stages
-
-
 
 # ── Context file (lib/context.sh) ────────────────────────────────────
 plan_context
@@ -178,7 +175,17 @@ echo "scale_counts: $LINES production lines ($TOTAL_LINES with tests), $FILES fi
 echo "scale_reason: $SCALE_REASON"
 echo "deep: $DEEP_ROW (source: $DEEP_SOURCE)"
 echo "effort_per_pass: ~$EFFORT tool calls (scale $SCALE)"
-if [ -n "$STAGE_LIST" ]; then echo "stages:"; printf '%s' "$STAGES_OUT"; else echo "stages: none"; fi
+if [ "$MODE" = self ] && [ "$GUARD" = ok ]; then
+  echo "round: $ROUND of $ROUNDS"
+  echo "mutants: $MUTANTS$([ "$NO_COVERAGE" = true ] && echo ' (--no-coverage)')"
+  if [ "$MUTANTS" -gt 0 ]; then
+    if [ "$MUTANT_POOL" -eq 0 ]; then
+      echo "mutant_pool: 0 — no non-styling source lines in the prod diff; the coverage check has nothing to mutate"
+    else
+      echo "mutant_pool: ~$MUTANT_POOL non-styling source lines"
+    fi
+  fi
+fi
 case "$EARLIER_MODE" in
   same)
     if [ "$EARLIER_COUNT" -eq 0 ]; then echo "earlier_findings: same head — the earlier review of this head had no finding"

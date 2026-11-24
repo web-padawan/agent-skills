@@ -53,7 +53,7 @@ Restart the session so that the skills load.
 - `references/severity.md` defines the A / B / C tiers and the Conventional Comments labels.
 
 `docs/contracts.md` lists the plan keys and the contracts of the extension points: fact
-packs, owner directories, stages, the findings file and the prompt block. The rest of `docs/` holds the
+packs, owner directories, the findings file and the prompt block. The rest of `docs/` holds the
 design history. No skill loads it.
 
 The review core works on a repository of any owner. It supports JavaScript and TypeScript

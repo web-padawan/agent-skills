@@ -72,7 +72,7 @@ mkdir -p "$WORK"
 echo "work: $WORK"
 
 echo "== help"
-for f in "$SCRIPTS"/*.sh "$SCRIPTS"/facts/*.sh "$SCRIPTS"/stages/*.sh "$SCRIPTS"/../owners/*/facts/*.sh; do
+for f in "$SCRIPTS"/*.sh "$SCRIPTS"/facts/*.sh "$SCRIPTS"/../owners/*/facts/*.sh; do
   [ -e "$f" ] || continue
   case "$(basename "$f")" in smoke.sh) continue ;; esac
   check "$(basename "$f") --help" 0 "$f" --help
@@ -779,11 +779,11 @@ fx_findings() {  # fx_findings <extra jq fields> — a findings file of the fixt
 fx_findings ', verdict: "clean"'
 fx_plan fx-verdict.log --type fix
 expect "review-plan.sh starts a new run at round 1 on a head with a verdict" \
-  "    round: 1 of 1" "$(grep '^    round:' "$WORK/fx-verdict.log")"
+  "round: 1 of 1" "$(grep '^round:' "$WORK/fx-verdict.log")"
 fx_findings ''
 fx_plan fx-noverdict.log --type fix
 expect "review-plan.sh continues the run on a head without a verdict" \
-  "    round: 2 of 1" "$(grep '^    round:' "$WORK/fx-noverdict.log")"
+  "round: 2 of 1" "$(grep '^round:' "$WORK/fx-noverdict.log")"
 jq -n '{branch: "topic", head: "1111111111111111111111111111111111111111", round: 1, findings: []}' > "$FX_DIR/topic-findings.json"
 fx_plan fx-otherhead.log --type fix
 expect "review-plan.sh ignores a findings file of another head" \
@@ -834,16 +834,11 @@ for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
     | sort -u | comm -23 - <(printf '%s\n' "$CONTRACT_KEYS"))
   expect "docs/contracts.md lists every plan key of $log" "" "$unknown"
 done
-# Every key that a stage script prints is in the stage key list of docs/contracts.md.
-STAGE_KEYS=$(awk '/^Stage keys\./ { s = 1; next } s && /^```/ { c = !c; if (!c) exit; next } s && c && NF { print $1 }' \
-  "$SCRIPTS/../docs/contracts.md" | sort -u)
-unknown=$(cat "$WORK"/fx-*.log | awk '/^stages:$/ { f = 1; next } f && /^    [a-z_]+:/ { k = $1; sub(/:$/, "", k); print k; next } f && !/^  / { f = 0 }' \
-  | sort -u | comm -23 - <(printf '%s\n' "$STAGE_KEYS"))
-expect "docs/contracts.md lists every stage key of the fixture plans" "" "$unknown"
-check "review-plan.sh refuses --off with an unknown stage" 1 \
-  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --off nosuch"
-check "review-plan.sh refuses --budget without a number" 1 \
-  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --budget rounds=x"
+check "review-plan.sh refuses --rounds without a number" 1 \
+  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --rounds x"
+expect "review-plan.sh sets the mutant budget to 0 with --no-coverage" \
+  "mutants: 0 (--no-coverage)" \
+  "$(cd "$DC" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type feature --no-coverage 2>/dev/null | grep '^mutants:')"
 # The provider contract and the owner gate: a pack of the owner directory runs with the
 # contract flags and env, and the same pack under another owner does not run.
 mkdir -p "$WORK/config/fixture-owner/facts" "$WORK/config/other-owner/facts"
@@ -893,7 +888,7 @@ OWNER_HITS=$(cd "$ROOT" && grep -rn -i -w -E 'vaadin|lumo|aura' \
   agents references skills/pr-review skills/self-review docs/contracts.md \
   scripts/review-plan.sh scripts/diff-facts.sh scripts/get-pr-context.sh scripts/pr-screen.sh \
   scripts/pr-refresh.sh scripts/post-review.sh scripts/post-comment.sh \
-  scripts/lib scripts/stages scripts/sections scripts/hooks $(ls -d scripts/facts 2>/dev/null) 2>/dev/null \
+  scripts/lib scripts/sections scripts/hooks $(ls -d scripts/facts 2>/dev/null) 2>/dev/null \
   | grep -v -i -E 'vaadin/[a-z0-9._-]+' || true)
 expect "the review core names an owner only in an owner/repo citation" "" "$OWNER_HITS"
 

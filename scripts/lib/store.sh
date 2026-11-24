@@ -3,7 +3,7 @@
 #
 # Reads: MODE, BRANCH, HEAD, FRESH, REPORT_DIR
 # Sets: SLUG, REPORT_DIR, FINDINGS_FILE, EARLIER_MODE, EARLIER_HEAD, EARLIER_COUNT,
-#       EARLIER_LIST
+#       EARLIER_LIST, ROUND
 
 plan_store() {
   # ── Report paths
@@ -27,6 +27,10 @@ plan_store() {
   # must not repeat. A file of another head is ignored, and the review starts new.
   FINDINGS_FILE=""; EARLIER_MODE="none"; EARLIER_HEAD=""; EARLIER_COUNT=0
   EARLIER_LIST=""
+  # A round is one fan-out of the passes. A file of the same head without `verdict` is a run
+  # that did not finish, so this round is its `round` plus 1. A file with `verdict`, a file
+  # of another head, or no file starts a new run at round 1.
+  ROUND=1
   if [ "$MODE" = "self" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] && [ -n "$HEAD" ]; then
     FINDINGS_FILE="$REPORT_DIR/$SLUG-findings.json"
     if [ ! -f "$FINDINGS_FILE" ]; then
@@ -47,6 +51,12 @@ plan_store() {
         return 0
       fi
       EARLIER_MODE="same"
+      if jq -e 'has("verdict") | not' "$FINDINGS_FILE" >/dev/null 2>&1; then
+        local last
+        last=$(jq -r '.round // 1' "$FINDINGS_FILE")
+        [[ "$last" =~ ^[0-9]+$ ]] || last=1
+        ROUND=$((last + 1))
+      fi
       EARLIER_COUNT=$(jq '.findings | length' "$FINDINGS_FILE")
       # A finding that triage merged into another one rides on the kept line, so a
       # further round sees it and does not report it again.

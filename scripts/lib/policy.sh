@@ -4,9 +4,9 @@
 # restates it. Why the numbers look like this: docs/rationale.md.
 #
 # Reads: MODE, TYPE, SCALE, PLUGIN_NAME, BASE, HEAD, CHANGED, PROD_FILES, TEST_FILES,
-#        BINARY_FILES, CODE_RE
+#        BINARY_FILES, CODE_RE, ROUNDS_FLAG, NO_COVERAGE
 # Sets: LOOKUP_TYPE, PASS_TOKENS, PASSES_DROPPED, DEEP_ROW, DEEP_SOURCE, EFFORT,
-#       STAGE_LIST
+#       ROUNDS, MUTANTS, MUTANT_POOL
 
 # The pass registry: the id, the agent and the lane that the pass reads.
 # The lane is the whole diff input of the pass. `prod` is the prepared production patch.
@@ -57,7 +57,6 @@ policy_row() {  # policy_row <mode> <type>
 
 plan_policy() {
   LOOKUP_TYPE="$TYPE"
-  STAGE_LIST=""
 
   local row rounds="" mutants=0
   row=$(policy_row "$MODE" "$LOOKUP_TYPE")
@@ -80,20 +79,22 @@ plan_policy() {
     PASSES_DROPPED="tests (no test, code or binary file changed)"
   fi
 
-  # Stage rounds, self mode only: the row's number, capped by the scale tier. A small diff
-  # gives a pass little to miss, so only the full tier repeats the fan-out. The skill maps
-  # --rounds N to --budget rounds=N.
+  # Rounds, self mode only: the row's number, capped by the scale tier. A small diff gives
+  # a pass little to miss, so only the full tier repeats the fan-out. --rounds N sets it.
   case "$rounds" in ''|*[!0-9]*) rounds=1 ;; esac
   case "$SCALE" in trivial|lite) [ "$rounds" -gt 1 ] && rounds=1 ;; esac
-  [ "$MODE" = self ] && STAGE_LIST="${STAGE_LIST:+$STAGE_LIST }rounds=$rounds"
+  ROUNDS="${ROUNDS_FLAG:-$rounds}"
 
-  # Stage coverage, self mode only: the mutant budget of the row, capped by the scale tier.
-  # The skill maps --no-coverage to --off coverage.
+  # Coverage check, self mode only: the mutant budget of the row, capped by the scale tier.
+  # --no-coverage sets it to 0.
   local cap
   case "$mutants" in ''|*[!0-9]*) mutants=0 ;; esac
   case "$SCALE" in trivial) cap=3 ;; lite) cap=8 ;; *) cap=999 ;; esac
   [ "$mutants" -gt "$cap" ] && mutants="$cap"
-  [ "$MODE" = self ] && STAGE_LIST="${STAGE_LIST:+$STAGE_LIST }coverage=$mutants"
+  [ "$NO_COVERAGE" = true ] && mutants=0
+  MUTANTS="$mutants"
+  MUTANT_POOL=0
+  [ "$MODE" = self ] && [ "$MUTANTS" -gt 0 ] && MUTANT_POOL=$(mutant_pool)
 
   # Effective deep-block budget for the change pass: the row's number, capped by the
   # scale tier. The budget is a ceiling. The change pass selects the significant changes.
@@ -115,61 +116,27 @@ plan_policy() {
   return 0
 }
 
-# ── Stages
-# A stage is a step of a skill outside the fan-out, with a budget that the plan sets. The
-# registry names the slot of the skill where the stage runs, whether the gate asks a
-# question for it, and the reference file that holds its steps. plan_policy lists the
-# stages of a profile in STAGE_LIST as <name>=<budget> words. docs/contracts.md holds the
-# stage contract.
-stage_info() {  # stage_info <name> — the slot, the ask flag and the reference, tab-separated
-  case "$1" in
-    rounds) printf 'after-triage\tno\tskills/self-review/references/rounds.md\n' ;;
-    coverage) printf 'after-gate\tyes\tskills/self-review/references/mutation.md\n' ;;
-  esac
-}
-
-stage_check_flags() {  # stage_check_flags — exit 1 on an unknown stage or a bad budget
-  local s pair
-  for s in $OFF_STAGES; do
-    [ -n "$(stage_info "$s")" ] || { echo "error: --off: unknown stage $s" >&2; exit 1; }
-  done
-  for pair in $BUDGET_FLAGS; do
-    [[ "$pair" =~ ^[a-z][a-z0-9-]*=[0-9]+$ ]] || { echo "error: --budget takes <stage>=<number>, got $pair" >&2; exit 1; }
-    [ -n "$(stage_info "${pair%%=*}")" ] || { echo "error: --budget: unknown stage ${pair%%=*}" >&2; exit 1; }
-  done
-  return 0
-}
-
-# Reads: STAGE_LIST, OFF_STAGES, BUDGET_FLAGS, SCRIPT_DIR, BASE, HEAD, PROD_FILES,
-#        TEST_FILES, FINDINGS_FILE, EARLIER_MODE, GUARD
-# Sets: STAGE_LIST, STAGES_OUT
-plan_stages() {
-  local entry name budget pair kept="" slot ask ref out
-  for entry in $STAGE_LIST; do
-    name="${entry%%=*}"; budget="${entry#*=}"
-    case " $OFF_STAGES " in *" $name "*) continue ;; esac
-    for pair in $BUDGET_FLAGS; do [ "${pair%%=*}" = "$name" ] && budget="${pair#*=}"; done
-    kept="$kept $name=$budget"
-  done
-  STAGE_LIST="${kept# }"
-  STAGES_OUT=""
-  # The findings file only when the plan read it: not with --fresh, not when unreadable.
-  local findings=""
-  case "$EARLIER_MODE" in same) findings="$FINDINGS_FILE" ;; esac
-  for entry in $STAGE_LIST; do
-    name="${entry%%=*}"; budget="${entry#*=}"
-    IFS=$'\t' read -r slot ask ref <<< "$(stage_info "$name")"
-    STAGES_OUT="${STAGES_OUT}  $name: slot $slot, budget $budget, ask $ask, ref $ref
-"
-    # A refused or unanchored run has no diff to give a stage script.
-    [ "$GUARD" = ok ] && [ -n "$BASE" ] && [ -n "$HEAD" ] || continue
-    [ -x "$SCRIPT_DIR/stages/$name.sh" ] || continue
-    # shellcheck disable=SC2086
-    out=$(FACTS_PROD=$(printf '%s\n' $PROD_FILES | sed '/^$/d') FACTS_TESTS=$(printf '%s\n' $TEST_FILES | sed '/^$/d') \
-      STAGE_FINDINGS="$findings" "$SCRIPT_DIR/stages/$name.sh" --base "$BASE" --head "$HEAD" --budget "$budget" 2>&1) \
-      || out="error: stages/$name.sh failed — $(printf '%s' "$out" | tail -1)"
-    [ -n "$out" ] && STAGES_OUT="${STAGES_OUT}$(printf '%s\n' "$out" | sed 's/^/    /')
-"
-  done
-  return 0
+# The mutant candidate pool, advisory and not a budget: the non-styling source lines that
+# the coverage check can mutate (mutation.md skips styling). A styling-only diff reports 0,
+# so the check does not look for work that does not exist.
+mutant_pool() {
+  [ -n "$BASE" ] && [ -n "$PROD_FILES" ] || { echo 0; return 0; }
+  # shellcheck disable=SC2086
+  git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | awk '
+    /^\+\+\+ b\// { file = substr($0, 7); next }
+    /^\+/ {
+      if (file !~ /\.[cm]?[jt]sx?$/) next          # source code only
+      if (file ~ /(^|\/)styles\// || file ~ /-styles\.[cm]?[jt]s$/) next   # styling by construction
+      body = substr($0, 2)
+      sub(/^[ \t]+/, "", body)
+      if (body == "") next
+      if (body ~ /^(import|export[ \t]+\{|export[ \t]+\*)/) next
+      if (body ~ /^(\/\/|\/\*|\*|\*\/)/) next
+      if (body ~ /^[)}\]`;,]+$/) next
+      if (body ~ /^-{0,2}[_a-z][-_a-z0-9]*:[ \t]/) next   # CSS declaration, custom properties included
+      if (body ~ /^[.:&#@[$]/ || body ~ /^[a-z-]+[ \t]*\{$/) next   # CSS selector, at-rule, interpolated selector
+      if (body ~ /^(var|color-mix|calc|light-dark|oklch|linear-gradient)\(/) next   # wrapped CSS value
+      n++
+    }
+    END { print n + 0 }' || echo 0
 }
