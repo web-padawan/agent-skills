@@ -7,7 +7,7 @@ what is different about that skill. This file is the shared part.
 1 plan      run scripts/review-plan.sh — anchors, type, scale, budgets, pass list; writes the context skeleton
 2 context   write the notes file in its own message — Settled facts and Open leads, nothing else
 3 fan out   paste the plan's prompts, one agent each; delivery.md decides whether findings arrive
-4 roll call delivery.md's roll call, then escalate anything that delivered nothing
+4 roll call delivery.md's roll call, then the fallback for a pass that delivered nothing
 5 triage    verify · dedup · tier · one-line suggested fix · label · freeze
 6 deliver   the skill's own output: chat report, findings file, or PR comments
 ```
@@ -15,7 +15,7 @@ what is different about that skill. This file is the shared part.
 | Reference | Covers |
 | --- | --- |
 | [`severity.md`](severity.md) | A / B / C, the tie-breaker, type-aware tiering, the rendering table |
-| [`delivery.md`](delivery.md) | Launch rules, the delivery clause, the roll call, the escalation ladder |
+| [`delivery.md`](delivery.md) | Launch rules, the delivery clause, the roll call, the fallback |
 
 ## 1 — Plan
 
@@ -109,7 +109,7 @@ Launch each pass with the `subagent_type` and `model` that its header names.
 
 Add nothing to the prompt. Questions, categories, output contracts and verification rules
 live in the agent definitions (`agents/<name>.md`). Read [`delivery.md`](delivery.md) before
-the first launch. It holds the two launch rules that the block cannot enforce.
+the first launch. It holds the launch rules that the block cannot enforce.
 
 **Fallback**, only when the plugin agents are unavailable: use `general-purpose` and paste
 the body of the corresponding `agents/<name>.md` into the prompt.
@@ -155,7 +155,7 @@ lines are what triage works on.
 ## 4 — Roll call
 
 Run the roll call of [`delivery.md`](delivery.md) before triage. It holds the format, the
-markers and the escalation ladder.
+markers and the fallback for a pass that delivered nothing.
 
 In triage, drop each finding that a Settled fact answers.
 
