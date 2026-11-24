@@ -13,6 +13,8 @@ Learn what the PR is for and why, fast. The goal is to save review time, so be c
   `commits`. Do not read the diff in this step.
 - Exception: if the plan says `prod_source: 0 of <n>` or `unknown`, and `diff_prod: inline`,
   read the diff. A workflow, config or tooling change has no other explanation.
+- If the plan lists `related_prs:`, name each related PR and its relation under **Scope**.
+  The context file quotes their review threads, so do not read them again.
 - If the plan has a `workflow:` block, read each `uses:` action at its ref. The diff calls
   that code, and the code decides what the workflow does.
 
