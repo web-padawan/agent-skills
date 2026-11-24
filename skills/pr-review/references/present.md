@@ -70,8 +70,16 @@ only when their decoration is `blocking`.
 On a fork PR, or on a `redirect` verdict, put `One summary review` first. The author then gets
 one list of changes, as in *Replies by verdict* of comment-guidelines.md.
 
-Then ask one `AskUserQuestion` with the header `Post`: "Post these as comments on the PR?"
-Drop an option that would post nothing. Example: drop `Only blocking issues` when the only
+Send the review as text in a message of its own. Ask the post question in the next message.
+The open question dialog can cover the text above it, and a message can lose its text. So the
+question text carries the census and the label and anchor of each finding that can post:
+
+```
+Post these as comments on the PR? 1 issue (1 blocking), 1 nitpick:
+issue (behavior, blocking) `Foo.java:42`; nitpick `Bar.java:17`.
+```
+
+Ask it as one `AskUserQuestion` with the header `Post`. Drop an option that would post nothing. Example: drop `Only blocking issues` when the only
 blocking finding is `already raised`. The options:
 
 - `Yes — post all`: one review, with a thread per finding and the summary of
