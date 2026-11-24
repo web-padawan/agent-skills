@@ -1,7 +1,9 @@
 # Present findings and gate
 
 Read [`../../../references/comment-guidelines.md`](../../../references/comment-guidelines.md)
-first. Then give the review below. Render each finding of the frozen list (the findings that
+first. Then run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --at present --context <context file>`
+and act on each `action:` line. An author can push between triage and this step. Then give
+the review below. Render each finding of the frozen list (the findings that
 triage kept) as a Conventional Comment:
 
 ```
