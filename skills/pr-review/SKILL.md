@@ -63,9 +63,6 @@ or `pr_author: <login> (contributor)`, also follow [`references/screening.md`](r
 
 ### Gate
 
-Before you ask, run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --at gate --context <context file>`.
-Act on each `action:` line.
-
 Give the explanation of Understand as text in a message of its own. In the next message, ask
 one `AskUserQuestion` with the header `Review`. The open dialog can cover the text above it,
 so the question text starts with the **Problem** and **Change** lines, then asks "How should I
@@ -88,8 +85,8 @@ Follow pipeline.md §2 and §3, and the launch rules of delivery.md. The deep bl
 
 ### Triage
 
-Run `pr-refresh.sh --at triage`, then the roll call. Act on each `action:` line. Then triage
-per pipeline.md §4 and §5, and severity.md. One filter decides what reaches the PR.
+Run the roll call. Then triage per pipeline.md §4 and §5, and severity.md. One filter decides
+what reaches the PR.
 
 **Keep** a finding only when it is discrete and actionable, this PR introduced it, and you
 confirmed it. An A or B finding also needs both of these:
