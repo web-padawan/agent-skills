@@ -25,20 +25,17 @@ what is different about that skill. This file is the shared part.
 the literal `base` / `head` / `head0` SHAs. Shell variables do not survive between tool
 calls, and subagents never see them. The plan is authoritative for everything that it prints.
 
-The plan leaves two decisions to you:
+The plan leaves one decision to you. When it prints `type: undetermined`, decide the type
+from the diff shape:
 
-- `type: undetermined`. Decide the type from the diff shape:
-  - a new export, public property, method or `.d.ts` addition: feature
-  - edits inside existing logic plus a test: fix
-  - the same behavior moved or renamed: refactor
-  - only tests, docs or build files: chore
+- a new export, public property, method or `.d.ts` addition: feature
+- edits inside existing logic plus a test: fix
+- the same behavior moved or renamed: refactor
+- only tests, docs or build files: chore
 
-  A parent PR or issue passed to the skill outranks the diff shape (`bug` means fix,
-  `enhancement` means feature). Re-run the script with `--type` so that the skeleton carries
-  the resolved type.
-- `type_conflict: <signal> → <type>`. A lower signal is more demanding than the declared
-  type. Keep the declared type, and hand the disagreement to the change pass as an explicit
-  question.
+A parent PR or issue passed to the skill outranks the diff shape (`bug` means fix,
+`enhancement` means feature). Re-run the script with `--type` so that the skeleton carries
+the resolved type.
 
 A `guard:` value that starts with `refuse:` ends the run. Say the one-line reason and stop.
 
