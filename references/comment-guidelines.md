@@ -15,11 +15,25 @@ each label. Render each comment from the frozen list in this shape:
 <discussion — the one-line fix, then how it was verified when that is not obvious>
 ```
 
+When Triage kept a failing test, add it after the discussion:
+
+````
+<details><summary>Failing test</summary>
+
+In `<path of the test file>`:
+
+```<language>
+<the test method>
+```
+</details>
+````
+
 - The label line is bold, ends with a colon, and is the first line of the message.
 - The subject is the claim as triage froze it. Do not soften or expand it here.
 - The discussion is one short paragraph at most. It gives the fix, and the verification when a
   reader would otherwise have to trust you (`git show <base>` read, the suite searched, the
   browsers reproduced in). Leave no trace of how you found the finding.
+- Post a failing test only when it ran on the head and failed on its own assertion.
 
 ## Rules
 
