@@ -47,7 +47,8 @@ plan_store() {
     else
       EARLIER_HEAD=$(jq -r '.head // empty' "$FINDINGS_FILE")
       if [ "$EARLIER_HEAD" != "$HEAD" ]; then
-        EARLIER_MODE="ignored (the findings file is of ${EARLIER_HEAD:0:10}, not of this head)"
+        local of="${EARLIER_HEAD:0:10}"
+        EARLIER_MODE="ignored (the findings file is of ${of:-an unknown head}, not of this head)"
         return 0
       fi
       EARLIER_MODE="same"

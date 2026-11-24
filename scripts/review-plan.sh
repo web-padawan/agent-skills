@@ -72,7 +72,7 @@ done
 
 case "$MODE" in self|pr) ;; *) echo "error: --mode must be self or pr" >&2; exit 1 ;; esac
 case "$TYPE_FLAG" in ""|fix|feature|refactor|chore) ;; *) echo "error: --type must be fix, feature, refactor or chore" >&2; exit 1 ;; esac
-[[ "$ROUNDS_FLAG" =~ ^[0-9]*$ ]] || { echo "error: --rounds takes a number, got $ROUNDS_FLAG" >&2; exit 1; }
+[[ -z "$ROUNDS_FLAG" || "$ROUNDS_FLAG" =~ ^[1-9][0-9]*$ ]] || { echo "error: --rounds takes a number above 0, got $ROUNDS_FLAG" >&2; exit 1; }
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PLUGIN_ROOT=$(dirname "$SCRIPT_DIR")

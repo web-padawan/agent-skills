@@ -121,8 +121,9 @@ plan_policy() {
 # so the check does not look for work that does not exist.
 mutant_pool() {
   [ -n "$BASE" ] && [ -n "$PROD_FILES" ] || { echo 0; return 0; }
+  local n
   # shellcheck disable=SC2086
-  git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | awk '
+  n=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | awk '
     /^\+\+\+ b\// { file = substr($0, 7); next }
     /^\+/ {
       if (file !~ /\.[cm]?[jt]sx?$/) next          # source code only
@@ -138,5 +139,6 @@ mutant_pool() {
       if (body ~ /^(var|color-mix|calc|light-dark|oklch|linear-gradient)\(/) next   # wrapped CSS value
       n++
     }
-    END { print n + 0 }' || echo 0
+    END { print n + 0 }') || n=0
+  echo "${n:-0}"
 }

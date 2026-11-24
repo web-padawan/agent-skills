@@ -836,6 +836,8 @@ for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
 done
 check "review-plan.sh refuses --rounds without a number" 1 \
   bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --rounds x"
+check "review-plan.sh refuses --rounds 0" 1 \
+  bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --rounds 0"
 expect "review-plan.sh sets the mutant budget to 0 with --no-coverage" \
   "mutants: 0 (--no-coverage)" \
   "$(cd "$DC" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type feature --no-coverage 2>/dev/null | grep '^mutants:')"
