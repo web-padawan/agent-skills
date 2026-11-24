@@ -54,7 +54,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode pr [--pr <number-or-url>] \
 
 Read `fork:`, `screening:`, `diff_facts:`, `ci:` and `existing_comments:` first. Then read the
 rest of the plan per pipeline.md §1, and act on every `hint:`. `${CLAUDE_PLUGIN_ROOT}/docs/contracts.md`
-lists every key of the plan. pr-review has no stage slot, so the plan prints `stages: none`.
+lists every key of the plan.
 
 ### Understand
 
