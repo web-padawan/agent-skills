@@ -11,10 +11,10 @@ input `$0` is the parent PR or issue that is the source of this branch.
 
 Three rules outrank everything else:
 
-- **Every step is read-only.** The only carve-out is the `coverage` stage of the
-  `after-gate` slot. It is the only reason that `Edit` is in `allowed-tools`. Mutate one
-  line at a time. Restore each line with `git checkout -- <path>` before the next mutant.
-  The stage ends only when `git status --porcelain --untracked-files=no` is empty again.
+- **Every step is read-only.** The only carve-out is the coverage check of step 7. It is
+  the only reason that `Edit` is in `allowed-tools`. Mutate one line at a time. Restore each
+  line with `git checkout -- <path>` before the next mutant. The check ends only when
+  `git status --porcelain --untracked-files=no` is empty again.
 - **Leave `HEAD` and the index exactly as you found them.** Never run commit, amend, push,
   `git add`, `stash`, `reset --hard`, or `git clean`.
 - **This skill creates only the context file, its notes file, the patch files for a diff too
@@ -30,8 +30,8 @@ Every finding goes in the report as `confirmed` or `accepted`.
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the script-written context file and your notes file, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering, deep-block severities |
 | [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
-| [`references/rounds.md`](references/rounds.md) | Slot `after-triage`: the `rounds` stage, one more fan-out on the same head |
-| [`references/mutation.md`](references/mutation.md) | Slot `after-gate`: the `coverage` stage, its gate question, mutant selection, restore safety, survivors as findings |
+| [`references/rounds.md`](references/rounds.md) | Step 5: one more fan-out on the same head |
+| [`references/mutation.md`](references/mutation.md) | Steps 6 and 7: the coverage check, its gate question, mutant selection, restore safety, survivors as findings |
 | [`references/finalize.md`](references/finalize.md) | Steps 6 and 8: the gate, the FINDINGS.md template, the verdict rubric |
 
 Read each reference the first time that a step needs it, and once only. Relative paths
@@ -45,9 +45,7 @@ resolve from this file. If a read fails, use
    `${CLAUDE_PLUGIN_ROOT}/scripts/review-plan.sh --mode self` plus the flags that the user
    passed:
    - `--fix|--feature|--refactor|--chore` → `--type <type>`
-   - `--rounds N` → `--budget rounds=N`
-   - `--no-coverage` → `--off coverage`
-   - `--fresh` → `--fresh`
+   - `--rounds N`, `--no-coverage` and `--fresh` as they are
 
    If the output has a `guard: refuse:` line, say the reason in one line and stop. Record
    `base`, `head` and `head0` as literal SHAs. When the user gave `$0`, fetch it with `gh`.
@@ -80,18 +78,17 @@ resolve from this file. If a read fails, use
    The context, notes and patch files live in the git directory, so they never appear here.
    Leave every pre-existing untracked file alone.
 5. **Roll call and triage.** Do the roll call and triage per pipeline.md, in that order.
-   Then run the `after-triage` slot: each stage of the `stages:` block of the plan with
-   `slot after-triage`, per the reference file that its line names. The `rounds` stage can
-   send you back to step 3.
+   Then follow rounds.md. It reads the `round:` line of the plan, and it can send you back
+   to step 2.
 
    The `earlier_findings:` line of the plan tells you whether an earlier round on this head
    left findings. The context file lists them, so that no pass repeats them.
 6. **Gate.** Per finalize.md, print the classified list in chat. Then ask one
-   `AskUserQuestion`: write the report, and one question for each stage with `ask yes`. The
-   reference file of the stage holds its question. The skill applies nothing either way.
+   `AskUserQuestion`: write the report, and run the coverage check. mutation.md holds the
+   coverage question. The skill applies nothing either way.
    The gate decides what you produce, not what you change.
-7. **After the gate.** Run the `after-gate` slot: each stage with `slot after-gate` that the
-   gate approved, per its reference file. Skip a stage with a budget of 0.
+7. **Coverage check.** When the gate approved it, run the coverage check per mutation.md.
+   Skip it when the plan prints `mutants: 0`.
 8. **Report and verdict.** Per finalize.md, assert that `HEAD` equals `head0` from the plan,
    with nothing unstaged and nothing staged. Write the report when the gate approved it.
    Write the findings file at the end of every run, with the verdict. Also write it when the
@@ -101,5 +98,5 @@ resolve from this file. If a read fails, use
    work**.
 
 The profile lives in `scripts/lib/policy.sh` and reaches you through the plan. It covers
-which passes run, the deep-block budget, and the stages with their budgets. Do not
+which passes run, the deep-block budget, and the round and mutant budgets. Do not
 re-derive it here.
