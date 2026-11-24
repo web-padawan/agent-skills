@@ -54,7 +54,7 @@ resolve from this file. If a read fails, use
    `${CLAUDE_PLUGIN_ROOT}/docs/contracts.md` lists every key of the plan.
 
    Per pipeline.md, resolve `type: undetermined` yourself. Re-run with `--type` so that the
-   skeleton carries the type. Hand any `type_conflict` to the change pass.
+   skeleton carries the type.
 
    The script writes the context skeleton at the `context:` path from the plan. For a large
    diff, the script also writes the patch files that `diff_prod:` and `diff_tests:` name.
