@@ -1,6 +1,6 @@
 ---
 name: self-review
-description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs three review passes in one parallel batch: a change pass (scope, behavior, fix correctness, plus boundary/impact blocks on the top significant changes), a code pass (logic, conventions, reuse, maintainability, comments) and a tests pass; the diff's scale tier (trivial/lite/full) sizes the coverage, deep-block and rounds budgets only. A large feature gets a second round that looks for what the first missed, and a run on a newer head reconciles the findings of the last run. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Use on your own branch; not for reviewing someone else's PR (pr-review).
+description: Self-review the current branch (or its open PR) before opening or updating a PR. Detects the change type — bug fix, feature, refactor, chore — and runs three review passes in one parallel batch: a change pass (scope, behavior, fix correctness, plus boundary/impact blocks on the top significant changes), a code pass (logic, conventions, reuse, maintainability, comments) and a tests pass; the diff's scale tier (trivial/lite/full) sizes the coverage, deep-block and rounds budgets only. A large feature gets a second round that looks for what the first missed. Never edits code — classifies findings A (must fix before merge) / B (follow-up) / C (taste) and writes a FINDINGS.md report with a ready / needs-work verdict. Use on your own branch; not for reviewing someone else's PR (pr-review).
 argument-hint: "[parent-PR-or-issue-url] [--fix|--feature|--refactor|--chore] [--rounds N] [--fresh] [--no-coverage]"
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(mvn:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/ab.sh:*)
@@ -84,8 +84,8 @@ resolve from this file. If a read fails, use
    `slot after-triage`, per the reference file that its line names. The `rounds` stage can
    send you back to step 3.
 
-   The `earlier_findings:` line of the first plan tells you whether an earlier run left
-   findings. On a newer head, the passes reconcile them, and triage applies their status.
+   The `earlier_findings:` line of the plan tells you whether an earlier round on this head
+   left findings. The context file lists them, so that no pass repeats them.
 6. **Gate.** Per finalize.md, print the classified list in chat. Then ask one
    `AskUserQuestion`: write the report, and one question for each stage with `ask yes`. The
    reference file of the stage holds its question. The skill applies nothing either way.
@@ -95,8 +95,8 @@ resolve from this file. If a read fails, use
 8. **Report and verdict.** Per finalize.md, assert that `HEAD` equals `head0` from the plan,
    with nothing unstaged and nothing staged. Write the report when the gate approved it.
    Write the findings file at the end of every run, with the verdict. Also write it when the
-   review has no finding, or when the gate declined the report. The next run of this skill
-   starts from it. Reply in chat with the type, scale tier, tier counts, the reminder that
+   review has no finding, or when the gate declined the report. A further round on the
+   same head starts from it. Reply in chat with the type, scale tier, tier counts, the reminder that
    nothing was changed, and the verdict. The verdict is **ready for PR** / **needs more
    work**.
 
