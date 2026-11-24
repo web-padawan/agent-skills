@@ -20,7 +20,7 @@ that a script writes.
 | [`references/quick.md`](references/quick.md) | Quick review: chosen at the Gate, also the fallback |
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Plan, Fan out and Triage: the plan, the context and notes files, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | Triage: A / B / C, tiers by change type, what CI settles, the rendering table |
-| [`../../references/delivery.md`](../../references/delivery.md) | Fan out and Triage: launch rules, the delivery clause, the roll call, the escalation ladder |
+| [`../../references/delivery.md`](../../references/delivery.md) | Fan out and Triage: launch rules, the delivery clause, the roll call, the fallback |
 | [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Present and Post: comment tone, replies by verdict, posting |
 | [`references/present.md`](references/present.md) | Present: the chat template, the result rule, the post gate |
 
