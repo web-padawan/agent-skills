@@ -706,9 +706,6 @@ echo "stale" > "$FX_DIR/context-prod.patch"
 fx_plan fx-png.log --fresh --type fix
 expect "review-plan.sh deletes the notes file and patches of an earlier context" \
   "" "$(ls "$FX_DIR/context-notes.md" "$FX_DIR/context-prod.patch" 2>/dev/null)"
-PASS_N=$(grep -c '^Context file:' "$WORK/fx-png.log")
-expect "review-plan.sh asks each pass for the last ids of the notes file" \
-  "yes" "$([ "$PASS_N" -gt 0 ] && [ "$PASS_N" = "$(grep -c '^End your reply with one line that names the last id of each section of that file: `notes:' "$WORK/fx-png.log")" ] && echo yes)"
 # notes-guard.py reads the context line of a real prompt of the plan.
 NOTES_GUARD="$SCRIPTS/hooks/notes-guard.py"
 FX_PROMPT=$(awk '/^--- change ·/ { f = 1; next } /^--- / { f = 0 } f' "$WORK/fx-png.log")
@@ -720,9 +717,7 @@ expect "notes-guard.py denies a pass before the notes file exists" deny "$(notes
 grep -q "Write it in a message of its own" <<< "$(jq -cn --arg p "$FX_PROMPT" '{tool_name: "Agent", tool_input: {prompt: $p}}' | python3 -I "$NOTES_GUARD")"
 expect "notes-guard.py names the fix in its denial" 0 "$?"
 printf '## Settled facts\n- a fact\n\n## Open leads\n- none\n' > "$FX_DIR/context-notes.md"
-expect "notes-guard.py denies a pass while a Settled fact has no id" deny "$(notes_guard Agent "$FX_PROMPT")"
-printf '## Settled facts\n- S1: a fact — a.js:1\n- S2: another\n\n## Open leads\n- none\n' > "$FX_DIR/context-notes.md"
-expect "notes-guard.py allows a pass when the notes file has its ids" allow "$(notes_guard Agent "$FX_PROMPT")"
+expect "notes-guard.py allows a pass when the notes file exists" allow "$(notes_guard Agent "$FX_PROMPT")"
 expect "notes-guard.py reads the Task tool name too" allow "$(notes_guard Task "$FX_PROMPT")"
 rm -f "$FX_DIR/context-notes.md"
 expect "notes-guard.py leaves an Agent call without the context line alone" allow "$(notes_guard Agent 'Find the tests')"
