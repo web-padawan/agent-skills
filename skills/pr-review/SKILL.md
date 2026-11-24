@@ -144,5 +144,4 @@ Follow [`references/present.md`](references/present.md).
 ### Post
 
 Post as comment-guidelines.md describes, from the findings file of Triage. `One summary
-review` adds `--body-only`. `Only blocking issues` adds `--blocking-only`. Give the link of
-each posted comment or review.
+review` adds `--body-only`. Give the link of each posted comment or review.
