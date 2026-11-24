@@ -157,8 +157,6 @@ lines are what triage works on.
 Run the roll call of [`delivery.md`](delivery.md) before triage. It holds the format, the
 markers and the fallback for a pass that delivered nothing.
 
-In triage, drop each finding that a Settled fact answers.
-
 ## 5 — Triage
 
 When the plan prints `owner_rules: <path>`, read that file once before triage. Its rules
