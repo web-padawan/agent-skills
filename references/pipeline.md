@@ -19,8 +19,8 @@ what is different about that skill. This file is the shared part.
 
 ## 1 — Plan
 
-`scripts/review-plan.sh --mode self|pr [--pr N] [--type T] [--off <stage>]
-[--budget <stage>=<n>] [--context-out <path>]` prints a `=== PLAN ===` block. The script also
+`scripts/review-plan.sh --mode self|pr [--pr N] [--type T] [--rounds <n>] [--no-coverage]
+[--context-out <path>]` prints a `=== PLAN ===` block. The script also
 **writes the context skeleton** at the path that its `context:` line names (see §2). Record
 the literal `base` / `head` / `head0` SHAs. Shell variables do not survive between tool
 calls, and subagents never see them. The plan is authoritative for everything that it prints.
@@ -258,7 +258,7 @@ Wording rules, because the report and any comment reuse these lines verbatim:
 ## 6 — Deliver
 
 The skill owns this step. Nothing in this pipeline edits code, stages, or commits. Two
-carve-outs exist. The coverage stage of self-review restores every mutant before the next.
+carve-outs exist. The coverage check of self-review restores every mutant before the next.
 The failing tests of pr-review run through `mutant.sh`, which restores the test file. A
 run creates these files:
 
