@@ -14,8 +14,8 @@ one message.
 returns to you.
 
 A launch can be asynchronous. Then each report arrives as a task notification, and the
-harness starts your turn again. Wait for that turn, and do not poll a listing tool. For each
-such turn, write at most one line, for example `Done: code, tests. Waiting on: change.`
+harness starts your turn again. Wait for that turn. Do not poll a listing tool. For each such
+turn, write at most one line, for example `Done: code, tests. Waiting on: change.`
 
 Every printed prompt ends with this clause. The script copies the clause from here by
 marker. Edit the clause here only:
