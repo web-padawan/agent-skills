@@ -112,29 +112,6 @@ nits after the passes report them.
 > you find nothing new, write `NO FINDINGS`.
 <!-- /block -->
 
-<!-- block:earlier-findings-delta -->
-> The last review reported these findings on an earlier head. The author changed the branch
-> since then. Reconcile each finding whose category is one of yours. For each such finding
-> with status `open`, `not_fixed`, `partially_fixed` or `fixed_wrongly`, check the current
-> code. Then write one line after your findings: `earlier <id> | <status> | <how, one clause>`.
-> Use the first status that applies:
->
-> - `obsolete`: the code that the finding points at is gone. The same problem at a new place
->   is a new finding.
-> - `fixed`: the code changed, and every point of the finding is gone. A comment that calls
->   it fixed is not a change.
-> - `partially_fixed`: the code changed, and at least one point stands. Report the point that
->   stands as a new finding.
-> - `fixed_wrongly`: the code changed, and the change is wrong or adds a problem. Report that
->   problem as a new finding.
-> - `not_fixed`: the code did not change. Do not report the finding again.
->
-> Never report a `disputed` or `accepted` finding again, in any form. The author decided it.
-> Report a C finding only on a line in `### Changed since`. When that section is absent,
-> report on any line. Report an A or B finding on any line. A changed line can come from a
-> merge of the base branch. Do not raise a style point on code that the author did not write.
-<!-- /block -->
-
 <!-- block:conventions-header -->
 > These are the conventions docs of the repository, in lookup order. The excerpt quotes the
 > docs while their total stays at 400 lines or less, and names the others. Do not open a
