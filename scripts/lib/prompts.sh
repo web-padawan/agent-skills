@@ -1,7 +1,7 @@
 # prompts.sh: sourced by review-plan.sh. The prompt block of each pass.
 #
 # Reads: PASS_TOKENS, CONTEXT_PATH, NOTES_PATH, PROD_DIFF_WHERE, TESTS_DIFF_WHERE, TYPE,
-#        TYPE_CONFLICT, DEEP_ROW, COMMENT_FILES, MODE, FORK, EFFORT, SCALE, PLUGIN_ROOT
+#        DEEP_ROW, COMMENT_FILES, MODE, FORK, EFFORT, SCALE, PLUGIN_ROOT
 # Sets: CLAUSE
 #
 # The literal prompt per pass: context and notes paths, the lane, the resolved prompt
@@ -40,7 +40,6 @@ plan_prompts() {
         change)
           echo "Your diff: $(lane_prod)."
           echo "Change type: $TYPE."
-          [ "$TYPE_CONFLICT" != "none" ] && echo "type_conflict: $TYPE_CONFLICT"
           echo "Deep budget: $DEEP_ROW."
           ;;
         code)

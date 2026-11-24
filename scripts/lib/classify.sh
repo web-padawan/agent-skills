@@ -1,7 +1,7 @@
 # classify.sh: sourced by review-plan.sh. The change type of the diff and its scale tier.
 #
 # Reads: MODE, PR, TYPE_FLAG, BRANCH, BASE, HEAD, CHANGED, TEST_RE
-# Sets: GH_ARGS, PR_TITLE, TYPE, TYPE_SIGNAL, TYPE_CONFLICT, TITLE_TYPE, COMMIT_TYPE,
+# Sets: GH_ARGS, PR_TITLE, TYPE, TYPE_SIGNAL, TITLE_TYPE, COMMIT_TYPE,
 #       BRANCH_TYPE, LINES, TOTAL_LINES, FILES, PROD_FILE_COUNT, SCALE, SCALE_REASON, OVERRIDES
 
 # Map a conventional-commit subject to a type. Only the prefix is read; the rest of
@@ -15,10 +15,6 @@ prefix_type() {
     *) echo "" ;;
   esac
 }
-
-# A lower signal that is *more demanding* than the winner is handed to the change
-# pass as a question; it never silently upgrades the type.
-demand() { case "$1" in feature) echo 3 ;; fix) echo 2 ;; refactor) echo 1 ;; chore) echo 0 ;; *) echo -1 ;; esac; }
 
 add_override() { OVERRIDES="${OVERRIDES:+$OVERRIDES, }$1"; }
 
@@ -85,20 +81,6 @@ plan_classify() {
   if [ -z "$TYPE" ]; then
     TYPE="undetermined"
     TYPE_SIGNAL="none resolved — decide from the diff shape (see references/pipeline.md)"
-  fi
-
-  TYPE_CONFLICT="none"
-  if [ "$TYPE" != "undetermined" ]; then
-    win=$(demand "$TYPE")
-    for cand in "PR title:$TITLE_TYPE" "commits:$COMMIT_TYPE" "branch name:$BRANCH_TYPE"; do
-      other="${cand#*:}"
-      [ -z "$other" ] && continue
-      [ "$other" = "$TYPE" ] && continue
-      if [ "$(demand "$other")" -gt "$win" ]; then
-        TYPE_CONFLICT="${cand%%:*} → $other (more demanding than the declared type — hand it to the change pass)"
-        win=$(demand "$other")
-      fi
-    done
   fi
 
   # ── Scale

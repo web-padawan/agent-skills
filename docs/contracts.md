@@ -30,12 +30,10 @@ screening          pr mode: the screening facts, indented
 diff_facts         the diff facts and the fact packs, indented
 type               fix, feature, refactor, chore or undetermined
 type_signal        the signal that set the type
-type_conflict      none, or a more demanding lower signal
 scale              trivial, lite or full
 scale_counts       production lines, all lines, files, production files
 scale_reason       size, or the risk override
 deep               the deep budget of the change pass and its source
-deep_candidates    the count of .d.ts files, new exports and new public methods
 effort_per_pass    the tool call ceiling of each pass
 stages             the stages of the run, indented, or none
 earlier_findings   none, ignored, unreadable, same, delta or rewritten

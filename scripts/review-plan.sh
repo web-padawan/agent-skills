@@ -173,12 +173,10 @@ if [ -n "$DIFF_FACTS" ]; then
 fi
 echo "type: $TYPE"
 echo "type_signal: $TYPE_SIGNAL"
-echo "type_conflict: $TYPE_CONFLICT"
 echo "scale: $SCALE"
 echo "scale_counts: $LINES production lines ($TOTAL_LINES with tests), $FILES files, $PROD_FILE_COUNT production (lock, generated, snapshot and image files excluded)"
 echo "scale_reason: $SCALE_REASON"
 echo "deep: $DEEP_ROW (source: $DEEP_SOURCE)"
-echo "deep_candidates: $DEEP_CANDIDATES (.d.ts files $CAND_DTS, new exports $CAND_EXPORTS, new public methods $CAND_METHODS)"
 echo "effort_per_pass: ~$EFFORT tool calls (scale $SCALE)"
 if [ -n "$STAGE_LIST" ]; then echo "stages:"; printf '%s' "$STAGES_OUT"; else echo "stages: none"; fi
 case "$EARLIER_MODE" in

@@ -5,8 +5,7 @@
 #
 # Reads: MODE, TYPE, SCALE, PLUGIN_NAME, BASE, HEAD, CHANGED, PROD_FILES, TEST_FILES,
 #        BINARY_FILES, CODE_RE
-# Sets: LOOKUP_TYPE, PASS_TOKENS, PASSES_DROPPED, DEEP_ROW, DEEP_SOURCE,
-#       CAND_DTS, CAND_EXPORTS, CAND_METHODS, DEEP_CANDIDATES, EFFORT,
+# Sets: LOOKUP_TYPE, PASS_TOKENS, PASSES_DROPPED, DEEP_ROW, DEEP_SOURCE, EFFORT,
 #       STAGE_LIST
 
 # The pass registry: the id, the agent and the lane that the pass reads.
@@ -97,45 +96,11 @@ plan_policy() {
   [ "$MODE" = self ] && STAGE_LIST="${STAGE_LIST:+$STAGE_LIST }coverage=$mutants"
 
   # Effective deep-block budget for the change pass: the row's number, capped by the
-  # scale tier.
+  # scale tier. The budget is a ceiling. The change pass selects the significant changes.
   case "$DEEP_ROW" in ''|*[!0-9]*) DEEP_ROW=0 ;; esac
-  case "$SCALE" in trivial) cap=1 ;; lite) cap=2 ;; *) cap=999 ;; esac
+  case "$SCALE" in trivial|lite) cap=1 ;; *) cap=999 ;; esac
   [ "$DEEP_ROW" -gt "$cap" ] && DEEP_ROW="$cap"
   DEEP_SOURCE="matrix, capped by scale"
-
-  # Deep candidates — what the diff actually offers a boundary block: `.d.ts` files,
-  # new exports, added public (non-underscore) methods at class indentation. A fix with
-  # none of these gets one block for its top change instead of three surveys. The
-  # effective budget is min(row, tier cap, max(1, candidates)).
-  CAND_DTS=0; CAND_EXPORTS=0; CAND_METHODS=0
-  if [ -n "$BASE" ] && [ -n "$PROD_FILES" ]; then
-    CAND_DTS=$(printf '%s\n' $PROD_FILES | grep -c '\.d\.ts$' || true)
-    CAND_EXPORTS=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | grep -cE '^\+[[:space:]]*export ' || true)
-    CAND_METHODS=$(git diff --unified=0 "$BASE..$HEAD" -- $PROD_FILES 2>/dev/null | awk '
-      /^\+\+\+ b\// { file = substr($0, 7); next }
-      /^\+/ {
-        if (file !~ /\.[cm]?[jt]sx?$/ || file ~ /\.d\.ts$/) next
-        body = substr($0, 2)
-        # A member of a mixin class sits at 4 spaces. A member of a plain class sits at 2
-        # spaces. A line with => is a callback, not a member. A 4-space line ends with { or
-        # with ( for a multi-line signature. A 2-space line ends with {.
-        if (body ~ /=>/) next
-        if (body ~ /^    (static |async |get |set )?[A-Za-z$][A-Za-z0-9$]*[ \t]*\(/ && body ~ /[{(][ \t]*$/) {
-          name = body; sub(/^    (static |async |get |set )?/, "", name)
-        } else if (body ~ /^  ((static|async|get|set|public|protected|override)[ \t]+)*[A-Za-z$][A-Za-z0-9$]*[ \t]*\(.*\{[ \t]*$/) {
-          name = body; sub(/^  ((static|async|get|set|public|protected|override)[ \t]+)*/, "", name)
-        } else next
-        sub(/[ \t]*\(.*$/, "", name)
-        if (name ~ /^(if|for|while|switch|catch|return|super|constructor|render|connectedCallback|disconnectedCallback|attributeChangedCallback|firstUpdated|willUpdate|updated|requestUpdate|performUpdate)$/) next
-        n++
-      }
-      END { print n + 0 }' || echo 0)
-  fi
-  DEEP_CANDIDATES=$((CAND_DTS + CAND_EXPORTS + CAND_METHODS))
-  if [ "$DEEP_ROW" -gt 0 ]; then
-    local cand_cap=$DEEP_CANDIDATES; [ "$cand_cap" -lt 1 ] && cand_cap=1
-    if [ "$DEEP_ROW" -gt "$cand_cap" ]; then DEEP_ROW="$cand_cap"; DEEP_SOURCE="matrix, capped by scale and by $DEEP_CANDIDATES deep candidates"; fi
-  fi
 
   # Per-pass effort ceiling from the scale tier. The deep budget alone does not cap what a
   # single pass may spend. These are ceilings, not targets: a pass that answers its
