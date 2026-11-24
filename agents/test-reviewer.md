@@ -17,7 +17,7 @@ stage, or commit anything.
 Work through every file of your lane hunk by hunk. Do not stop after the first findings. A
 finding in a file is a reason to look harder at that file.
 
-In self mode, a later mutation stage measures assertion strength empirically. Your coverage
+In self mode, a later coverage check measures assertion strength empirically. Your coverage
 findings are scenario-level. Name the untested scenario and the regression that it would let
 through. Never report a percentage and never write "add more tests".
 
