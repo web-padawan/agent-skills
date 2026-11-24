@@ -26,7 +26,7 @@
 #
 # In self mode it also reads the findings file of the last review of the branch
 # (`<report-dir>/<branch>-findings.json`): the same head lists the earlier findings so that
-# no pass repeats them, a newer head reconciles them. `--fresh` ignores the file. The stage
+# no pass repeats them. A file of another head is ignored. `--fresh` ignores the file. The stage
 # `rounds` (scripts/stages/rounds.sh) counts the round.
 #
 # Prints get-pr-context.sh's PR_METADATA, CI_STATUS and EXISTING_COMMENTS sections (skip
@@ -183,8 +183,6 @@ case "$EARLIER_MODE" in
   same)
     if [ "$EARLIER_COUNT" -eq 0 ]; then echo "earlier_findings: same head — the earlier review of this head had no finding"
     else echo "earlier_findings: same head — $EARLIER_COUNT findings of the earlier rounds, listed so that no pass repeats them"; fi ;;
-  delta) echo "earlier_findings: delta from ${EARLIER_HEAD:0:10} — $EARLIER_COUNT findings, $EARLIER_OPEN open to reconcile, $(printf '%s\n' "$CHANGED_SINCE" | grep -c . || true) files changed since" ;;
-  rewritten) echo "earlier_findings: rewritten — ${EARLIER_HEAD:0:10} is not an ancestor of the head; $EARLIER_COUNT findings, $EARLIER_OPEN open to reconcile, no line markers" ;;
   *) echo "earlier_findings: $EARLIER_MODE" ;;
 esac
 [ -n "$FINDINGS_FILE" ] && echo "findings_file: $FINDINGS_FILE"

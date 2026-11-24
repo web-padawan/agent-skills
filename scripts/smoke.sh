@@ -784,6 +784,11 @@ fx_findings ''
 fx_plan fx-noverdict.log --type fix
 expect "review-plan.sh continues the run on a head without a verdict" \
   "    round: 2 of 1" "$(grep '^    round:' "$WORK/fx-noverdict.log")"
+jq -n '{branch: "topic", head: "1111111111111111111111111111111111111111", round: 1, findings: []}' > "$FX_DIR/topic-findings.json"
+fx_plan fx-otherhead.log --type fix
+expect "review-plan.sh ignores a findings file of another head" \
+  "earlier_findings: ignored (the findings file is of 1111111111, not of this head)" \
+  "$(grep '^earlier_findings:' "$WORK/fx-otherhead.log")"
 fx_findings ', schema: 2'
 fx_plan fx-schema.log --type fix
 expect "review-plan.sh does not read a findings file of schema 2" \

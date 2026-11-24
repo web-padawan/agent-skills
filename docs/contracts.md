@@ -36,7 +36,7 @@ scale_reason       size, or the risk override
 deep               the deep budget of the change pass and its source
 effort_per_pass    the tool call ceiling of each pass
 stages             the stages of the run, indented, or none
-earlier_findings   none, ignored, unreadable, same, delta or rewritten
+earlier_findings   none, ignored, unreadable or same
 findings_file      self mode: the path of the findings file
 conventions_doc    the conventions docs in lookup order, comma-separated, or none
 owner_rules        the rules.md of the owner directory, or none
@@ -132,7 +132,7 @@ self-review writes the findings file at the `findings_file:` path of the plan, p
 - `schema` is 1. The plan reads a file without `schema` as schema 1. It prints `earlier_findings: unreadable (schema <n>)` for a higher schema.
 - A file without `verdict` is the record of a run that did not finish.
 - Each finding holds `id`, `round`, `category`, `tier`, `status`, `file`, `line`, `claim`, `fix`, `verified` and `merged`.
-- `status` is one of `open`, `accepted`, `fixed`, `partially_fixed`, `fixed_wrongly`, `not_fixed`, `obsolete` and `disputed`.
+- `status` is one of `open`, `accepted` and `disputed`.
 
 pr-review writes its findings file at the `findings:` path of the plan, in the format that
 `scripts/post-review.sh --help` prints.

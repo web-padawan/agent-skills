@@ -8,7 +8,7 @@
 #        SCALE_REASON, DEEP_ROW, DEEP_SOURCE, EFFORT, BRANCH_COMMITS, PROD_FILES,
 #        TEST_FILES, BINARY_FILES, COMMENT_FILES, CONVENTIONS, CONVENTIONS_WHOLE_MAX,
 #        DIFF_FACTS, EARLIER_MODE, EARLIER_HEAD, EARLIER_LIST,
-#        CHANGED_SINCE, FINDINGS_FILE, OWNER, OWNER_RULES
+#        FINDINGS_FILE, OWNER, OWNER_RULES
 # Sets: CONTEXT_PATH, CONTEXT_NOTE, NOTES_PATH, PROD_DIFF_WHERE, TESTS_DIFF_WHERE,
 #       CONTEXT_LINES, PR_NUMBER, PR_URL, CI_SECTION, COMMENTS_SECTION, RELATED_SECTION
 #
@@ -229,35 +229,19 @@ section_related_prs() {
 }
 
 section_earlier_findings() {
-  case "$EARLIER_MODE" in
-    same|delta|rewritten)
-      echo
-      echo "## Earlier findings"
-      echo
-      if [ "$EARLIER_MODE" = "same" ]; then
-        block "$PLUGIN_ROOT/references/skeleton-blocks.md" earlier-findings-same
-      else
-        block "$PLUGIN_ROOT/references/skeleton-blocks.md" earlier-findings-delta
-      fi
-      echo
-      echo "Source: \`$FINDINGS_FILE\`, reviewed head \`${EARLIER_HEAD:0:10}\`. Each line: id | status | category | file:line | tier | claim. A \`Merged:\` entry after a claim is a finding that triage merged into it."
-      echo
-      if [ -n "$EARLIER_LIST" ]; then
-        printf '%s\n' "$EARLIER_LIST" | sed '/^$/d; s/^/- /'
-      else
-        echo "- none: the review of \`${EARLIER_HEAD:0:10}\` had no finding"
-      fi
-      if [ "$EARLIER_MODE" = "delta" ]; then
-        echo
-        echo "### Changed since ${EARLIER_HEAD:0:10}"
-        echo
-        if [ -n "$CHANGED_SINCE" ]; then printf '%s\n' "$CHANGED_SINCE" | sed 's/^/- /'; else echo "- none"; fi
-      elif [ "$EARLIER_MODE" = "rewritten" ]; then
-        echo
-        echo "The reviewed head is not an ancestor of this head, so no line is marked as changed since. Review the whole diff at full priority."
-      fi
-      ;;
-  esac
+  [ "$EARLIER_MODE" = "same" ] || return 0
+  echo
+  echo "## Earlier findings"
+  echo
+  block "$PLUGIN_ROOT/references/skeleton-blocks.md" earlier-findings-same
+  echo
+  echo "Source: \`$FINDINGS_FILE\`, reviewed head \`${EARLIER_HEAD:0:10}\`. Each line: id | status | category | file:line | tier | claim. A \`Merged:\` entry after a claim is a finding that triage merged into it."
+  echo
+  if [ -n "$EARLIER_LIST" ]; then
+    printf '%s\n' "$EARLIER_LIST" | sed '/^$/d; s/^/- /'
+  else
+    echo "- none: the review of \`${EARLIER_HEAD:0:10}\` had no finding"
+  fi
   return 0
 }
 

@@ -3,7 +3,7 @@
 #
 # Reads: MODE, BRANCH, HEAD, FRESH, REPORT_DIR
 # Sets: SLUG, REPORT_DIR, FINDINGS_FILE, EARLIER_MODE, EARLIER_HEAD, EARLIER_COUNT,
-#       EARLIER_OPEN, EARLIER_LIST, CHANGED_SINCE
+#       EARLIER_LIST
 
 plan_store() {
   # ── Report paths
@@ -22,15 +22,11 @@ plan_store() {
 
   # ── Earlier findings
   # The findings file that the last self-review of this branch wrote
-  # (skills/self-review/references/finalize.md, "Findings file"). One review does not find
-  # everything, so the next one starts from it:
-  #   same      the head is unchanged: a further round. The earlier findings must not repeat.
-  #   delta     the head descends from the reviewed one: the author changed the branch. Each
-  #             pass reconciles the earlier findings of its categories, and C findings stay
-  #             on the lines changed since (the markers below).
-  #   rewritten the reviewed head is gone (rebase, force-push): reconcile, no line markers.
-  FINDINGS_FILE=""; EARLIER_MODE="none"; EARLIER_HEAD=""; EARLIER_COUNT=0; EARLIER_OPEN=0
-  EARLIER_LIST=""; CHANGED_SINCE=""
+  # (skills/self-review/references/finalize.md, "Findings file"). One round does not find
+  # everything, so a further round on the same head starts from it: the earlier findings
+  # must not repeat. A file of another head is ignored, and the review starts new.
+  FINDINGS_FILE=""; EARLIER_MODE="none"; EARLIER_HEAD=""; EARLIER_COUNT=0
+  EARLIER_LIST=""
   if [ "$MODE" = "self" ] && [ "$REPORT_DIR" != "SCRATCHPAD" ] && [ -n "$HEAD" ]; then
     FINDINGS_FILE="$REPORT_DIR/$SLUG-findings.json"
     if [ ! -f "$FINDINGS_FILE" ]; then
@@ -46,24 +42,12 @@ plan_store() {
       EARLIER_MODE="unreadable (schema $(jq -r '.schema' "$FINDINGS_FILE"))"
     else
       EARLIER_HEAD=$(jq -r '.head // empty' "$FINDINGS_FILE")
-      EARLIER_COUNT=$(jq '.findings | length' "$FINDINGS_FILE")
-      EARLIER_OPEN=$(jq '[.findings[] | select(.status as $s | ["open", "not_fixed", "partially_fixed", "fixed_wrongly"] | index($s))] | length' "$FINDINGS_FILE")
-      if [ "$EARLIER_HEAD" = "$HEAD" ]; then
-        EARLIER_MODE="same"
-      elif [ -n "$EARLIER_HEAD" ] && git merge-base --is-ancestor "$EARLIER_HEAD" "$HEAD" 2>/dev/null; then
-        EARLIER_MODE="delta"
-        # One line per file: the new-side line ranges that changed since the reviewed head.
-        CHANGED_SINCE=$(git diff --unified=0 --no-renames "$EARLIER_HEAD..$HEAD" 2>/dev/null | awk '
-          /^\+\+\+ b\// { f = substr($0, 7); next }
-          /^\+\+\+ / { f = ""; next }
-          /^@@/ && f != "" {
-            split($3, a, ","); s = substr(a[1], 2) + 0; n = (a[2] == "" ? 1 : a[2] + 0)
-            if (n > 0) r[f] = r[f] (r[f] == "" ? "" : ", ") (n > 1 ? s "-" (s + n - 1) : s)
-          }
-          END { for (f in r) print f ": " r[f] }' | sort)
-      else
-        EARLIER_MODE="rewritten"
+      if [ "$EARLIER_HEAD" != "$HEAD" ]; then
+        EARLIER_MODE="ignored (the findings file is of ${EARLIER_HEAD:0:10}, not of this head)"
+        return 0
       fi
+      EARLIER_MODE="same"
+      EARLIER_COUNT=$(jq '.findings | length' "$FINDINGS_FILE")
       # A finding that triage merged into another one rides on the kept line, so a
       # further round sees it and does not report it again.
       EARLIER_LIST=$(jq -r '.findings[] | "\(.id) | \(.status) | \(.category) | \(.file // "-"):\(.line // "-") | \(.tier) | \(.claim)" + ([.merged[]? | " Merged: \(.file // "-"):\(.line // "-") \(.claim)"] | join(""))' "$FINDINGS_FILE")

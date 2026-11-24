@@ -155,7 +155,7 @@ plan_stages() {
   STAGES_OUT=""
   # The findings file only when the plan read it: not with --fresh, not when unreadable.
   local findings=""
-  case "$EARLIER_MODE" in same|delta|rewritten) findings="$FINDINGS_FILE" ;; esac
+  case "$EARLIER_MODE" in same) findings="$FINDINGS_FILE" ;; esac
   for entry in $STAGE_LIST; do
     name="${entry%%=*}"; budget="${entry#*=}"
     IFS=$'\t' read -r slot ask ref <<< "$(stage_info "$name")"
