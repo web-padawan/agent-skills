@@ -33,7 +33,6 @@ compatibility* strictly. Nothing observable may change.
 
 ### Scope — category `scope`
 
-- For a `type_conflict` line in the prompt: does the diff match the declared change type?
 - No bug fixes in a refactor PR unless explicitly covered by a test
 - No drive-by changes: no files or hunks that the stated goal does not need
 - No behavior that the stated intent does not request
