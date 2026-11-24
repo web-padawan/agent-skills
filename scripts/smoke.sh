@@ -325,6 +325,43 @@ check "pr-refresh.sh refuses a run without --context" 2 "$SCRIPTS/pr-refresh.sh"
 check "pr-refresh.sh refuses a context file without a PR" 2 \
   "$SCRIPTS/pr-refresh.sh" --at gate --context "$WORK/self-context.md"
 
+echo "== related-prs.sh"
+# A fake gh: PR 7 (feat/b on feat/a) by ann. PR 6 is its parent, PR 8 sits on top of it,
+# PR 5 by ann shares src/a.ts and has one resolved thread, PR 9 by ann shares no file.
+mkdir -p "$WORK/relgh"
+cat > "$WORK/relgh/gh" <<'GH'
+#!/usr/bin/env bash
+jqx=""; prev=""
+for a in "$@"; do [ "$prev" = --jq ] && jqx=$a; prev=$a; done
+case "$*" in
+  "pr view 7 "*) out='{"author": {"login": "ann"}, "headRefName": "feat/b", "baseRefName": "feat/a", "isCrossRepository": '"${REL_CROSS:-false}"', "files": [{"path": "src/a.ts"}, {"path": "src/b.ts"}]}' ;;
+  "repo view"*) out='{"defaultBranchRef": {"name": "main"}}' ;;
+  *"--head feat/a"*) out='[{"number": 6, "title": "feat: a", "isCrossRepository": false}]' ;;
+  *"--base feat/b"*) out='[{"number": 8, "title": "feat: c", "files": [{"path": "src/c.ts"}, {"path": "test/c.test.ts"}]}]' ;;
+  *"--author ann"*) out='[{"number": 5, "title": "feat: prototype", "files": [{"path": "src/a.ts"}]}, {"number": 6, "title": "feat: a", "files": [{"path": "src/a.ts"}]}, {"number": 9, "title": "docs: x", "files": [{"path": "x.md"}]}]' ;;
+  *"number=5"*) out='{"data": {"repository": {"pullRequest": {"reviewThreads": {"nodes": [{"isResolved": true, "isOutdated": false, "path": "src/a.ts", "line": 3, "comments": {"nodes": [{"databaseId": 11, "author": {"login": "bob"}, "body": "Make the hook protected."}, {"databaseId": 12, "author": {"login": "ann"}, "body": "Fixed in abc1234."}]}}]}}}}}' ;;
+  *"api graphql"*) out='{"data": {"repository": {"pullRequest": {"reviewThreads": {"nodes": []}}}}}' ;;
+  *) echo "fake gh: unexpected call: $*" >&2; exit 1 ;;
+esac
+if [ -n "$jqx" ]; then printf '%s' "$out" | jq -r "$jqx"; else printf '%s\n' "$out"; fi
+GH
+chmod +x "$WORK/relgh/gh"
+PATH="$WORK/relgh:$PATH" "$SCRIPTS/related-prs.sh" --repo o/r --pr 7 > "$WORK/related.log" 2>&1
+expect "related-prs.sh finds the parent, the child and a same-author PR on the same files" \
+  "pr: parent #6 | 0 threads (0 resolved) | feat: a
+pr: child #8 | 0 threads (0 resolved) | feat: c
+  tests: test/c.test.ts
+pr: same-author #5 | 1 threads (1 resolved) | feat: prototype
+  shared: 1 files" \
+  "$(grep -v -E '^(threads:|  #|      reply)' "$WORK/related.log")"
+expect "related-prs.sh lists the threads of a related PR with their replies" \
+  "  #5 | 11 | bob | resolved | src/a.ts:3 | Make the hook protected.
+      reply 12 | ann | Fixed in abc1234." \
+  "$(grep -E '^(  #|      reply)' "$WORK/related.log")"
+expect "related-prs.sh finds no child of a fork PR" "" \
+  "$(PATH="$WORK/relgh:$PATH" REL_CROSS=true "$SCRIPTS/related-prs.sh" --repo o/r --pr 7 | grep '^pr: child')"
+check "related-prs.sh refuses a PR that is not a number" 2 "$SCRIPTS/related-prs.sh" --repo o/r --pr x
+
 echo "== pr-screen.sh"
 SCREENING_CONFIG="$SCRIPTS/../owners/vaadin/screening.json"
 # Three packages import the changed module, and a unit test asserts CSS. The fixture

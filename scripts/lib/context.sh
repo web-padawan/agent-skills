@@ -10,12 +10,12 @@
 #        DIFF_FACTS, WORKFLOW_FACTS, EARLIER_MODE, EARLIER_HEAD, EARLIER_LIST,
 #        CHANGED_SINCE, FINDINGS_FILE, OWNER, OWNER_RULES
 # Sets: CONTEXT_PATH, CONTEXT_NOTE, NOTES_PATH, PROD_DIFF_WHERE, TESTS_DIFF_WHERE,
-#       CONTEXT_LINES, PR_NUMBER, PR_URL, CI_SECTION, COMMENTS_SECTION
+#       CONTEXT_LINES, PR_NUMBER, PR_URL, CI_SECTION, COMMENTS_SECTION, RELATED_SECTION
 #
 # A section is a function section_<name> below, or a file scripts/sections/<name>.sh that
 # the composer sources. SECTIONS names them in order. A section prints nothing when its
 # condition fails. Otherwise it starts with an empty line, except the title.
-SECTIONS="title framing identity rules rubric pr-body changed-files conventions smells comment-policy settled-facts already-on-pr earlier-findings diff notes"
+SECTIONS="title framing identity rules rubric pr-body changed-files conventions smells comment-policy settled-facts already-on-pr related-prs earlier-findings diff notes"
 
 # Everything deterministic about the shared context file (references/pipeline.md §2):
 # the framing, identity, rules and rubric copied from the reference docs by marker,
@@ -221,6 +221,17 @@ section_already_on_pr() {
   return 0
 }
 
+section_related_prs() {
+  printf '%s\n' "$RELATED_SECTION" | grep -q '^pr: ' || return 0
+  echo
+  echo "## Already on related PRs"
+  echo
+  block "$PLUGIN_ROOT/references/skeleton-blocks.md" related-prs-header
+  echo
+  printf '%s\n' "$RELATED_SECTION" | sed 's/^/    /'
+  return 0
+}
+
 section_earlier_findings() {
   case "$EARLIER_MODE" in
     same|delta|rewritten)
@@ -411,6 +422,7 @@ plan_context() {
 
     CI_SECTION=$(printf '%s\n' "$CTX" | awk '/^=== CI_STATUS ===$/ { f = 1; next } /^=== / { f = 0 } f' | sed '/^$/d')
     COMMENTS_SECTION=$(printf '%s\n' "$CTX" | awk '/^=== EXISTING_COMMENTS ===$/ { f = 1; next } /^=== / { f = 0 } f' | sed '/^$/d')
+    RELATED_SECTION=$(printf '%s\n' "$CTX" | awk '/^=== RELATED_PRS ===$/ { f = 1; next } /^=== / { f = 0 } f' | sed '/^$/d')
     {
       local name
       for name in $SECTIONS; do context_section "$name"; done

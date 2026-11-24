@@ -150,9 +150,19 @@ if [ "$WANT_CONTEXT" = true ]; then
   COMMENTS_LINE=$(printf '%s\n' "${COMMENTS_SECTION:-}" | awk '/^summary: / { sub(/^summary: /, ""); print; exit } /^unavailable: / { print "none (" substr($0, 14) ")"; exit }')
   echo "existing_comments: ${COMMENTS_LINE:-none}"
   printf '%s\n' "${COMMENTS_SECTION:-}" | grep '^hint:' || true
+  # The PR lines of related-prs.sh; the context file quotes their threads.
+  RELATED_PRS=$(printf '%s\n' "${CTX:-}" | awk '/^=== RELATED_PRS ===$/ { f = 1; next } /^=== / { f = 0 } f' \
+    | awk '/^threads:/ { exit } NF')
+  if printf '%s\n' "$RELATED_PRS" | grep -q '^pr: '; then
+    echo "related_prs:"
+    printf '%s\n' "$RELATED_PRS" | sed -E -e 's/^pr: /  /' -e 's/^  (tests|shared):/    \1:/'
+  else
+    echo "related_prs: ${RELATED_PRS:-none}"
+  fi
 else
   echo "ci: not gathered (--no-context)"
   echo "existing_comments: not gathered (--no-context)"
+  echo "related_prs: not gathered (--no-context)"
 fi
 if [ -n "$SCREENING" ]; then
   echo "screening:"
