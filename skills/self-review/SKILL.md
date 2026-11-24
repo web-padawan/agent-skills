@@ -29,7 +29,7 @@ Every finding goes in the report as `confirmed` or `accepted`.
 | --- | --- |
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Steps 1–5: the plan, the script-written context file and your notes file, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | A / B / C, the tie-breaker, type-aware tiering, deep-block severities |
-| [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, escalation ladder |
+| [`../../references/delivery.md`](../../references/delivery.md) | Launch rules, the delivery clause, roll call, fallback |
 | [`references/rounds.md`](references/rounds.md) | Step 5: one more fan-out on the same head |
 | [`references/mutation.md`](references/mutation.md) | Steps 6 and 7: the coverage check, its gate question, mutant selection, restore safety, survivors as findings |
 | [`references/finalize.md`](references/finalize.md) | Steps 6 and 8: the gate, the FINDINGS.md template, the verdict rubric |
