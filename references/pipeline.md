@@ -55,8 +55,8 @@ The script wrote the skeleton. The skeleton already holds these parts:
 - the Settled facts that the script can prove (CI digest, diff facts)
 - the comments already on the PR: thread id, author, bot or human, open or resolved,
   `path:line`, first line
-- the earlier findings, when the last self-review of the branch left a findings file, and on a
-  newer head the line ranges changed since
+- the earlier findings, when an earlier round of the self-review left a findings file of the
+  same head
 - the conventions excerpt: the conventions docs of the repository, quoted whole while their
   total stays at 400 lines or less. A doc that does not fit is named only
 - the comment policy, when the diff touches a comment
@@ -142,13 +142,6 @@ lead cleared: <the lead, a few words> — <how, one clause>
 A lead that returns as neither a finding nor a `lead cleared:` line was not worked. Triage
 treats such a lead that way (§5.3).
 
-On a newer head than the last self-review, the pass also writes one line per open earlier
-finding of its categories (the `## Earlier findings` section of the skeleton):
-
-```
-earlier <id> | <fixed|partially_fixed|fixed_wrongly|not_fixed|obsolete> | <how, one clause>
-```
-
 Categories, by owner pass:
 
 - `change`: `scope`, `behavior`, `fix`, `boundary`, `api`, `impact`
@@ -215,10 +208,8 @@ Navigate to `about:blank`, then build the tree inside `browser_evaluate`.
    repeats the claim of another thread only when you confirmed it.
 
    Then dedup against `## Earlier findings`, when the skeleton has it. A finding whose file
-   and claim match an earlier finding is that earlier finding, not a new one. Apply each
-   `earlier` line as the new status of its finding. An open earlier finding with no
-   `earlier` line keeps its status, marked `not checked`. A pass that repeats a `disputed`
-   or `accepted` finding gets the repeat dropped.
+   and claim match an earlier finding is that earlier finding, not a new one. Drop the
+   repeat.
 
    Then check against `## Already on related PRs`, when the skeleton has it. The plan lists
    these PRs as `related_prs:`. A finding that reverses a decision that a reply accepted
