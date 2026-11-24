@@ -4,6 +4,46 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-24 — Log audit of 29 review sessions: dead paths removed
+
+The review core grew from 3,370 lines on Sep 8 to 9,047 lines on Nov 24. The audit read the
+session logs of Oct 20 to Nov 24: 21 PR gates, 14 self-review plans and 123 pass runs. It
+counted how often each mechanism fired. Of about 44 posted threads, the change pass and the
+tests pass gave 24, the code pass gave 4, and the quick review gave 6.
+
+- `Only blocking issues` was chosen 0 times at 21 post gates. → `post-review.sh` has no
+  `--blocking-only` flag (`610155b`).
+- `pr-refresh.sh` ran 35 times at the gate and at triage. One session saw a change. →
+  it runs once, before Present, without `--at` (`85cd445`).
+- No PR changed a workflow file after `workflow-facts.sh` landed on Nov 4. → the script and
+  the `workflow:` block are gone. understand.md still asks to read each added `uses:` action
+  (`0991c8d`).
+- The deep candidate count printed 0 for 106 new Java methods, and the budget of 1 was
+  enough. `type_conflict` was `none` in 37 of 37 plans. → the scale tier alone caps the deep
+  budget, at 1 below the full tier, and the type conflict signal is gone (`e804ce3`). A full
+  review of a Java feature now gets a budget of 3, not 1.
+- `notes-guard.py` denied nothing. A wrong notes count never changed a posted finding. →
+  the notes file has no ids, and no pass ends with a `notes:` line. The guard still denies
+  a launch without the notes file (`fdbdcef`).
+- 0 of 14 self-review plans ran on a newer head than a findings file. Only the same head
+  occurred, for a further round. → the plan ignores a findings file of another head. The
+  `earlier` lines, the reconcile statuses and the delta block are gone (`6c0559c`).
+- The stage registry held 2 stages for 1 skill. → the plan prints `round:`, `mutants:` and
+  `mutant_pool:` as plain keys, with the flags `--rounds` and `--no-coverage` (`bf26c4f`).
+- 0 of 22 roll calls had a missing or a truncated pass, and no pass was launched again.
+  Every launch was asynchronous and delivered. → delivery.md keeps the `name` rule, the roll
+  call and one fallback, in 73 lines. The `run_in_background: false` rule and the truncated
+  report steps are gone.
+- Kept against the first proposal: `type: undetermined`, for a repository without
+  Conventional Commits titles, and `passes_dropped`, which the language limit of the lanes
+  uses.
+- Not changed, and open: the code pass in PR mode, the screening verdicts, and the mechanisms
+  that the reviews 16 to 19 added.
+- An independent review pass of the branch found that an `open` A of an earlier round could
+  leave the verdict. → finalize.md adds the earlier findings of the same head to the gate list.
+- The smoke suite went from 201 checks to 190. The review core went from 9,047 lines to
+  8,436.
+
 ## 2026-11-24 — PR reviews 16 to 19: flow-components #10795 to #10798, a stack of chart PRs
 
 One session reviewed four stacked PRs by mcollovati, split out of the prototype #10728 (PR
