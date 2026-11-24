@@ -4,7 +4,34 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
-## 2026-11-23 — PR review 15: flow-components #10728, ChartFunction for chart options
+## 2026-11-24 — PR reviews 16 to 19: flow-components #10795 to #10798, a stack of chart PRs
+
+One session reviewed four stacked PRs by mcollovati, split out of the prototype #10728 (PR
+review 15): the JSON tree refactor (#10795), `ChartFunction` (#10796), its setters (#10797)
+and the strict CSP ITs (#10798). Each PR has the previous one as its base branch. All four
+link the issue #10723, and none links #10728.
+
+- In the #10798 run, the Gate and the Post questions reached the reviewer with no text. The
+  API messages of the two `AskUserQuestion` calls held only a thinking block and the tool
+  call. In the 7 earlier questions, 2 to 4 KB of text came first in the same message. The run
+  followed a `/exit` and a resume. The reviewer answered the Gate blind and declined to post
+  findings that they had not seen. The open dialog can also cover the text above it. → open.
+- On #10796, triage kept a blocking finding that asked to make `clearFormatterFunction()`
+  package-private. On #10728, the reviewer had asked for `protected` hooks on
+  `AbstractDataLabels.java:201`, and the author fixed it in 5921a2ed79. The finding reversed
+  an accepted decision. Triage also kept a test gap that #10797 closes with
+  `ChartFunctionSettersTest`. The plan printed `existing_comments: none` for #10796, because
+  the threads were on other PRs. Nothing in the pipeline looks at the base branch, the PRs
+  stacked on top, or an open PR of the same author with the same files. → open.
+- On #10795, the author force-pushed after triage. The review was presented for the old head,
+  with a nitpick on an `AlertJs` change that the new head removed. `post-review.sh --dry-run`
+  refused with "the PR head moved from 5367352 to 4f5a8a1". The refusal worked, but only after
+  the Present step. `pr-refresh.sh` runs only `--at gate|triage`. → open.
+- Three passes miscounted the notes file. #10795 tests: `notes: 9 settled, 3 leads` for a
+  file with 5 and 3. #10796 code: 6 settled of 7. #10798 tests: 6 settled of 8. The roll call
+  of pipeline.md §4 reads a wrong count as "did not read the Settled facts". So triage cannot
+  tell a pass that skipped the file from a pass that counted badly. → open.
+
 
 71 files and 2395 production lines, most of them 53 setter pairs in 55 model classes. The PR
 adds `ChartFunction` and sends each function as a separate argument of a declared `ChartJs`
