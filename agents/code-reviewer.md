@@ -101,9 +101,7 @@ Three questions share this category. Answer all three.
   after the findings. A lead that ends in neither counts as not worked, and triage treats it
   so.
 - **Earlier findings.** The `## Earlier findings` section of the context file may list the
-  findings of an earlier review. On the same head, never repeat them. On a newer head, write
-  one `earlier <id> | <status> | <how, one clause>` line per open finding of your categories,
-  after the lead lines. The section says which status applies.
+  findings of an earlier round on the same head. Never repeat them.
 - **Already on the PR.** Check the context file section `## Already on the PR` for a thread on
   the same file whose first line makes your claim. For such a thread, append ` | dup:<id>` to
   the finding line. Report the finding anyway, because triage records whether the review
