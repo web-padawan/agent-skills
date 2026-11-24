@@ -287,9 +287,6 @@ check "post-review.sh refuses a dup verdict outside the vocabulary" 2 \
 post_json confirms '[{"file": "a", "line": 1, "message": "**issue (logic, blocking):** x", "dup": {"id": 5, "verdict": "confirms"}}]'
 check "post-review.sh refuses a run where every finding confirms a thread" 2 \
   "$SCRIPTS/post-review.sh" --head "$POST_HEAD" --findings "$WORK/post-confirms.json" --dry-run
-post_json nonblocking '[{"file": "a", "line": 1, "message": "**suggestion (logic, non-blocking):** x"}]'
-check "post-review.sh refuses --blocking-only when no finding is blocking" 2 \
-  "$SCRIPTS/post-review.sh" --head "$POST_HEAD" --findings "$WORK/post-nonblocking.json" --dry-run --blocking-only
 # A fake gh: PR 1 at $POST_HEAD, no threads, src/a.js with the hunks 1-4 and 21-25 and a
 # binary file without a patch.
 mkdir -p "$WORK/fakegh"

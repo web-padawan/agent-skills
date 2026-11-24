@@ -5,7 +5,7 @@
 #
 # Usage:
 #   post-review.sh [--pr <number-or-url>] --head <sha> --findings <file.json> [--summary <file.md>]
-#                  [--body-only] [--blocking-only] [--dry-run]
+#                  [--body-only] [--dry-run]
 #
 # <file.json>: the frozen list of triage (pipeline.md §5.7), one object per finding:
 #   {"findings": [{"file": "path/in/diff", "line": 42, "message": "**issue (logic, blocking):** ...",
@@ -38,9 +38,6 @@
 # the author gets one list to work through, and no new thread is opened. A reply still goes
 # into its thread.
 #
-# --blocking-only posts only the findings whose label carries `blocking`, and lists the rest.
-# It refuses the run when no finding is blocking.
-#
 # A line finding must sit on a line of a hunk of the PR diff, context lines included.
 # GitHub moves a thread on any other line to the file, so the script refuses the batch
 # before anything posts, also in a dry run. Re-anchor such a finding, or set
@@ -64,7 +61,6 @@ SUMMARY=""
 REVIEWED_HEAD=""
 DRY_RUN=false
 BODY_ONLY=false
-BLOCKING_ONLY=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -74,7 +70,6 @@ while [[ $# -gt 0 ]]; do
     --summary) SUMMARY="${2:?--summary requires a value}"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
     --body-only) BODY_ONLY=true; shift ;;
-    --blocking-only) BLOCKING_ONLY=true; shift ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -131,21 +126,16 @@ done
 
 # ── Select what posts ────────────────────────────────────────────────
 # One disposition per finding: `thread` (a new thread, or the body), `reply` (into the dup
-# thread), `confirms` (agreement, never a comment), `status` (not postable), `blocking`
-# (held back by --blocking-only).
+# thread), `confirms` (agreement, never a comment), `status` (not postable).
 DISP=()
 POSTABLE=0
 NEED_REVIEW=false   # a pending review: a new thread outside --body-only, or any reply
 for ((i = 0; i < N; i++)); do
   status=$(field "$i" status); dup_verdict=$(field "$i" dup.verdict)
-  first=$(field "$i" message | head -1)
   d=thread
   case "$status" in dismissed*|fixed*|dropped*) d=status ;; esac
   if [ "$d" = thread ] && [ -n "$dup_verdict" ]; then
     case "$dup_verdict" in confirms) d=confirms ;; *) d=reply ;; esac
-  fi
-  if [ "$BLOCKING_ONLY" = true ] && [ "$d" != status ] && [ "$d" != confirms ] && ! [[ "$first" =~ $BLOCKING_RE ]]; then
-    d=blocking
   fi
   DISP[i]=$d
   case "$d" in
@@ -154,7 +144,7 @@ for ((i = 0; i < N; i++)); do
   esac
 done
 if [ "$N" -gt 0 ] && [ "$POSTABLE" -eq 0 ]; then
-  echo "error: nothing to post — every finding is a confirms, a non-blocking or a non-postable status; nothing posted" >&2
+  echo "error: nothing to post — every finding is a confirms or a non-postable status; nothing posted" >&2
   exit 2
 fi
 
@@ -370,7 +360,6 @@ for i in $ORDER; do
   case "${DISP[i]}" in
     confirms) echo "confirms: $where (thread $dup_id, agreement is not a comment)"; LISTED=$((LISTED + 1)); continue ;;
     status) echo "skipped: $where (status $status)"; LISTED=$((LISTED + 1)); continue ;;
-    blocking) echo "skipped: $where (not blocking)"; LISTED=$((LISTED + 1)); continue ;;
   esac
 
   if [ "${DISP[i]}" = thread ] && [ "$BODY_ONLY" != true ] && [ -n "$file" ] && [ -n "$line" ] && [ "$allow" != true ]; then
