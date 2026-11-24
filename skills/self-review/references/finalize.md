@@ -6,6 +6,9 @@ Render the gate from the frozen list of triage
 ([`../../../references/pipeline.md`](../../../references/pipeline.md) §5.7), never from the
 agent reports.
 
+When the context file has an `## Earlier findings` section, add each finding of that section
+to the list, with its id and its status. An earlier `open` A finding counts as a confirmed A.
+
 Before you print the gate, give each finding the id that the findings file will hold. An
 earlier finding keeps its id. A new finding gets the next free id. The gate, the report and
 the findings file show the same id, so that the author can dispute a finding by its id.
@@ -197,7 +200,7 @@ with Write as one JSON object:
   `needs more work`. Omit it when you write the file between rounds. A file without
   `verdict` is the record of a run that did not finish.
 - Keep every finding of an earlier file of the same head. Give a new finding the next free
-  id. Never reuse an id.
+  id. Never reuse an id of that file.
 - When triage merges a finding into another one (pipeline.md §5.2), add it to the `merged`
   list of the kept finding. Give each entry its `file`, `line` and `claim`. The plan lists
   the entries with the kept finding, so a later round does not report them again. Example:
@@ -209,6 +212,7 @@ with Write as one JSON object:
   - `disputed`: the author says that the code is correct. No later round on this head
     reports it again.
 - When the author disputes a finding at the gate, by id or by claim, set it to `disputed`.
+  The author can also edit the file by hand between runs.
 
 ## Verdict rubric
 
