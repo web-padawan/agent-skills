@@ -12,6 +12,7 @@ single-plugin marketplace. You install it from a local path. Nothing is publishe
 | `comment-cleanup` | Deletes and shortens comments in a diff, a file or a package. Edits comment lines only. |
 | `screenshot-diff` | Classifies visual test screenshot diffs. Never updates a baseline. |
 | `work-summary` | A manager summary of your merged PRs for a period. |
+| `issue-draft` | A short issue draft in the issue form of the target repository. Writes a local file and posts nothing. |
 | `codebase-onboarding` | An onboarding guide and a starter `CLAUDE.md` for an unfamiliar Node.js codebase. Never changes an existing `CLAUDE.md`. |
 | `authoring-skills` | Conventions to create or improve a skill in this plugin. |
 
@@ -39,6 +40,8 @@ Restart the session so that the skills load.
 /agent-skills:comment-cleanup --commit HEAD
 /agent-skills:screenshot-diff packages/button
 /agent-skills:work-summary menu-bar --since 2026-08-01 --until 2026-09-30
+/agent-skills:issue-draft bug                   # one issue draft from the findings of the session
+/agent-skills:issue-draft --repo owner/name 123 # a new body for an existing issue, as a draft
 /agent-skills:codebase-onboarding               # guide and starter CLAUDE.md of a Node.js repo
 ```
 
@@ -135,5 +138,5 @@ The plugin runs from a cached copy of one commit. Commit the change, run
 
 ## Dependencies
 
-- The `gh` CLI, authenticated, for every skill that reads a PR.
+- The `gh` CLI, authenticated, for every skill that reads a PR or an issue.
 - No owner by default. The owner directory of the repository under review adds its rules.
