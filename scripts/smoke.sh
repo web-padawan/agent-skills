@@ -507,7 +507,7 @@ expect "pr-screen.sh lists the contributor flags it skipped for a team author" \
   --meta "$WORK/screening-feat.json") > "$WORK/screening-generic.log" 2>&1
 expect "pr-screen.sh applies only the generic rules without a config" \
   "issue_flags: none" "$(grep '^issue_flags:' "$WORK/screening-generic.log")"
-check "pr-screen.sh exits 0 without a breaking marker" 0 \
+check "pr-screen.sh exits 0 for a PR without flags" 0 \
   bash -c "cd '$SCREENING_REPO' && '$SCRIPTS/pr-screen.sh' --pr 1 --meta '$WORK/screening-feat.json'"
 
 echo "== ci.sh"
