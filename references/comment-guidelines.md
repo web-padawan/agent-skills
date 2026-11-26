@@ -54,27 +54,6 @@ Offer it at the gate. Never post it by default. Make two moves, in this order:
 In a review, the summary goes in the review body (`post-review.sh --summary`). The script
 writes the census line, so the summary file holds move 2 only.
 
-## Replies by verdict
-
-The screening verdict of `pr-review` (`skills/pr-review/references/screening.md`) picks the shape.
-A `take` verdict gets the review of this file. The three other verdicts get one comment:
-
-- **decide**: thank the author, name the decision and its owner, and say what happens to the
-  PR meanwhile. Post nothing about the code.
-- **decline**: thank the author, give the reason, and name the replacement or the next step.
-  Reuse what the PR got right, for example its tests.
-- **redirect**: one review body. Name the aligned mechanism, cite a precedent `file:line`,
-  sketch the change, and list the tests to add. Inline threads only for blocking defects.
-
-Show the draft in chat. Post decide and decline with `post-comment.sh --no-label`, and
-redirect with `post-review.sh --body-only`.
-
-Examples, from maintainer replies on fork PRs:
-
-- decide: `Thanks for the PR. We will discuss with the team whether this change is ok to do in a minor release before proceeding.`
-- decline: `Closing per above comment. A proper solution needs the offset API of the linked issue, which would also simplify the margin workarounds in other components. Thanks for the regression tests, they can be reused if we agree to proceed with the offset API.`
-- redirect: `**suggestion**: Move the aria-controls binding into the heading template` followed by the `delegateProps` precedent (`opened` already uses it), the template binding, what it removes (`__updateAriaControls()`, the `updateComplete` wait), and two tests: a replaced heading and replaced content.
-
 ## Good and bad comment examples
 
 **Good comments** (specific, actionable, about added code):
