@@ -4,6 +4,25 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-26 — Log audit, part 2: screening verdicts and the Follow-ups section
+
+One review ran on the pruned plugin, a quick review of flow-components #10808. The plan, the
+one `pr-refresh.sh` call and the post worked. The gates are now 23.
+
+- `Draft a reply` and `Stop` were chosen 0 times at 23 gates. The `decide` hint fired 2
+  times, both on team PRs, and both were wrong. Only 4 PRs came from a contributor. →
+  `pr-screen.sh` prints the facts and the flags, and no `verdict_hint`, `verdict_reason` or
+  `gate_default`. The gate has no `Draft a reply` option. The redirect verdict and the
+  replies by verdict are gone. The gate lists `Quick review` first on scale trivial
+  (`bec785c`). The `low-impact` and `a11y` flags no longer depend on a reach of 3.
+- The Follow-ups section repeated every B and C finding. It took 30 to 44 of the 123 to 161
+  lines in 5 of 6 real reports. After a report, the author asked to fix the findings and
+  never asked for a follow-up issue. → the report has no Follow-ups section (`5c22930`).
+- Left in place: a fact pack still prints `reach_max:`, and no script reads it now.
+- Not done, by choice of the author: a growth cap in the smoke suite, and the code pass only
+  at the full scale in PR mode.
+- The review core went from 8,436 lines to 8,349.
+
 ## 2026-11-24 — Log audit of 29 review sessions: dead paths removed
 
 The review core grew from 3,370 lines on Sep 8 to 9,047 lines on Nov 24. The audit read the
