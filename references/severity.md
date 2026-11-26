@@ -92,8 +92,8 @@ filter of `pr-review` decides which ones are worth a line comment.
 
 ## Rendering — Conventional Comments
 
-The tier is the internal severity of the plugin. A PR comment, a follow-up line, a summary, or
-anything else that a human reads renders the tier as a
+The tier is the internal severity of the plugin. A PR comment, a summary, or anything else
+that a human reads renders the tier as a
 [Conventional Comment](https://conventionalcomments.org). The form is
 `<label> (<decorations>): <subject>` and then the discussion. Triage assigns the label once, at
 step 5.7 of [`pipeline.md`](pipeline.md). Triage freezes the label in the canonical list beside
