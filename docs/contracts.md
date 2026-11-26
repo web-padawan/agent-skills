@@ -55,7 +55,7 @@ findings           pr mode: the path of the findings file
 report_dir         self mode: the report directory
 report             self mode: the path of the report
 context            the path and size of the context file, or why it was not written
-notes              the path of the notes file of the orchestrator, deleted by each plan that writes a context, required before fan-out
+notes              the path of the notes file of the orchestrator, `(kept ...)` for the same head, deleted for another head, required before fan-out
 diff_prod          inline, none, or the patch path of the production lane
 diff_tests         inline, none, or the patch path of the test lane
 commands           the lint and test commands and their source

@@ -35,7 +35,7 @@
 # plan's `context:` path — `--context-out` picks the path, `--no-write` skips it. The
 # skeleton and, for a large diff, the two patch files beside it are the only files this
 # script creates; it names (never writes) the `notes:` file the orchestrator adds beside
-# them, and deletes an earlier notes file and patches when it writes a new skeleton. After the plan it prints `=== PROMPTS ===`: the literal prompt for each pass, with
+# them, and deletes the earlier patches, and an earlier notes file of another head, when it writes a new skeleton. After the plan it prints `=== PROMPTS ===`: the literal prompt for each pass, with
 # the pass's agent and model, so a launch copies a block instead of assembling one.
 # It never stages, commits, or touches tracked files.
 #
@@ -250,7 +250,11 @@ elif [ -n "$REPORT_DIR" ]; then
 fi
 if [ -n "$CONTEXT_PATH" ]; then
   echo "context: $CONTEXT_PATH (written, $CONTEXT_LINES lines — never Edit it; every pass reads it first)"
-  echo "notes: $NOTES_PATH (not written — Write it in a message of its own before the fan-out, with your Settled facts, Open leads and corrections; a section with nothing reads \`- none\`; hooks/notes-guard.py denies a pass while the file does not exist)"
+  if [ "$NOTES_KEPT" = true ]; then
+    echo "notes: $NOTES_PATH (kept — written for this head; Write it again only to change it)"
+  else
+    echo "notes: $NOTES_PATH (not written — Write it in a message of its own before the fan-out, with your Settled facts, Open leads and corrections; a section with nothing reads \`- none\`; hooks/notes-guard.py denies a pass while the file does not exist)"
+  fi
   echo "diff_prod: $PROD_DIFF_WHERE"
   echo "diff_tests: $TESTS_DIFF_WHERE"
 else

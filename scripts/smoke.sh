@@ -701,6 +701,17 @@ echo "stale" > "$FX_DIR/context-prod.patch"
 fx_plan fx-png.log --fresh --type fix
 expect "review-plan.sh deletes the notes file and patches of an earlier context" \
   "" "$(ls "$FX_DIR/context-notes.md" "$FX_DIR/context-prod.patch" 2>/dev/null)"
+# A plan run again for the same head keeps the notes file. A plan for another head deletes it.
+echo "## Settled facts" > "$FX_DIR/context-notes.md"
+fx_plan fx-same-head.log --fresh --type fix
+expect "review-plan.sh keeps the notes file of the same head" \
+  "$FX_DIR/context-notes.md" "$(ls "$FX_DIR/context-notes.md" 2>/dev/null)"
+expect "review-plan.sh prints that it kept the notes file" 1 "$(grep -c '^notes: .* (kept' "$WORK/fx-same-head.log")"
+sed -i.bak 's/^- head: `[0-9a-f]*`$/- head: `0000000000000000000000000000000000000000`/' "$FX_DIR/context.md"
+rm -f "$FX_DIR/context.md.bak"
+fx_plan fx-png.log --fresh --type fix
+expect "review-plan.sh deletes the notes file of another head" \
+  "" "$(ls "$FX_DIR/context-notes.md" 2>/dev/null)"
 # notes-guard.py reads the context line of a real prompt of the plan.
 NOTES_GUARD="$SCRIPTS/hooks/notes-guard.py"
 FX_PROMPT=$(awk '/^--- change ·/ { f = 1; next } /^--- / { f = 0 } f' "$WORK/fx-png.log")

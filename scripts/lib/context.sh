@@ -9,7 +9,7 @@
 #        TEST_FILES, BINARY_FILES, COMMENT_FILES, CONVENTIONS, CONVENTIONS_WHOLE_MAX,
 #        DIFF_FACTS, EARLIER_MODE, EARLIER_HEAD, EARLIER_LIST,
 #        FINDINGS_FILE, OWNER, OWNER_RULES
-# Sets: CONTEXT_PATH, CONTEXT_NOTE, NOTES_PATH, PROD_DIFF_WHERE, TESTS_DIFF_WHERE,
+# Sets: CONTEXT_PATH, CONTEXT_NOTE, NOTES_PATH, NOTES_KEPT, PROD_DIFF_WHERE, TESTS_DIFF_WHERE,
 #       CONTEXT_LINES, PR_NUMBER, PR_URL, CI_SECTION, COMMENTS_SECTION, RELATED_SECTION
 #
 # A section is a function section_<name> below, or a file scripts/sections/<name>.sh that
@@ -307,6 +307,7 @@ plan_context() {
   # orchestrator's context — the one cost the skeleton exists to remove.
   NOTES_PATH=""
   [ -n "$CONTEXT_PATH" ] && NOTES_PATH="${CONTEXT_PATH%.md}-notes.md"
+  NOTES_KEPT=false
 
   PROD_DIFF_WHERE="none"
   TESTS_DIFF_WHERE="none"
@@ -316,9 +317,17 @@ plan_context() {
     PROD_PATCH="$PATCH_STEM-prod.patch"
     TESTS_PATCH="$PATCH_STEM-tests.patch"
     mkdir -p "$(dirname "$CONTEXT_PATH")"
-    # A new context starts without notes. The path is the same for every branch, so an
-    # earlier notes file holds the facts of another branch or of an earlier round.
-    rm -f "$NOTES_PATH" "$PROD_PATCH" "$TESTS_PATCH"
+    # The notes path is the same for every branch, so an earlier notes file can hold the
+    # facts of another head. Keep it only when the earlier context names the same head: a
+    # plan run again for that head, for example with --type, must not drop the notes.
+    OLD_HEAD=""
+    [ -f "$CONTEXT_PATH" ] && OLD_HEAD=$(sed -n 's/^- head: `\([0-9a-f]*\)`$/\1/p' "$CONTEXT_PATH" | head -1)
+    if [ -n "$OLD_HEAD" ] && [ "$OLD_HEAD" = "$HEAD" ] && [ -f "$NOTES_PATH" ]; then
+      NOTES_KEPT=true
+    else
+      rm -f "$NOTES_PATH"
+    fi
+    rm -f "$PROD_PATCH" "$TESTS_PATCH"
 
     # PR fields for the identity section and the body. gh's own --jq, never grep on JSON.
     PR_NUMBER=""; PR_URL=""; PR_AUTHOR=""; PR_HEADREF=""; PR_BASEREF=""; PR_DRAFT=""; PR_BODY=""
