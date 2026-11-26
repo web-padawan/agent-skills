@@ -8,47 +8,37 @@ team (`pr_author: <login> (contributor)` in the screening lines). Skip it for a 
 Add the card to the explanation of the PR.
 
 ```
-**Verdict**: <verdict_hint of the plan, or your corrected verdict>
 - Issue: #<n>, <labels that matter>, <team or contributor>, <age> | none linked
+- Flags: <each issue_flags entry of the plan, with what it means for this PR> | none
 - Reach: <the consumers that the diff_facts lines name, the widest first> | none named
 - Claims: <one line per checkable claim of the body, with its status>
-- Why: <the verdict_reason lines, or the one fact that decides>
 ```
 
-## Screening verdicts
+## Flags
 
-`scripts/pr-screen.sh` prints the screening facts, a `verdict_hint` and one `verdict_reason`
-line per rule that fired, for example `behavior-altering -> question (semver)`. The label
-after the arrow is the label of the reply. The plan quotes them under `screening:`. The hint
-is a proposal, and the reviewer picks at the gate. The plan prints the first gate option of
-the hint as `gate_default:`. The table gives the option of a corrected verdict.
+`scripts/pr-screen.sh` prints the screening facts, and the plan quotes them under
+`screening:`. A flag is a fact for the reviewer. The reviewer decides at the gate whether a
+code review is worth it now. Each flag reads a label, a marker or the author:
 
-| Verdict | Means | Default gate option |
-| --- | --- | --- |
-| take | a code review is worth it now | `Full review`, or `Quick review` on scale trivial |
-| review | review, but first confirm the bug on the base | `Full review` |
-| decide | the team must decide before a code review is worth it | `Draft a reply` |
-| decline | the PR duplicates or conflicts with team work | `Draft a reply` |
-| redirect | a better location or mechanism exists | set at Triage |
+| Flag | Means |
+| --- | --- |
+| `behavior-altering` | a breaking label, a `type!:` title or a `BREAKING CHANGE:` footer: a semver call |
+| `feature-no-ac` | a feature of a contributor, and the issue has no acceptance criteria |
+| `low-impact` | the issue has a low impact label. Compare it with the `reach` lines |
+| `a11y` | the issue has an accessibility label. No pass runs a screen reader |
+| `untriaged`, `self-filed` | no team member confirmed the bug |
 
-A rule reads a label, a marker or a count. The label rules and the team allowlist come from
-the config that `screening_config:` names. Without a config, only the generic rules apply.
-A `type!:` title or a `BREAKING CHANGE:` footer sets `behavior-altering`, and the script
-prints `breaking_marker:`. For a team author, the script prints the contributor rules in
-`skipped_flags:`, and they do not change the hint. The evidence behind each rule is in
+The label rules and the team allowlist come from the config that `screening_config:` names.
+Without a config, only the generic rules apply. For a team author, the script prints the
+contributor flags in `skipped_flags:`. The evidence behind each flag is in
 `docs/rationale.md`.
 
-### Correct the hint
+The flags read only labels, markers and the author. Add a line to the card when another fact
+matters at the gate:
 
-The rules read only labels, markers and counts. Correct the verdict when a fact outside the
-rules decides:
-
-- **decline**: a team PR, a team branch or an assignee on the same issue. The linked issue
-  in the context file lists the PRs that reference it.
-- **decide**: the body or the issue thread shows that a maintainer asked for a discussion.
-- **take**: a decide rule fired, but a maintainer already agreed on the issue. Quote the comment.
-
-Say in one clause why you corrected the hint.
+- a team PR, a team branch or an assignee on the same issue
+- a maintainer who asked for a discussion in the body or in the issue thread
+- a maintainer who already agreed on the issue. Quote the comment.
 
 ## Claims of the body
 
