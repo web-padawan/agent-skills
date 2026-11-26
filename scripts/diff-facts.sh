@@ -7,7 +7,7 @@
 #   diff-facts.sh --base <sha> --head <sha>
 #
 # Run it from inside the target repository. review-plan.sh calls it in both modes and
-# quotes the lines under Settled facts. pr-screen.sh takes `reach_max` for its verdict.
+# quotes the lines under Settled facts.
 #
 # A fact pack is an executable scripts/facts/<name>.sh, or <owner dir>/facts/<name>.sh for
 # the owner of the repository (lib/owner.sh). The core runs every pack from the repository

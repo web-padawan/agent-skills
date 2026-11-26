@@ -1,8 +1,8 @@
 # facts.sh: sourced by review-plan.sh. The conventions doc, the owner rules, the diff facts
 # and their fact packs, the screening facts, the command map and the affected packages.
 #
-# Reads: MODE, PR, WANT_CONTEXT, SCRIPT_DIR, PLUGIN_ROOT, BASE, HEAD, CHANGED, SCALE, PROD_FILES
-# Sets: CONVENTIONS, CONVENTIONS_WHOLE_MAX, OWNER, OWNER_RULES, DIFF_FACTS, REACH_MAX,
+# Reads: MODE, PR, WANT_CONTEXT, SCRIPT_DIR, PLUGIN_ROOT, BASE, HEAD, CHANGED, PROD_FILES
+# Sets: CONVENTIONS, CONVENTIONS_WHOLE_MAX, OWNER, OWNER_RULES, DIFF_FACTS,
 #       SCREENING, LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, PROD_SOURCE,
 #       AFFECTED
 
@@ -28,21 +28,19 @@ plan_facts() {
   # ── Diff facts
   # The facts of the diff that git alone answers (scripts/diff-facts.sh). The plan prints
   # them, and the skeleton quotes them whole under Settled facts, in both modes.
-  DIFF_FACTS=""; REACH_MAX=0
+  DIFF_FACTS=""
   if [ -n "$BASE" ] && [ -n "$HEAD" ] && [ -n "$CHANGED" ]; then
     DIFF_FACTS=$(FACTS_MODE="$MODE" FACTS_PR="$PR" FACTS_OFFLINE="$([ "$WANT_CONTEXT" = true ] || echo 1)" \
       "$SCRIPT_DIR/diff-facts.sh" --base "$BASE" --head "$HEAD" 2>&1 | sed '/^=== DIFF_FACTS ===$/d') \
       || DIFF_FACTS="error: diff-facts.sh failed — $(printf '%s' "$DIFF_FACTS" | tail -1)"
-    REACH_MAX=$(printf '%s\n' "$DIFF_FACTS" | sed -n 's/^reach_max: //p' | head -1)
-    REACH_MAX=${REACH_MAX:-0}
   fi
 
   # ── Screening (pr mode)
-  # What a maintainer must know before a review is worth it: the author, the linked issue,
-  # the flags and the verdict hint. Only the plan prints it. The passes never learn the bar.
+  # What a maintainer must know before a review is worth it: the author, the linked issue
+  # and the flags. Only the plan prints it. The passes never learn the bar.
   SCREENING=""
   if [ "$MODE" = "pr" ] && [ -n "$PR" ] && [ "$WANT_CONTEXT" = true ]; then
-    SCREENING_ARGS=(--pr "$PR" --reach-max "$REACH_MAX" --scale "$SCALE")
+    SCREENING_ARGS=(--pr "$PR")
     SCREENING=$("$SCRIPT_DIR/pr-screen.sh" "${SCREENING_ARGS[@]}" 2>&1 | sed '/^=== SCREENING ===$/d') \
       || SCREENING="error: pr-screen.sh failed — $(printf '%s' "$SCREENING" | tail -1)"
   fi

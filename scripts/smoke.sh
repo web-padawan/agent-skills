@@ -468,25 +468,23 @@ expect "diff-facts.sh prints the first-sync rule of a notify property" 1 \
 expect "review-plan.sh quotes the diff facts in the skeleton" \
   "    shadow_reach: packages/core/src/vaadin-core-mixin.js:2 child.$.button" \
   "$(grep '^    shadow_reach:' "$SCREENING_REPO/.git/self-review/context.md" 2>/dev/null)"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --config "$SCREENING_CONFIG" \
   --meta "$WORK/screening-meta.json") > "$WORK/screening.log" 2>&1
 expect "pr-screen.sh sets the flag of an issue label" \
   "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening.log")"
 expect "pr-screen.sh counts a former employee as team" \
   "issue: #7 open labels=[bug, Impact: Low] author=team age=31d comments=0" "$(grep '^issue:' "$WORK/screening.log")"
-expect "pr-screen.sh proposes a decision for a low-impact change with a wide reach" \
-  "verdict_reason: low-impact and reach 3 -> question (design)" "$(grep '^verdict_reason:' "$WORK/screening.log")"
-expect "pr-screen.sh proposes a reply at the gate for a decide verdict" \
-  "gate_default: Draft a reply" "$(grep '^gate_default:' "$WORK/screening.log")"
+expect "pr-screen.sh prints no verdict" \
+  "0" "$(grep -c -E '^(verdict_hint|verdict_reason|gate_default):' "$WORK/screening.log")"
 jq '.data.repository.pullRequest.closingIssuesReferences.nodes[0].labels.nodes = []' "$WORK/screening-meta.json" > "$WORK/screening-nolabels.json"
 (cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --meta "$WORK/screening-nolabels.json") > "$WORK/screening-nolabels.log" 2>&1
 expect "pr-screen.sh keeps the fields of an issue without labels" \
   "issue: #7 open labels=[] author=contributor age=31d comments=0" "$(grep '^issue:' "$WORK/screening-nolabels.log")"
-expect "pr-screen.sh gives no behavior-altering reason without a breaking label or marker" \
+expect "pr-screen.sh sets no behavior-altering flag without a breaking label or marker" \
   "0" "$(grep -c 'behavior-altering' "$WORK/screening.log")"
 jq '.data.repository.pullRequest.title = "fix!: change the core mixin"
   | .data.repository.pullRequest.body = "Text\r\nBREAKING CHANGE: M is 2"' "$WORK/screening-meta.json" > "$WORK/screening-breaking.json"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --config "$SCREENING_CONFIG" \
   --meta "$WORK/screening-breaking.json") > "$WORK/screening-breaking.log" 2>&1
 expect "pr-screen.sh reads a breaking change that the title and the body mark" \
   "breaking_marker: title and body" "$(grep '^breaking_marker:' "$WORK/screening-breaking.log")"
@@ -494,26 +492,23 @@ expect "pr-screen.sh sets behavior-altering for a marked breaking change" \
   "issue_flags: behavior-altering low-impact" "$(grep '^issue_flags:' "$WORK/screening-breaking.log")"
 # A feature without acceptance criteria: a contributor gets the flag, a team author skips it.
 jq '.data.repository.pullRequest.title = "feat: add a core option"' "$WORK/screening-meta.json" > "$WORK/screening-feat.json"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --config "$SCREENING_CONFIG" \
   --meta "$WORK/screening-feat.json") > "$WORK/screening-feat.log" 2>&1
 expect "pr-screen.sh flags a feature of a contributor without acceptance criteria" \
   "issue_flags: low-impact feature-no-ac" "$(grep '^issue_flags:' "$WORK/screening-feat.log")"
 jq '.data.repository.pullRequest.author.login = "platosha"' "$WORK/screening-feat.json" > "$WORK/screening-feat-team.json"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 --config "$SCREENING_CONFIG" \
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --config "$SCREENING_CONFIG" \
   --meta "$WORK/screening-feat-team.json") > "$WORK/screening-feat-team.log" 2>&1
 expect "pr-screen.sh keeps only the team flags for a team author" \
   "issue_flags: low-impact" "$(grep '^issue_flags:' "$WORK/screening-feat-team.log")"
 expect "pr-screen.sh lists the contributor flags it skipped for a team author" \
   "skipped_flags: self-filed feature-no-ac (team author)" "$(grep '^skipped_flags:' "$WORK/screening-feat-team.log")"
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --reach-max 3 \
+(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 \
   --meta "$WORK/screening-feat.json") > "$WORK/screening-generic.log" 2>&1
-(cd "$SCREENING_REPO" && "$SCRIPTS/pr-screen.sh" --pr 1 --scale trivial \
-  --meta "$WORK/screening-feat.json") > "$WORK/screening-trivial.log" 2>&1
-expect "pr-screen.sh proposes a quick review for a trivial take verdict" \
-  "gate_default: Quick review" "$(grep '^gate_default:' "$WORK/screening-trivial.log")"
 expect "pr-screen.sh applies only the generic rules without a config" \
-  "issue_flags: none|verdict_hint: take" \
-  "$(grep '^issue_flags:' "$WORK/screening-generic.log")|$(grep '^verdict_hint:' "$WORK/screening-generic.log")"
+  "issue_flags: none" "$(grep '^issue_flags:' "$WORK/screening-generic.log")"
+check "pr-screen.sh exits 0 without a breaking marker" 0 \
+  bash -c "cd '$SCREENING_REPO' && '$SCRIPTS/pr-screen.sh' --pr 1 --meta '$WORK/screening-feat.json'"
 
 echo "== ci.sh"
 # shellcheck source=lib/ci.sh

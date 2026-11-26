@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
 # pr-screen.sh — the screening facts of a PR: what a maintainer must know before a review is
-# worth it. The author, the linked issue with its labels, the flags that the labels and the
-# markers set, and a verdict hint from fixed rules.
+# worth it. The author, the linked issue with its labels, and the flags that the labels and
+# the markers set. The reviewer decides at the gate of pr-review what the flags mean.
 #
 # Usage:
-#   pr-screen.sh --pr <number-or-url> [--reach-max <n>] [--meta <file.json>]
-#                [--config <file.json>] [--scale trivial|lite|full]
+#   pr-screen.sh --pr <number-or-url> [--meta <file.json>] [--config <file.json>]
 #
 # Run it from inside the target repository. review-plan.sh calls it in pr mode.
-# --reach-max is the `reach_max` of scripts/diff-facts.sh: the most other packages that
-#   import one changed module. A fact pack prints it. Two rules read it. The default is 0.
-# --scale is the scale tier of the plan. It picks the `gate_default:` option of a `take`
-#   verdict. The default is full.
 # --meta reads the GraphQL answer from a file instead of gh, and team membership from the
 #   allowlist only. The smoke test uses it.
 # --config names the screening config. The default is screening.json in the owner directory
@@ -27,10 +22,9 @@
 #   triaged_labels       an issue label that marks triage. Without it, no issue is untriaged
 #   acceptance_criteria  a pattern in the issue body or comments. Without it, no feature-no-ac
 #
-# The verdict rules are the `Verdict hint` section below. Each rule that fires prints one
-# `verdict_reason:` line. skills/pr-review/references/screening.md says what each verdict
-# means at the gate. feature-no-ac and self-filed hold an outside contributor to the process
-# of the team. For a team author the script skips them and prints `skipped_flags:`.
+# skills/pr-review/references/screening.md says what each flag means. feature-no-ac and
+# self-filed hold an outside contributor to the process of the team. For a team author the
+# script skips them and prints `skipped_flags:`.
 #
 # Team means a 204 from orgs/<owner>/members/<login>, or a login in team_allowlist of the
 # config. author_association is never used, because it reports a private org member as
@@ -42,16 +36,12 @@
 # Exit codes: 0 ok · 1 gh could not answer · 2 usage error.
 set -euo pipefail
 
-REACH_DECIDE=3
-
-PR=""; REACH_MAX=0; META_FILE=""; CONFIG=""; SCALE="full"
+PR=""; META_FILE=""; CONFIG=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
-    --reach-max) REACH_MAX="${2:?--reach-max requires a value}"; shift 2 ;;
     --meta) META_FILE="${2:?--meta requires a value}"; shift 2 ;;
     --config) CONFIG="${2:?--config requires a value}"; shift 2 ;;
-    --scale) SCALE="${2:?--scale requires a value}"; shift 2 ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -60,8 +50,6 @@ done
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 [ -n "$PR" ] || { echo "error: --pr is required" >&2; exit 2; }
-[[ "$REACH_MAX" =~ ^[0-9]+$ ]] || { echo "error: --reach-max takes a number" >&2; exit 2; }
-case "$SCALE" in trivial|lite|full) ;; *) echo "error: --scale takes trivial, lite or full" >&2; exit 2 ;; esac
 command -v jq >/dev/null 2>&1 || { echo "error: jq not found" >&2; exit 1; }
 if [ -n "$CONFIG" ] && ! jq -e 'type == "object"' "$CONFIG" >/dev/null 2>&1; then
   echo "error: --config takes a JSON object file" >&2; exit 2
@@ -192,19 +180,6 @@ if [ -n "$ISSUES" ]; then
 fi
 if [ -n "$AC_PATTERN" ] && [ "$TITLE_TYPE" = feature ] && [ "$HAS_AC" != true ]; then add_contributor_flag feature-no-ac; fi
 
-# ── Verdict hint ──────────────────────────────────────────────────────
-has() { case " $FLAGS " in *" $1 "*) return 0 ;; esac; return 1; }
-VERDICT="take"; REASONS=""
-add_reason() { REASONS="${REASONS}verdict_reason: $1
-"; }
-if has behavior-altering; then VERDICT=decide; add_reason "behavior-altering -> question (semver)"; fi
-if has feature-no-ac; then VERDICT=decide; add_reason "feature-no-ac -> question (design)"; fi
-if has low-impact && [ "$REACH_MAX" -ge "$REACH_DECIDE" ]; then VERDICT=decide; add_reason "low-impact and reach $REACH_MAX -> question (design)"; fi
-if has a11y && [ "$REACH_MAX" -ge "$REACH_DECIDE" ]; then VERDICT=decide; add_reason "a11y and reach $REACH_MAX -> question (a11y)"; fi
-if [ "$VERDICT" = take ] && { has untriaged || has self-filed; }; then
-  VERDICT=review; add_reason "$(has untriaged && echo untriaged)$(has untriaged && has self-filed && echo ' and ')$(has self-filed && echo self-filed) -> confirm the bug on base first"
-fi
-
 # ── Print ─────────────────────────────────────────────────────────────
 echo "=== SCREENING ==="
 echo "fork: ${IS_FORK:-unknown}"
@@ -215,12 +190,4 @@ if [ -n "$ISSUE_LINES" ]; then printf '%s' "$ISSUE_LINES"; else echo "issue: non
 echo "issue_flags: ${FLAGS:-none}"
 [ -n "$SKIPPED" ] && echo "skipped_flags: $SKIPPED (team author)"
 [ -n "$BREAKING" ] && echo "breaking_marker: $BREAKING"
-echo "verdict_hint: $VERDICT"
-# The first option of the pr-review Gate for the hint (skills/pr-review/SKILL.md, Gate).
-case "$VERDICT" in
-  take) if [ "$SCALE" = trivial ]; then GATE="Quick review"; else GATE="Full review"; fi ;;
-  review) GATE="Full review" ;;
-  *) GATE="Draft a reply" ;;
-esac
-echo "gate_default: $GATE"
-printf '%s' "$REASONS"
+exit 0

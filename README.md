@@ -81,7 +81,7 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `post-comment.sh` | One Conventional Comment on a PR, inline or general, or a reply |
 | `post-review.sh` | All selected findings as one PR review: line, then file, then body anchors |
 | `review-plan.sh` | The review plan and the context file of the pipeline |
-| `pr-screen.sh` | The screening facts of a PR: author, linked issue, labels, verdict hint |
+| `pr-screen.sh` | The screening facts of a PR: author, linked issue, labels, flags |
 | `diff-facts.sh` | The git-only facts of a diff: diff noise, new test files, and the facts of each fact pack |
 | `owners/vaadin/facts/web-components.sh` | Fact pack of a web component monorepo: reach, Flow counterpart, CSS unit assertions, shadow DOM reads |
 | `owners/vaadin/facts/flow-components.sh` | Fact pack of a Flow repository: the web component declaration of each synced property and called method, also when it is newer than the pinned version |
