@@ -25,7 +25,7 @@ code review is worth it now. Each flag reads a label, a marker or the author:
 | `behavior-altering` | a breaking label, a `type!:` title or a `BREAKING CHANGE:` footer: a semver call |
 | `feature-no-ac` | a feature of a contributor, and the issue has no acceptance criteria |
 | `low-impact` | the issue has a low impact label. Compare it with the `reach` lines |
-| `a11y` | the issue has an accessibility label. No pass runs a screen reader |
+| `a11y` | the issue has an accessibility label. No pass runs a screen reader. Compare it with the `reach` lines |
 | `untriaged`, `self-filed` | no team member confirmed the bug |
 
 The label rules and the team allowlist come from the config that `screening_config:` names.
@@ -33,8 +33,8 @@ Without a config, only the generic rules apply. For a team author, the script pr
 contributor flags in `skipped_flags:`. The evidence behind each flag is in
 `docs/rationale.md`.
 
-The flags read only labels, markers and the author. Add a line to the card when another fact
-matters at the gate:
+The flags read only labels, markers and the author. When another fact matters at the gate,
+add a line to the card:
 
 - a team PR, a team branch or an assignee on the same issue
 - a maintainer who asked for a discussion in the body or in the issue thread
