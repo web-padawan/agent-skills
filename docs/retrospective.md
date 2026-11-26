@@ -4,6 +4,45 @@ What each real review run exposed, and what changed because of it. Newest first.
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
 file. The principles are in [`rationale.md`](rationale.md), one line each.
 
+## 2026-11-26 — PR review 20: flow-components #10839, vendor tool call limits
+
+A full review of a team refactor by tomivirkki. The PR removes the tool call limits of
+`LangChain4jLlmProvider` and `ToolCallLimitExceededException`, and lets a Spring AI turn at
+the limit complete. Head `53ae8b0`, scale `full`, 507 production lines in 5 files. Cost:
+change 19 calls / 84k tokens, code 18 / 93k, tests 20 / 88k. The passes gave 16 findings.
+Triage kept 5, and 3 were posted.
+
+- The plan ran three times on the same head. Run 1 gave `type: undetermined`. Run 2 added
+  `--type refactor`, as pipeline.md §1 asks. The orchestrator wrote the notes file after
+  run 2. Run 3 only printed the prompts again, because the orchestrator had cut them out of
+  the run 2 output with `grep`. Run 3 deleted the notes file (`context.sh:321`), and
+  `notes-guard.py` denied all 3 launches. The notes file was written again, and the passes
+  then launched. The guard worked. The cost was one denied fan-out and one more Write.
+- Cause of the wipe. The deletion of `392968d` is correct for a context of another branch or
+  head. It also deleted the notes of the same head, so a plan run again for the same head was
+  destructive. pipeline.md §1 itself asks for such a run (`--type`). → the plan reads the
+  `- head:` line of the earlier context file. For the same head, it keeps the notes file and
+  prints `notes: <path> (kept — written for this head ...)`. For another head, it deletes the
+  file. Three smoke checks pin both cases (`f63633e`).
+- The orchestrator piped the run 2 output through `grep` and lost `=== PROMPTS ===`. That was
+  an error of the orchestrator, not of the script. → no change, unless it occurs again.
+- The orchestrator wrote `dropped: <reason>` with a colon. `post-review.sh` refused the batch
+  before any network call. The refusal worked. → no change.
+- `post-review.sh --pr 10839` from the scratchpad directory failed with "failed to resolve the
+  PR". A bare number resolves against the repository of the current directory, and the hint
+  says so. A URL worked. → no change. The plan already prints the full `pr:` URL.
+- The Gate flagged that the PR does the opposite of the linked issue for the Spring AI turn.
+  The issue said that the turn "still fails". The change pass reached the same point from
+  three sides: scope, behavior and impact. Triage merged them into one `question (design)`.
+- At the Post gate, the reviewer typed "post B only" in the free text field. The 2 nitpicks
+  were set to `dropped excluded by reviewer`, and the 3 B findings posted. That is the first
+  request for a filter by tier since `--blocking-only` was removed on 2026-11-24. That flag
+  kept only `blocking` findings, which are A. → no change on one request.
+- The tests pass proposed an A: the default limit tests do not pin LangChain4j's default of
+  100. Triage dropped it, because a pin of a vendor default breaks on a version update.
+- The bot thread on streaming termination had a reply from the author and was resolved.
+  The notes file marked it dismissed, and no pass raised it again.
+
 ## 2026-11-26 — Log audit, part 2: screening verdicts and the Follow-ups section
 
 One review ran on the pruned plugin, a quick review of flow-components #10808. The plan, the
