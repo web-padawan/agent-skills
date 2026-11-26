@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a GitHub pull request from someone else. Explain its goal with a concrete example, check the screening facts (linked issue and labels, the packages that import the changed code, fork origin, the claims of the body) and whether the change is worth a review now, then, after you confirm, run the plugin's reviewer agents or a quick single-context review, and post only what you select as inline Conventional Comments, one summary review, or a drafted reply. Use when asked to review this PR, walk me through a PR, review a contribution, an external, community, fork or AI-generated PR, triage a PR before review, do a full review of a pull request, or review and post comments on a PR. Not for your own branch before it has a PR (self-review).
+description: Review a GitHub pull request from someone else. Explain its goal with a concrete example, check the screening facts (linked issue and labels, the packages that import the changed code, fork origin, the claims of the body) and whether the change is worth a review now, then, after you confirm, run the plugin's reviewer agents or a quick single-context review, and post only what you select as inline Conventional Comments or one summary review. Use when asked to review this PR, walk me through a PR, review a contribution, an external, community, fork or AI-generated PR, triage a PR before review, do a full review of a pull request, or review and post comments on a PR. Not for your own branch before it has a PR (self-review).
 argument-hint: "[PR number or URL, or blank to auto-detect from current branch] [--quick]"
 allowed-tools: Read, Write, Edit, Glob, Grep, Task, Agent, SendMessage, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(pnpm:*), Bash(*/scripts/gh-context.sh:*), Bash(*/scripts/get-pr-context.sh:*), Bash(*/scripts/review-plan.sh:*), Bash(*/scripts/pr-refresh.sh:*), Bash(*/scripts/post-review.sh:*), Bash(*/scripts/post-comment.sh:*), Bash(*/scripts/mutant.sh:*)
 ---
@@ -16,12 +16,12 @@ that a script writes.
 | Reference | Covers |
 | --- | --- |
 | [`references/understand.md`](references/understand.md) | Understand: the explanation of the PR |
-| [`references/screening.md`](references/screening.md) | Understand, only for a fork or contributor PR: the screening card, the verdicts, the claims of the body |
+| [`references/screening.md`](references/screening.md) | Understand, only for a fork or contributor PR: the screening card, the flags, the claims of the body |
 | [`references/quick.md`](references/quick.md) | Quick review: chosen at the Gate, also the fallback |
 | [`../../references/pipeline.md`](../../references/pipeline.md) | Plan, Fan out and Triage: the plan, the context and notes files, the fan-out, the roll call, triage |
 | [`../../references/severity.md`](../../references/severity.md) | Triage: A / B / C, tiers by change type, what CI settles, the rendering table |
 | [`../../references/delivery.md`](../../references/delivery.md) | Fan out and Triage: launch rules, the delivery clause, the roll call, the fallback |
-| [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Present and Post: comment tone, replies by verdict, posting |
+| [`../../references/comment-guidelines.md`](../../references/comment-guidelines.md) | Present and Post: comment tone, posting |
 | [`references/present.md`](references/present.md) | Present: the chat template, the result rule, the post gate |
 
 Relative paths resolve from this file. If a read fails, put
@@ -66,17 +66,15 @@ or `pr_author: <login> (contributor)`, also follow [`references/screening.md`](r
 Give the explanation of Understand as text in a message of its own. In the next message, ask
 one `AskUserQuestion` with the header `Review`. The open dialog can cover the text above it,
 so the question text starts with the **Problem** and **Change** lines, then asks "How should I
-continue?" List first the `gate_default:` option of the plan. When you corrected the verdict,
-list first its option in the verdict table of screening.md.
+continue?" When the plan says `scale: trivial`, list `Quick review` first. Otherwise list
+`Full review` first.
 
 - `Full review`: Fan out, Triage, Present and Post.
 - `Quick review`: [`references/quick.md`](references/quick.md).
-- `Draft a reply`: the reply of *Replies by verdict* in comment-guidelines.md, then Post.
 - `Stop`: nothing more.
 
-If the arguments include `--quick` and the first option is `Full review` or `Quick review`,
-run the quick review and do not ask. Otherwise ask, because a `decide` or `decline` verdict
-makes a code comment premature. If the reviewer asks about the goal first, stay in Understand.
+If the arguments include `--quick`, run the quick review and do not ask. If the reviewer asks
+about the goal first, stay in Understand.
 
 ### Fan out
 
@@ -128,9 +126,6 @@ format that `post-review.sh --help` prints. Also write each finding that the fil
 with the status `dropped <reason>`. The script posts from that file, and the file is the
 record of the review. Never commit it. Word a `contradicts` reply as a `question`, and a
 `not fixed` reply as an `issue`.
-
-**Redirect**: a finding can name a better location or mechanism with a precedent. When the rest
-of the PR depends on that choice, set the verdict to `redirect`.
 
 Rank first the A findings that affect released behavior or security.
 
