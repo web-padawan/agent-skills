@@ -12,7 +12,7 @@ Read it before you add a mechanism, and before you drop a rule that looks like c
 - **The dominant cost is passes times diff.** Each pass reads only its own lane of the diff.
   Only the tests pass reads both lanes (2026-08-27).
 - **Never Edit the context file.** Edit needs a Read, and the Read pulls the diff into the
-  orchestrator. The orchestrator writes its facts somewhere else (2026-09-08 costs).
+  orchestrator. The orchestrator puts its facts into the prompts (2026-09-08 costs).
 - **The plan is the launch.** The plan prints literal prompts, SHAs and paths. No run
   derives a launch from prose, so every run has the same prompts (2026-09-08 costs).
 - **Quote the conventions docs whole.** A selection of chapters lost a rule of the form "when
@@ -70,10 +70,8 @@ Read it before you add a mechanism, and before you drop a rule that looks like c
 - **Findings come first in the output.** A long result is cut from the end (PR review 3).
 - **Anchor a finding at its declaration line.** Two passes then land on the same line, and
   triage matches them without work (PR reviews 3, 8).
-- **An agent handed a list writes a survey.** A small budget and a fixed format keep the
-  analysis of a significant change short (2026-08-27).
-- **Cluster before ranking.** A feature in one module is usually one decision. A wrong
-  cluster then costs one block, not one agent run (2026-08-27).
+- **An agent handed a list writes a survey.** Give a pass questions, not a list of changes
+  to describe (2026-08-27).
 
 ## Triage
 
@@ -111,6 +109,9 @@ Read it before you add a mechanism, and before you drop a rule that looks like c
   had added each of them (log audits).
 - **Measure a mechanism before you keep it.** Count how often it fired and whether it changed
   a posted finding. The log audits did that from the session logs.
+- **A file that must exist at the right moment breeds fixes.** The notes file of the
+  orchestrator caused 6 incidents in 3 months. The facts now travel in the prompts (log
+  audits).
 
 ## Tried and removed
 
@@ -131,3 +132,13 @@ Do not add one of these again without new evidence.
 | The escalation ladder for lost reports | 2026-11-24 | 0 lost passes in 22 roll calls |
 | Screening verdicts and `Draft a reply` | 2026-11-26 | 0 replies drafted, 2 wrong hints |
 | The Follow-ups section of the self-review report | 2026-11-26 | a copy of every B and C finding |
+| The coverage check by mutants | 2026-11-26 | the tests pass already had 15 of 17 survivors |
+| The failing test step of pr-review | 2026-11-26 | 0 runs after it landed |
+| The findings file of self-review | 2026-11-26 | each use was a second round in one session |
+| The notes file and `notes-guard.py` | 2026-11-26 | 6 incidents in one mechanism |
+| Deep blocks, `BELOW LINE` and the deep budget | 2026-11-26 | a block holds no finding of its own |
+| `pr-refresh.sh` | 2026-11-26 | `post-review.sh` caught both incidents behind it |
+| `related-prs.sh` | 2026-11-26 | one incident, no use after it |
+| The code pass on a same-repo PR | 2026-11-26 | 4 of 44 posted threads |
+| The smell vocabulary | 2026-11-26 | every reviewed repository has a conventions doc |
+| `docs/contracts.md` | 2026-11-26 | the plan keys moved to `review-plan.sh --help` |

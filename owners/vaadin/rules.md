@@ -4,14 +4,14 @@ The review plan quotes these rules into the context file of each review of a vaa
 
 ## From agents/change-reviewer.md
 
-- Significant change rule (1), public surface, also matches a CSS custom property, a CSS part and a `.d.ts` entry.
-- In the `Boundary:` line of a block, a CSS part or a CSS custom property is a `styling hook`.
+- Public surface also includes a CSS custom property, a CSS part and a `.d.ts` entry. A CSS
+  part or a CSS custom property is a styling hook.
 
 ## From agents/code-reviewer.md
 
 - Comments: no comment longer than 1 line in a CSS file.
 
-## From references/severity.md
+## From references/review-rules.md
 
 - Tests tie-break: a path that another theme pins is pinned elsewhere, so the finding is B.
 - A process step can be a `.d.ts` entry, a dev page, or a companion PR in vaadin/flow-components.

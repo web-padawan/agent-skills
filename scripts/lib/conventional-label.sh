@@ -3,12 +3,12 @@
 # check_conventional_label <message>
 #   Returns 0 when the first line of <message> is `**<label>:** <subject>` or
 #   `**<label> (<deco>[, <deco>]):** <subject>`, with every token from the closed
-#   vocabulary in references/severity.md (Rendering). Otherwise prints why to
+#   vocabulary in references/review-rules.md (§6). Otherwise prints why to
 #   stderr and returns 1. A comment that fails here never reaches GitHub — a
 #   refused post beats an unparseable one.
 
 CC_LABELS='nitpick|suggestion|issue|todo|question|thought|chore|note'
-CC_CATEGORIES='scope|behavior|fix|boundary|api|impact|logic|conventions|reuse|maintainability|comments|tests'
+CC_CATEGORIES='scope|behavior|api|logic|fix|conventions|reuse|maintainability|comments|tests'
 CC_ROUTES='a11y|design|semver|parity'
 CC_MODIFIERS='blocking|non-blocking|if-minor'
 

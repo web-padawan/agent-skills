@@ -10,7 +10,7 @@
 #   post-comment.sh [--pr <number-or-url>] --reply <comment-id> --message <text>  # reply in a diff thread
 #
 # The message must open with a bold Conventional Comments label from the closed
-# vocabulary in references/severity.md (Rendering) — e.g.
+# vocabulary in references/review-rules.md (§6) — e.g.
 # "**issue (behavior, blocking):** ..." — or the script refuses it before any
 # network call. --no-label skips that check, for replies and the summary comment.
 #

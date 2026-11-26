@@ -1,10 +1,9 @@
 # facts.sh: sourced by review-plan.sh. The conventions doc, the owner rules, the diff facts
-# and their fact packs, the screening facts, the command map and the affected packages.
+# and their fact packs, the screening facts and the command map.
 #
 # Reads: MODE, PR, WANT_CONTEXT, SCRIPT_DIR, PLUGIN_ROOT, BASE, HEAD, CHANGED, PROD_FILES
 # Sets: CONVENTIONS, CONVENTIONS_WHOLE_MAX, OWNER, OWNER_RULES, DIFF_FACTS,
-#       SCREENING, LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, PROD_SOURCE,
-#       AFFECTED
+#       SCREENING, LINT_CMD, TEST_CMD, SRC_GLOB, CMD_SOURCE, PROD_SOURCE
 
 plan_facts() {
   # ── Conventions doc (named in the plan, quoted into the context)
@@ -76,11 +75,6 @@ plan_facts() {
     n_all=$(printf '%s\n' $PROD_FILES | grep -c . || true)
     n_src=$(printf '%s\n' $PROD_FILES | grep -cE "^$src_re\$" || true)
     PROD_SOURCE="$n_src of $n_all production files under src_glob"
-  fi
-
-  AFFECTED=""
-  if [ -n "$CHANGED" ]; then
-    AFFECTED=$(printf '%s\n' "$CHANGED" | awk -F/ '$1 == "packages" && NF > 2 { print $1 "/" $2 }' | sort -u | tr '\n' ' ')
   fi
   return 0
 }

@@ -5,17 +5,15 @@
 #   smoke.sh
 #
 # Builds a git repository under ${TMPDIR:-/tmp}/smoke-<time> with a main branch and a feature
-# branch of three commits. Then runs ab.sh, mutant.sh, fixup-into.sh and float-to-tip.sh
-# against it and checks their exit codes and their effect on the tree. Runs dev-server.sh and
-# `ab.sh --port` against a fake web-dev-server (a python3 http.server) and checks that they
-# return through a pipe, restore on SIGTERM, and leave no shell behind. Checks the
-# review-plan.sh report dir and earlier-findings list, the post-review.sh refusals, the
-# pr-refresh.sh usage refusals, the diff-facts.sh and pr-screen.sh facts on a fixture, the web
-# component property facts of diff-facts.sh in a Flow fixture,
-# the dropped tests pass on a workflow-only change, the plan fixtures (a PNG, two conventions
-# docs, findings files on the same head, a dirty tree), and the bash-guard.py, notes-guard.py
-# and question-guard.py decisions. Also checks that every script in this directory answers
-# --help with exit 0.
+# branch of three commits. Then runs ab.sh, fixup-into.sh and float-to-tip.sh against it and
+# checks their exit codes and their effect on the tree. Runs dev-server.sh and `ab.sh --port`
+# against a fake web-dev-server (a python3 http.server) and checks that they return through a
+# pipe, restore on SIGTERM, and leave no shell behind. Checks the review-plan.sh report dir,
+# prompts and plan keys, the post-review.sh refusals, the diff-facts.sh and pr-screen.sh facts
+# on a fixture, the web component property facts of diff-facts.sh in a Flow fixture, the
+# dropped tests pass on a workflow-only change, the plan fixtures (a PNG, conventions docs, a
+# dirty tree), and the bash-guard.py and question-guard.py decisions. Also checks that every
+# script in this directory answers --help with exit 0.
 #
 # Exit codes: 0 all checks passed · 1 a check failed.
 set -uo pipefail
@@ -149,32 +147,6 @@ expect "ab.sh kept the untracked file" "mine" "$(cat d/b.txt)"
 rm d/b.txt
 git checkout -q feature && git branch -q -D ab-files ab-ref
 
-echo "== mutant.sh"
-MH=$(git rev-parse HEAD)
-check "mutant.sh baseline is green on the clean tree" 0 \
-  "$SCRIPTS/mutant.sh" --head "$MH" --baseline --log "$WORK/mut-base.log" -- grep -q three a.txt
-printf 'one\ntwo\n' > a.txt
-check "mutant.sh reports a killed mutant" 0 \
-  "$SCRIPTS/mutant.sh" --head "$MH" --file a.txt --log "$WORK/mut-k.log" -- grep -q three a.txt
-expect "mutant.sh prints KILLED" "RESULT: KILLED (exit 1)" "$(grep '^RESULT:' "$WORK/last.log")"
-expect "mutant.sh restored a killed mutant" "" "$(git status --porcelain)"
-printf 'uno\ntwo\nthree\n' > a.txt
-check "mutant.sh reports a surviving mutant" 1 \
-  "$SCRIPTS/mutant.sh" --head "$MH" --file a.txt --log "$WORK/mut-s.log" -- grep -q three a.txt
-expect "mutant.sh restored a surviving mutant" "" "$(git status --porcelain)"
-check "mutant.sh refuses a file without a mutant" 2 \
-  "$SCRIPTS/mutant.sh" --head "$MH" --file a.txt -- true
-printf 'uno\n' > a.txt && printf 'y\n' > b.txt
-check "mutant.sh refuses a second dirty file" 2 \
-  "$SCRIPTS/mutant.sh" --head "$MH" --file a.txt -- true
-check "mutant.sh refuses a baseline on a dirty tree" 2 \
-  "$SCRIPTS/mutant.sh" --head "$MH" --baseline -- true
-git checkout -q -- a.txt b.txt
-printf 'uno\n' > a.txt
-check "mutant.sh refuses a HEAD other than head0" 2 \
-  "$SCRIPTS/mutant.sh" --head "$(git rev-parse HEAD~1)" --file a.txt -- true
-git checkout -q -- a.txt
-
 echo "== dev-server.sh"
 if command -v python3 >/dev/null; then
   # A fake web-dev-server: ps must show that name, so it is a python script, not a wrapper.
@@ -251,15 +223,13 @@ SELF_DIR=$(git rev-parse --path-format=absolute --git-path self-review)
 expect "review-plan.sh puts the self-review report dir in the git directory" \
   "report_dir: $SELF_DIR" \
   "$("$SCRIPTS/review-plan.sh" --mode self --no-context --no-write 2>/dev/null | grep '^report_dir:')"
-mkdir -p "$SELF_DIR"
-jq -n --arg head "$(git rev-parse HEAD)" '{branch: "feature", head: $head, round: 1, findings: [
-  {id: "F1", round: 1, category: "logic", tier: "B", status: "open", file: "a.txt", line: 2,
-   claim: "kept claim", merged: [{file: "a.txt", line: 3, claim: "merged claim"}]}]}' \
-  > "$SELF_DIR/feature-findings.json"
-"$SCRIPTS/review-plan.sh" --mode self --no-context > "$WORK/plan.log" 2>&1
-expect "review-plan.sh lists a merged finding with the finding that kept it" \
-  "- F1 | open | logic | a.txt:2 | B | kept claim Merged: a.txt:3 merged claim" \
-  "$(grep '^- F1 ' "$SELF_DIR/context.md" 2>/dev/null)"
+"$SCRIPTS/review-plan.sh" --mode self --no-context --type fix > "$WORK/plan.log" 2>&1
+PROMPT_N=$(grep -c '^--- [a-z]* · subagent_type:' "$WORK/plan.log")
+expect "review-plan.sh prints the Settled facts and Open leads slots in each prompt" \
+  "yes $PROMPT_N $PROMPT_N" \
+  "$([ "$PROMPT_N" -gt 0 ] && echo yes) $(grep -c '^Settled facts:$' "$WORK/plan.log") $(grep -c '^Open leads:$' "$WORK/plan.log")"
+expect "review-plan.sh copies the delivery clause into each prompt" \
+  "$PROMPT_N" "$(grep -c '^Your findings are the deliverable' "$WORK/plan.log")"
 
 echo "== post-review.sh"
 # shellcheck source=lib/conventional-label.sh
@@ -316,47 +286,6 @@ expect "post-review.sh names the hunks of a refused line anchor" \
   "$(grep '^  finding' "$WORK/last.log" | paste -sd'|' -)"
 post_json summaryonly '[{"file": "src/a.js", "line": 10, "message": "**issue (logic):** x", "summary_only": true}]'
 check "post-review.sh takes a line outside the hunks for a summary-only finding" 0 post_fake summaryonly
-printf '# Review context\n\n- mode: self\n- head: `%s`\n' "$(printf 'a%.0s' {1..40})" > "$WORK/self-context.md"
-check "pr-refresh.sh refuses a run without --context" 2 "$SCRIPTS/pr-refresh.sh"
-check "pr-refresh.sh refuses a context file without a PR" 2 \
-  "$SCRIPTS/pr-refresh.sh" --context "$WORK/self-context.md"
-
-echo "== related-prs.sh"
-# A fake gh: PR 7 (feat/b on feat/a) by ann. PR 6 is its parent, PR 8 sits on top of it,
-# PR 5 by ann shares src/a.ts and has one resolved thread, PR 9 by ann shares no file.
-mkdir -p "$WORK/relgh"
-cat > "$WORK/relgh/gh" <<'GH'
-#!/usr/bin/env bash
-jqx=""; prev=""
-for a in "$@"; do [ "$prev" = --jq ] && jqx=$a; prev=$a; done
-case "$*" in
-  "pr view 7 "*) out='{"author": {"login": "ann"}, "headRefName": "feat/b", "baseRefName": "feat/a", "isCrossRepository": '"${REL_CROSS:-false}"', "files": [{"path": "src/a.ts"}, {"path": "src/b.ts"}]}' ;;
-  "repo view"*) out='{"defaultBranchRef": {"name": "main"}}' ;;
-  *"--head feat/a"*) out='[{"number": 6, "title": "feat: a", "isCrossRepository": false}]' ;;
-  *"--base feat/b"*) out='[{"number": 8, "title": "feat: c", "files": [{"path": "src/c.ts"}, {"path": "test/c.test.ts"}]}]' ;;
-  *"--author ann"*) out='[{"number": 5, "title": "feat: prototype", "files": [{"path": "src/a.ts"}]}, {"number": 6, "title": "feat: a", "files": [{"path": "src/a.ts"}]}, {"number": 9, "title": "docs: x", "files": [{"path": "x.md"}]}]' ;;
-  *"number=5"*) out='{"data": {"repository": {"pullRequest": {"reviewThreads": {"nodes": [{"isResolved": true, "isOutdated": false, "path": "src/a.ts", "line": 3, "comments": {"nodes": [{"databaseId": 11, "author": {"login": "bob"}, "body": "Make the hook protected."}, {"databaseId": 12, "author": {"login": "ann"}, "body": "Fixed in abc1234."}]}}]}}}}}' ;;
-  *"api graphql"*) out='{"data": {"repository": {"pullRequest": {"reviewThreads": {"nodes": []}}}}}' ;;
-  *) echo "fake gh: unexpected call: $*" >&2; exit 1 ;;
-esac
-if [ -n "$jqx" ]; then printf '%s' "$out" | jq -r "$jqx"; else printf '%s\n' "$out"; fi
-GH
-chmod +x "$WORK/relgh/gh"
-PATH="$WORK/relgh:$PATH" "$SCRIPTS/related-prs.sh" --repo o/r --pr 7 > "$WORK/related.log" 2>&1
-expect "related-prs.sh finds the parent, the child and a same-author PR on the same files" \
-  "pr: parent #6 | 0 threads (0 resolved) | feat: a
-pr: child #8 | 0 threads (0 resolved) | feat: c
-  tests: test/c.test.ts
-pr: same-author #5 | 1 threads (1 resolved) | feat: prototype
-  shared: 1 files" \
-  "$(grep -v -E '^(threads:|  #|      reply)' "$WORK/related.log")"
-expect "related-prs.sh lists the threads of a related PR with their replies" \
-  "  #5 | 11 | bob | resolved | src/a.ts:3 | Make the hook protected.
-      reply 12 | ann | Fixed in abc1234." \
-  "$(grep -E '^(  #|      reply)' "$WORK/related.log")"
-expect "related-prs.sh finds no child of a fork PR" "" \
-  "$(PATH="$WORK/relgh:$PATH" REL_CROSS=true "$SCRIPTS/related-prs.sh" --repo o/r --pr 7 | grep '^pr: child')"
-check "related-prs.sh refuses a PR that is not a number" 2 "$SCRIPTS/related-prs.sh" --repo o/r --pr x
 
 echo "== pr-screen.sh"
 SCREENING_CONFIG="$SCRIPTS/../owners/vaadin/screening.json"
@@ -527,83 +456,6 @@ expect "ci.sh prints no A-tier hint when only advisory checks fail" \
 expect "ci.sh treats every failing check as A-tier without an owner config" \
   "2" "$(ci_failing "$CI_CHECKS" "$(advisory_pattern "")" | grep -c '^  failing: ')"
 
-echo "== pr-refresh.sh"
-# A PR commit, then a merge of main into the PR, then a real change. A stub
-# get-pr-context.sh next to a copy of the script prints the current state from a fixture.
-RF="$WORK/refresh"
-mkdir -p "$RF/bin"
-cp "$SCRIPTS/pr-refresh.sh" "$RF/bin/"
-printf '#!/usr/bin/env bash\ncat "$REFRESH_FIXTURE"\n' > "$RF/bin/get-pr-context.sh"
-chmod +x "$RF/bin/get-pr-context.sh"
-git init -q -b main "$RF/repo"
-(
-  cd "$RF/repo" || exit 1
-  git config user.email smoke@example.com; git config user.name smoke; git config commit.gpgsign false
-  printf 'a\n' > a.txt && git add . && git commit -q -m base
-  git checkout -q -b pr && printf 'p\n' > p.txt && git add . && git commit -q -m pr
-  git checkout -q main && printf 'm\n' > m.txt && git add . && git commit -q -m main
-  git checkout -q pr && git merge -q --no-edit main
-  printf 'p2\n' > p.txt && git commit -q -am change
-)
-RF_OLD_BASE=$(git -C "$RF/repo" rev-parse main~1)
-RF_OLD=$(git -C "$RF/repo" rev-parse pr~1^1)
-RF_MERGE=$(git -C "$RF/repo" rev-parse pr~1)
-RF_CHANGE=$(git -C "$RF/repo" rev-parse pr)
-RF_NEW_BASE=$(git -C "$RF/repo" rev-parse main)
-cat > "$RF/context.md" <<EOF
-# Review context
-
-- pr: https://github.com/owner/name/pull/1
-- base: \`$RF_OLD_BASE\`
-- head: \`$RF_OLD\`
-
-## Already on the PR
-
-    threads:  # id | author | kind | state | path:line | first line
-      11 | bot | bot | open | p.txt:1 | old claim
-          reply 12 | a | human | old reply
-
-## Diff
-EOF
-refresh_fixture() {  # refresh_fixture <head>
-  cat <<EOF
-=== PR_METADATA ===
-{"headRefOid":"$1"}
-=== ANCHORS ===
-merge_base: $RF_NEW_BASE
-=== CI_STATUS ===
-summary: 1 checks — 1 pass, 0 fail, 0 pending, 0 skipped
-=== EXISTING_COMMENTS ===
-threads:  # id | author | kind | state | path:line | first line
-  11 | bot | bot | open | p.txt:1 | old claim
-      reply 12 | a | human | old reply
-      reply 13 | b | human | new reply
-  14 | c | human | open | p.txt:3 | new thread
-general:  # id | author | first line
-  21 | sonar[bot] | new general
-EOF
-}
-refresh_fixture "$RF_MERGE" > "$RF/merge.txt"
-(cd "$RF/repo" && REFRESH_FIXTURE="$RF/merge.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md") > "$RF/merge.log" 2>&1
-expect "pr-refresh.sh does not count a merge of the base branch as a change" \
-  "tree_changed: no" "$(grep '^tree_changed:' "$RF/merge.log")"
-expect "pr-refresh.sh lists a new reply under its known thread, and a new thread" \
-  "  11 | bot | bot | open | p.txt:1 | old claim (thread known)|      reply 13 | b | human | new reply|  14 | c | human | open | p.txt:3 | new thread" \
-  "$(sed -n '/^new_threads:$/,/^new_general/p' "$RF/merge.log" | sed '1d;$d' | paste -sd'|' -)"
-expect "pr-refresh.sh asks to read a new general comment" \
-  "action: read each new general comment: a bot can post its review summary there" \
-  "$(grep '^action: read each new general' "$RF/merge.log")"
-refresh_fixture "$RF_CHANGE" > "$RF/change.txt"
-(cd "$RF/repo" && REFRESH_FIXTURE="$RF/change.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md") > "$RF/change.log" 2>&1
-expect "pr-refresh.sh lists a file whose own PR diff changed" \
-  "tree_changed: 1 files: p.txt" "$(grep '^tree_changed:' "$RF/change.log")"
-expect "pr-refresh.sh asks to check the findings on the changed files before Present" \
-  "action: the head moved since the plan: before you show the review, check each finding on a file of tree_changed at ${RF_CHANGE:0:7} and move its line to that head; a finding whose code this head fixes or removes gets status \`fixed at ${RF_CHANGE:0:7}\` and never posts; post with \`--head $RF_CHANGE\`" \
-  "$(grep '^action: the head moved' "$RF/change.log")"
-printf '=== PR_METADATA ===\nerror: failed to resolve the PR\n' > "$RF/gh-error.txt"
-check "pr-refresh.sh exits 1 when gh cannot read the PR" 1 \
-  env REFRESH_FIXTURE="$RF/gh-error.txt" "$RF/bin/pr-refresh.sh" --context "$RF/context.md"
-
 echo "== dropped tests pass"
 # A workflow change only: no test, code or binary file.
 WF_REPO="$WORK/workflow"
@@ -648,7 +500,7 @@ expect "review-plan.sh prefixes each agent with the plugin name" \
   "$R" \
   "$(awk '$1 == "change" && /reads:/ { print $2 }' "$WORK/prefix-plan.log")"
 
-# The scale tier caps the deep budget: 1 below the full tier.
+# The scale tier caps the rounds: 1 below the full tier. --rounds sets them at any tier.
 DC="$WORK/deep"
 git init -q -b main "$DC"
 git -C "$DC" config user.email smoke@example.com; git -C "$DC" config user.name smoke; git -C "$DC" config commit.gpgsign false
@@ -658,8 +510,12 @@ git -C "$DC" checkout -q -b topic
 printf 'class A {\n  open(force: boolean): void {\n    setTimeout(() => {\n    });\n  }\n}\n' > "$DC/src/a.ts"
 git -C "$DC" commit -q -am "feat: open"
 (cd "$DC" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type feature) > "$WORK/deep.log" 2>&1
-expect "review-plan.sh caps the deep budget of a small feature at 1" \
-  "deep: 1 (source: matrix, capped by scale)" "$(grep '^deep:' "$WORK/deep.log")"
+expect "review-plan.sh gives a small feature one round" \
+  "rounds: 1" "$(grep '^rounds:' "$WORK/deep.log")"
+expect "review-plan.sh takes the rounds of --rounds" \
+  "rounds: 3" "$(cd "$DC" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type feature --rounds 3 2>/dev/null | grep '^rounds:')"
+POLICY_PR=$( . "$SCRIPTS/lib/policy.sh"; policy_row pr fix | cut -f1)
+expect "lib/policy.sh runs no code pass on a same-repo PR" "change tests" "$POLICY_PR"
 
 echo "== lanes"
 # The lanes hold JavaScript, TypeScript and Java. A file of another language is neither.
@@ -675,7 +531,7 @@ expect "lib/lanes.sh sorts JavaScript, TypeScript and Java files only" \
 
 echo "== review-plan.sh fixtures"
 # Fixtures that pin the plan output of edge paths: a changed PNG, conventions docs of 300
-# and 500 lines, findings files on the same head, and a dirty tracked file.
+# and 500 lines, and a dirty tracked file.
 FX="$WORK/fixture"
 git init -q -b main "$FX"
 git -C "$FX" config user.email smoke@example.com
@@ -696,38 +552,10 @@ fx_plan() {  # fx_plan <log> [flags] — a self-mode plan of the fixture
   (cd "$FX" && "$SCRIPTS/review-plan.sh" --mode self --no-context "$@") > "$WORK/$log" 2>&1
 }
 mkdir -p "$FX_DIR"
-echo "## Settled facts" > "$FX_DIR/context-notes.md"
 echo "stale" > "$FX_DIR/context-prod.patch"
-fx_plan fx-png.log --fresh --type fix
-expect "review-plan.sh deletes the notes file and patches of an earlier context" \
-  "" "$(ls "$FX_DIR/context-notes.md" "$FX_DIR/context-prod.patch" 2>/dev/null)"
-# A plan run again for the same head keeps the notes file. A plan for another head deletes it.
-echo "## Settled facts" > "$FX_DIR/context-notes.md"
-fx_plan fx-same-head.log --fresh --type fix
-expect "review-plan.sh keeps the notes file of the same head" \
-  "$FX_DIR/context-notes.md" "$(ls "$FX_DIR/context-notes.md" 2>/dev/null)"
-expect "review-plan.sh prints that it kept the notes file" 1 "$(grep -c '^notes: .* (kept' "$WORK/fx-same-head.log")"
-sed -i.bak 's/^- head: `[0-9a-f]*`$/- head: `0000000000000000000000000000000000000000`/' "$FX_DIR/context.md"
-rm -f "$FX_DIR/context.md.bak"
-fx_plan fx-png.log --fresh --type fix
-expect "review-plan.sh deletes the notes file of another head" \
-  "" "$(ls "$FX_DIR/context-notes.md" 2>/dev/null)"
-# notes-guard.py reads the context line of a real prompt of the plan.
-NOTES_GUARD="$SCRIPTS/hooks/notes-guard.py"
-FX_PROMPT=$(awk '/^--- change ·/ { f = 1; next } /^--- / { f = 0 } f' "$WORK/fx-png.log")
-notes_guard() {  # notes_guard <tool> <prompt> — prints deny or allow
-  jq -cn --arg t "$1" --arg p "$2" '{tool_name: $t, tool_input: {subagent_type: "x", prompt: $p}}' \
-    | python3 -I "$NOTES_GUARD" | grep -q '"permissionDecision": "deny"' && echo deny || echo allow
-}
-expect "notes-guard.py denies a pass before the notes file exists" deny "$(notes_guard Agent "$FX_PROMPT")"
-grep -q "Write it in a message of its own" <<< "$(jq -cn --arg p "$FX_PROMPT" '{tool_name: "Agent", tool_input: {prompt: $p}}' | python3 -I "$NOTES_GUARD")"
-expect "notes-guard.py names the fix in its denial" 0 "$?"
-printf '## Settled facts\n- a fact\n\n## Open leads\n- none\n' > "$FX_DIR/context-notes.md"
-expect "notes-guard.py allows a pass when the notes file exists" allow "$(notes_guard Agent "$FX_PROMPT")"
-expect "notes-guard.py reads the Task tool name too" allow "$(notes_guard Task "$FX_PROMPT")"
-rm -f "$FX_DIR/context-notes.md"
-expect "notes-guard.py leaves an Agent call without the context line alone" allow "$(notes_guard Agent 'Find the tests')"
-expect "notes-guard.py leaves other tools alone" allow "$(notes_guard Bash "$FX_PROMPT")"
+fx_plan fx-png.log --type fix
+expect "review-plan.sh deletes the patches of an earlier context" \
+  "" "$(ls "$FX_DIR/context-prod.patch" 2>/dev/null)"
 QUESTION_GUARD="$SCRIPTS/hooks/question-guard.py"
 question_guard() {  # question_guard <header> <question> — prints deny or allow
   jq -cn --arg h "$1" --arg q "$2" '{tool_name: "AskUserQuestion", tool_input: {questions: [{header: $h, question: $q, options: []}]}}' \
@@ -749,58 +577,31 @@ expect "review-plan.sh counts no source file without a src_glob" \
 printf '{}\n' > "$FX/package.json"
 mkdir -p "$FX/.github" && printf 'x\n' > "$FX/.github/ci.yml"
 git -C "$FX" add .github && git -C "$FX" commit -q -m "ci: add a workflow"
-fx_plan fx-src.log --fresh --type fix
+fx_plan fx-src.log --type fix
 expect "review-plan.sh counts the production files under src_glob" \
   "prod_source: 1 of 2 production files under src_glob" "$(grep '^prod_source:' "$WORK/fx-src.log")"
 git -C "$FX" reset -q --hard HEAD~1 && rm -f "$FX/package.json"
 expect "review-plan.sh lists a changed PNG under the binary lane of the skeleton" \
   "- shot.png" "$(sed -n '/^binary (never diffed):$/{n;p;}' "$FX_DIR/context.md")"
-expect "review-plan.sh quotes the smell vocabulary when the repository has no conventions doc" \
-  "1" "$(grep -c '^## Smell vocabulary$' "$FX_DIR/context.md")"
 awk 'BEGIN { print "# Conventions"; for (c = 1; c <= 3; c++) { print "## Chapter " c; for (i = 1; i <= 98; i++) print "Rule " c "." i } }' > "$FX/CONVENTIONS.md"
-fx_plan fx-conv300.log --fresh --type fix
+fx_plan fx-conv300.log --type fix
 expect "review-plan.sh quotes a conventions doc of 300 lines whole" \
   "Source: \`CONVENTIONS.md\`, quoted whole (298 lines)." \
   "$(grep '^Source: `CONVENTIONS' "$FX_DIR/context.md")"
 awk 'BEGIN { print "# Conventions"; print "## Testing"; for (i = 1; i <= 160; i++) print "Test rule " i; print "## Components"; for (i = 1; i <= 160; i++) print "Code rule " i; print "## Release"; for (i = 1; i <= 170; i++) print "Release rule " i }' > "$FX/CONVENTIONS.md"
-fx_plan fx-conv500.log --fresh --type fix
+fx_plan fx-conv500.log --type fix
 expect "review-plan.sh names a conventions doc of 500 lines and does not quote it" \
   "Source: \`CONVENTIONS.md\`, not quoted (494 lines, the total is over 400)." \
   "$(grep '^Source: `CONVENTIONS' "$FX_DIR/context.md")"
 rm -f "$FX/CONVENTIONS.md"
 printf '# Contributing\n\nRun the tests.\n' > "$FX/CONTRIBUTING.md"
 printf '# Claude\n\nUse two spaces.\n' > "$FX/CLAUDE.md"
-fx_plan fx-docs.log --fresh --type fix
+fx_plan fx-docs.log --type fix
 expect "review-plan.sh names every conventions doc in lookup order" \
   "conventions_doc: CLAUDE.md, CONTRIBUTING.md" "$(grep '^conventions_doc:' "$WORK/fx-docs.log")"
 expect "review-plan.sh quotes every conventions doc that fits" \
   "### CLAUDE.md|### CONTRIBUTING.md" "$(grep -E '^### (CLAUDE|CONTRIBUTING)' "$FX_DIR/context.md" | paste -sd '|' -)"
-expect "review-plan.sh leaves out the smell vocabulary when the repository has a conventions doc" \
-  "0" "$(grep -c '^## Smell vocabulary$' "$FX_DIR/context.md")"
 rm -f "$FX/CONTRIBUTING.md" "$FX/CLAUDE.md"
-mkdir -p "$FX_DIR"
-fx_findings() {  # fx_findings <extra jq fields> — a findings file of the fixture head
-  jq -n --arg head "$FX_HEAD" "{branch: \"topic\", head: \$head, round: 1, findings: [] $1}" > "$FX_DIR/topic-findings.json"
-}
-fx_findings ', verdict: "clean"'
-fx_plan fx-verdict.log --type fix
-expect "review-plan.sh starts a new run at round 1 on a head with a verdict" \
-  "round: 1 of 1" "$(grep '^round:' "$WORK/fx-verdict.log")"
-fx_findings ''
-fx_plan fx-noverdict.log --type fix
-expect "review-plan.sh continues the run on a head without a verdict" \
-  "round: 2 of 1" "$(grep '^round:' "$WORK/fx-noverdict.log")"
-jq -n '{branch: "topic", head: "1111111111111111111111111111111111111111", round: 1, findings: []}' > "$FX_DIR/topic-findings.json"
-fx_plan fx-otherhead.log --type fix
-expect "review-plan.sh ignores a findings file of another head" \
-  "earlier_findings: ignored (the findings file is of 1111111111, not of this head)" \
-  "$(grep '^earlier_findings:' "$WORK/fx-otherhead.log")"
-fx_findings ', schema: 2'
-fx_plan fx-schema.log --type fix
-expect "review-plan.sh does not read a findings file of schema 2" \
-  "earlier_findings: unreadable (schema 2)" \
-  "$(grep '^earlier_findings:' "$WORK/fx-schema.log")"
-rm -f "$FX_DIR/topic-findings.json"
 printf 'export function a() {\n  return 3;\n}\n' > "$FX/src/a.js"
 check "review-plan.sh refuses a dirty tracked file in self mode" 2 \
   bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --type fix"
@@ -831,22 +632,19 @@ expect "review-plan.sh keeps the file list out of the code prompt" \
   "Comment-adjacent files for the \`comments\` category: the \`comment-adjacent\` list of the \`## Changed files\` section of the context file." \
   "$(grep '^Comment-adjacent files' "$WORK/cf-plan.log")"
 
-echo "== contracts"
-# Every key that the plan prints is in the plan key list of docs/contracts.md.
-CONTRACT_KEYS=$(awk '/^## Plan keys/ { s = 1; next } /^## / { s = 0 } s && /^```/ { c = !c; next } s && c && NF { print $1 }' \
-  "$SCRIPTS/../docs/contracts.md" | sort -u)
-for log in fx-png.log fx-verdict.log diff-facts-plan.log workflow-plan.log; do
+echo "== plan keys"
+# Every key that the plan prints is in the plan key list of review-plan.sh --help.
+HELP_KEYS=$("$SCRIPTS/review-plan.sh" --help | awk '/^# Plan keys/ { s = 1; next } /^# Exit codes/ { s = 0 } s && /^#   [a-z0-9_ ]+$/ { sub(/^#   /, ""); print }' \
+  | tr ' ' '\n' | sed '/^$/d' | sort -u)
+for log in fx-png.log diff-facts-plan.log workflow-plan.log; do
   unknown=$(awk '/^=== PLAN ===$/ { f = 1; next } /^=== PROMPTS ===$/ { f = 0 } f && /^[a-z_0-9]+:/ { sub(/:.*/, ""); print }' "$WORK/$log" \
-    | sort -u | comm -23 - <(printf '%s\n' "$CONTRACT_KEYS"))
-  expect "docs/contracts.md lists every plan key of $log" "" "$unknown"
+    | sort -u | comm -23 - <(printf '%s\n' "$HELP_KEYS"))
+  expect "review-plan.sh --help lists every plan key of $log" "" "$unknown"
 done
 check "review-plan.sh refuses --rounds without a number" 1 \
   bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --rounds x"
 check "review-plan.sh refuses --rounds 0" 1 \
   bash -c "cd '$FX' && '$SCRIPTS/review-plan.sh' --mode self --no-context --no-write --rounds 0"
-expect "review-plan.sh sets the mutant budget to 0 with --no-coverage" \
-  "mutants: 0 (--no-coverage)" \
-  "$(cd "$DC" && "$SCRIPTS/review-plan.sh" --mode self --no-context --no-write --type feature --no-coverage 2>/dev/null | grep '^mutants:')"
 # The provider contract and the owner gate: a pack of the owner directory runs with the
 # contract flags and env, and the same pack under another owner does not run.
 mkdir -p "$WORK/config/fixture-owner/facts" "$WORK/config/other-owner/facts"
@@ -871,7 +669,7 @@ mv "$WORK/config/fixture-owner/facts/contract.sh" "$WORK/config/other-owner/fact
 expect "diff-facts.sh does not run the pack of another owner" \
   "fact_packs: none" "$(grep '^fact_packs:' "$WORK/owner-gate.log")"
 printf '# Owner rules: fixture-owner\n\n## From agents/code-reviewer.md\n\n- A fixture rule.\n' > "$WORK/config/fixture-owner/rules.md"
-(cd "$FX" && REVIEW_SKILLS_CONFIG_DIR="$WORK/config" "$SCRIPTS/review-plan.sh" --mode self --no-context --fresh --type fix) \
+(cd "$FX" && REVIEW_SKILLS_CONFIG_DIR="$WORK/config" "$SCRIPTS/review-plan.sh" --mode self --no-context --type fix) \
   > "$WORK/owner-rules.log" 2>&1
 expect "review-plan.sh names the rules of the owner directory" \
   "owner_rules: $WORK/config/fixture-owner/rules.md" "$(grep '^owner_rules:' "$WORK/owner-rules.log")"
@@ -880,11 +678,11 @@ expect "review-plan.sh quotes the owner rules in the context file" \
   "$(grep -E '^### Owner rules|^#### From|^5\| ' "$FX_DIR/context.md" | paste -sd '|' -)"
 
 echo "== past PRs"
-# Only docs/retrospective.md cites a past PR or issue. The fixture PRs of plan-baseline.sh
-# and the shorthand link example of comment-slop.md are data, not citations.
+# Only docs/retrospective.md cites a past PR or issue. The shorthand link example of
+# comment-slop.md is data, not a citation.
 PR_HITS=$(cd "$SCRIPTS/.." && grep -rnE '#[0-9]{3,}' agents references skills owners docs scripts \
   README.md CLAUDE.md 2>/dev/null \
-  | grep -v -E '^(docs/retrospective\.md|scripts/smoke\.sh|scripts/dev/plan-baseline\.sh|skills/comment-cleanup/references/comment-slop\.md):' \
+  | grep -v -E '^(docs/retrospective\.md|scripts/smoke\.sh|skills/comment-cleanup/references/comment-slop\.md):' \
   || true)
 expect "only docs/retrospective.md cites a past PR" "" "$PR_HITS"
 
@@ -893,10 +691,10 @@ echo "== owner names"
 # vaadin/web-components. A rule for one owner lives in owners/<owner>/rules.md.
 ROOT="$SCRIPTS/.."
 OWNER_HITS=$(cd "$ROOT" && grep -rn -i -w -E 'vaadin|lumo|aura' \
-  agents references skills/pr-review skills/self-review docs/contracts.md \
+  agents references skills/pr-review skills/self-review \
   scripts/review-plan.sh scripts/diff-facts.sh scripts/get-pr-context.sh scripts/pr-screen.sh \
-  scripts/pr-refresh.sh scripts/post-review.sh scripts/post-comment.sh \
-  scripts/lib scripts/sections scripts/hooks $(ls -d scripts/facts 2>/dev/null) 2>/dev/null \
+  scripts/post-review.sh scripts/post-comment.sh \
+  scripts/lib scripts/hooks $(ls -d scripts/facts 2>/dev/null) 2>/dev/null \
   | grep -v -i -E 'vaadin/[a-z0-9._-]+' || true)
 expect "the review core names an owner only in an owner/repo citation" "" "$OWNER_HITS"
 

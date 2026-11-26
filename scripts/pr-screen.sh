@@ -22,7 +22,7 @@
 #   triaged_labels       an issue label that marks triage. Without it, no issue is untriaged
 #   acceptance_criteria  a pattern in the issue body or comments. Without it, no feature-no-ac
 #
-# skills/pr-review/references/screening.md says what each flag means. feature-no-ac and
+# skills/pr-review/references/understand.md says what each flag means. feature-no-ac and
 # self-filed hold an outside contributor to the process of the team. For a team author the
 # script skips them and prints `skipped_flags:`.
 #

@@ -1,43 +1,41 @@
 #!/usr/bin/env bash
-# review-plan.sh — compute the review plan for a review skill: the anchors, the
-# change type, the scale tier, the pass list with its agents and read lanes, the
-# mutant and deep-block budgets, the guards, and the report paths.
+# review-plan.sh — compute the review plan for a review skill: the anchors, the change type,
+# the scale tier, the passes with their agents, models and read lanes, the round budget, the
+# guards, and the report paths.
 #
-# The policy it resolves lives in scripts/lib/policy.sh, so no skill restates it.
+# The policy that it resolves lives in scripts/lib/policy.sh, so no skill restates it.
 # The modules in scripts/lib/ run in this order: anchors, lanes, classify, policy, facts,
-# store, context, prompts. Each one defines plan_<module>, and its
-# header names the variables that it reads and sets. docs/contracts.md lists the plan keys.
+# store, context, prompts. Each one defines plan_<module>, and its header names the
+# variables that it reads and sets.
 #
 # Usage:
 #   review-plan.sh [--mode self|pr] [--pr <number-or-url>]
-#                  [--type fix|feature|refactor|chore]
-#                  [--fresh] [--report-dir <path>]
-#                  [--rounds <n>] [--no-coverage]
-#                  [--no-context] [--context-out <path>] [--no-write]
+#                  [--type fix|feature|refactor|chore] [--rounds <n>]
+#                  [--report-dir <path>] [--no-context] [--context-out <path>] [--no-write]
 #
+# It prints the diff facts of scripts/diff-facts.sh and its fact packs in both modes. In pr
+# mode it also prints the screening facts of scripts/pr-screen.sh, and `fork:`. A fork PR
+# keeps the code pass, and the plan writes the fork marker that scripts/hooks/bash-guard.py
+# reads. A pr-mode run on a same-repo PR removes it, and it expires after 3 hours. A fork
+# head that is the working tree refuses: its project settings loaded at session start.
 # When no test, code or binary file changed, it drops the tests pass.
 #
-# It prints the diff facts of scripts/diff-facts.sh and its fact packs in both modes.
-# In pr mode it also prints the screening facts of scripts/pr-screen.sh, and `fork:`. A fork
-# PR keeps reuse and maintainability in the code pass, and writes the fork marker that
-# scripts/hooks/bash-guard.py reads. A pr-mode run on a same-repo PR removes it, and it
-# expires after 3 hours. A fork head that is the
-# working tree refuses: its project settings loaded at session start.
+# It prints get-pr-context.sh's PR_METADATA, CI_STATUS and EXISTING_COMMENTS sections (skip
+# with --no-context), then === PLAN ===. It writes the context file that the passes read at
+# the `context:` path. `--context-out` picks the path, and `--no-write` skips it. For a large
+# diff, it writes two patch files beside the context file, and it deletes the patches of an
+# earlier context. After the plan it prints === PROMPTS ===: the literal prompt of each pass,
+# with its agent and model. The orchestrator fills the Settled facts and Open leads slots of
+# each prompt (references/review-rules.md §2). It never stages, commits, or touches tracked
+# files.
 #
-# In self mode it also reads the findings file of the last review of the branch
-# (`<report-dir>/<branch>-findings.json`): the same head lists the earlier findings so that
-# no pass repeats them. A file of another head is ignored. `--fresh` ignores the file.
-# `--rounds <n>` sets the round budget, and `--no-coverage` sets the mutant budget to 0.
-#
-# Prints get-pr-context.sh's PR_METADATA, CI_STATUS and EXISTING_COMMENTS sections (skip
-# with --no-context; the other sections are restated by the plan) then === PLAN ===, and
-# writes the shared context skeleton the passes read (references/pipeline.md §2) at the
-# plan's `context:` path — `--context-out` picks the path, `--no-write` skips it. The
-# skeleton and, for a large diff, the two patch files beside it are the only files this
-# script creates; it names (never writes) the `notes:` file the orchestrator adds beside
-# them, and deletes the earlier patches, and an earlier notes file of another head, when it writes a new skeleton. After the plan it prints `=== PROMPTS ===`: the literal prompt for each pass, with
-# the pass's agent and model, so a launch copies a block instead of assembling one.
-# It never stages, commits, or touches tracked files.
+# Plan keys, one `key: value` line each after === PLAN ===. An indented line belongs to the
+# key above it. A key prints only when it applies:
+#   mode guard note branch head0 base head base_branch pr fork hint ci existing_comments
+#   screening diff_facts type type_signal scale scale_counts scale_reason effort_per_pass
+#   rounds conventions_doc owner_rules passes agents passes_dropped launch prod_files
+#   test_files binary_files comment_files commits findings report_dir report context
+#   diff_prod diff_tests commands prod_source risk_check_manual
 #
 # Exit codes: 0 ok · 1 usage/environment error · 2 guard refused the run.
 set -euo pipefail
@@ -49,22 +47,18 @@ REPORT_DIR=""
 WANT_CONTEXT=true
 CONTEXT_OUT=""
 NO_WRITE=false
-FRESH=false
 ROUNDS_FLAG=""
-NO_COVERAGE=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode) MODE="${2:?--mode requires a value}"; shift 2 ;;
     --pr) PR="${2:?--pr requires a value}"; shift 2 ;;
     --type) TYPE_FLAG="${2:?--type requires a value}"; shift 2 ;;
-    --fresh) FRESH=true; shift ;;
     --report-dir) REPORT_DIR="${2:?--report-dir requires a value}"; shift 2 ;;
     --no-context) WANT_CONTEXT=false; shift ;;
     --context-out) CONTEXT_OUT="${2:?--context-out requires a value}"; shift 2 ;;
     --no-write) NO_WRITE=true; shift ;;
     --rounds) ROUNDS_FLAG="${2:?--rounds requires a number}"; shift 2 ;;
-    --no-coverage) NO_COVERAGE=true; shift ;;
     --help|-h) sed -n '2,/^set -euo pipefail$/{/^set /d;p;}' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 1 ;;
   esac
@@ -110,13 +104,13 @@ plan_lanes
 # ── Change type and scale (lib/classify.sh) ──────────────────────────
 plan_classify
 
-# ── Policy: passes, budgets, models, effort (lib/policy.sh) ──────────
+# ── Policy: passes, rounds, models, effort (lib/policy.sh) ───────────
 plan_policy
 
 # ── Facts: conventions, diff, screening, commands (lib/facts.sh)
 plan_facts
 
-# ── Report paths and earlier findings (lib/store.sh) ─────────────────
+# ── Report paths (lib/store.sh) ───────────────────────────────────────
 plan_store
 
 # ── Context file (lib/context.sh) ────────────────────────────────────
@@ -146,19 +140,9 @@ if [ "$WANT_CONTEXT" = true ]; then
   COMMENTS_LINE=$(printf '%s\n' "${COMMENTS_SECTION:-}" | awk '/^summary: / { sub(/^summary: /, ""); print; exit } /^unavailable: / { print "none (" substr($0, 14) ")"; exit }')
   echo "existing_comments: ${COMMENTS_LINE:-none}"
   printf '%s\n' "${COMMENTS_SECTION:-}" | grep '^hint:' || true
-  # The PR lines of related-prs.sh; the context file quotes their threads.
-  RELATED_PRS=$(printf '%s\n' "${CTX:-}" | awk '/^=== RELATED_PRS ===$/ { f = 1; next } /^=== / { f = 0 } f' \
-    | awk '/^threads:/ { exit } NF')
-  if printf '%s\n' "$RELATED_PRS" | grep -q '^pr: '; then
-    echo "related_prs:"
-    printf '%s\n' "$RELATED_PRS" | sed -E -e 's/^pr: /  /' -e 's/^  (tests|shared):/    \1:/'
-  else
-    echo "related_prs: ${RELATED_PRS:-none}"
-  fi
 else
   echo "ci: not gathered (--no-context)"
   echo "existing_comments: not gathered (--no-context)"
-  echo "related_prs: not gathered (--no-context)"
 fi
 if [ -n "$SCREENING" ]; then
   echo "screening:"
@@ -173,26 +157,8 @@ echo "type_signal: $TYPE_SIGNAL"
 echo "scale: $SCALE"
 echo "scale_counts: $LINES production lines ($TOTAL_LINES with tests), $FILES files, $PROD_FILE_COUNT production (lock, generated, snapshot and image files excluded)"
 echo "scale_reason: $SCALE_REASON"
-echo "deep: $DEEP_ROW (source: $DEEP_SOURCE)"
 echo "effort_per_pass: ~$EFFORT tool calls (scale $SCALE)"
-if [ "$MODE" = self ] && [ "$GUARD" = ok ]; then
-  echo "round: $ROUND of $ROUNDS"
-  echo "mutants: $MUTANTS$([ "$NO_COVERAGE" = true ] && echo ' (--no-coverage)')"
-  if [ "$MUTANTS" -gt 0 ]; then
-    if [ "$MUTANT_POOL" -eq 0 ]; then
-      echo "mutant_pool: 0 — no non-styling source lines in the prod diff; the coverage check has nothing to mutate"
-    else
-      echo "mutant_pool: ~$MUTANT_POOL non-styling source lines"
-    fi
-  fi
-fi
-case "$EARLIER_MODE" in
-  same)
-    if [ "$EARLIER_COUNT" -eq 0 ]; then echo "earlier_findings: same head — the earlier review of this head had no finding"
-    else echo "earlier_findings: same head — $EARLIER_COUNT findings of the earlier rounds, listed so that no pass repeats them"; fi ;;
-  *) echo "earlier_findings: $EARLIER_MODE" ;;
-esac
-[ -n "$FINDINGS_FILE" ] && echo "findings_file: $FINDINGS_FILE"
+[ "$MODE" = self ] && echo "rounds: $ROUNDS"
 echo "conventions_doc: $([ -n "$CONVENTIONS" ] && printf '%s' "$CONVENTIONS" | sed 's/ /, /g' || echo none)"
 echo "owner_rules: ${OWNER_RULES:-none}"
 
@@ -202,7 +168,7 @@ if [ "$GUARD" != "ok" ]; then
 fi
 
 if [ "$LOOKUP_TYPE" = "undetermined" ] && [ -z "$PASS_TOKENS" ]; then
-  echo "passes: none — resolve the type from the diff shape (references/pipeline.md step 1) and re-run with --type"
+  echo "passes: none — resolve the type from the diff shape (references/review-rules.md §1) and run the plan again with --type"
 elif [ -z "$PASS_TOKENS" ]; then
   echo "passes: none — no matrix row for $MODE/$LOOKUP_TYPE/$SCALE (check scripts/lib/policy.sh)"
 else
@@ -220,7 +186,7 @@ else
   done
   echo "agents: $COUNT"
   [ -n "$PASSES_DROPPED" ] && echo "passes_dropped: $PASSES_DROPPED"
-  echo "launch: the notes file already written, in an earlier message · one message · one Agent call per pass · subagent_type, model and prompt from === PROMPTS === verbatim · no name (references/delivery.md)"
+  echo "launch: one message · one Agent call per pass · subagent_type, model and prompt from === PROMPTS === · fill the Settled facts and Open leads of each prompt, change nothing else · no name (references/review-rules.md §2 and §3)"
 fi
 
 echo "prod_files: ${PROD_FILES:-none}"
@@ -250,11 +216,6 @@ elif [ -n "$REPORT_DIR" ]; then
 fi
 if [ -n "$CONTEXT_PATH" ]; then
   echo "context: $CONTEXT_PATH (written, $CONTEXT_LINES lines — never Edit it; every pass reads it first)"
-  if [ "$NOTES_KEPT" = true ]; then
-    echo "notes: $NOTES_PATH (kept — written for this head; Write it again only to change it)"
-  else
-    echo "notes: $NOTES_PATH (not written — Write it in a message of its own before the fan-out, with your Settled facts, Open leads and corrections; a section with nothing reads \`- none\`; hooks/notes-guard.py denies a pass while the file does not exist)"
-  fi
   echo "diff_prod: $PROD_DIFF_WHERE"
   echo "diff_tests: $TESTS_DIFF_WHERE"
 else
@@ -262,7 +223,6 @@ else
 fi
 echo "commands: lint=${LINT_CMD:-unknown} test=${TEST_CMD:-unknown} src_glob=${SRC_GLOB:-unknown} (source: $CMD_SOURCE)"
 echo "prod_source: $PROD_SOURCE"
-echo "affected_packages: ${AFFECTED:-none}"
 if [ -n "$TEST_FILES" ]; then
   echo "risk_check_manual: a deleted or weakened assertion in an existing test also forces the full tier — this script cannot detect it, so check the test hunks yourself"
 fi

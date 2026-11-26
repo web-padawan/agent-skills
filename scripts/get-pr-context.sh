@@ -14,9 +14,6 @@
 #
 # ANCHORS also prints `fork: true|false` and `head_repo: <owner/name>`.
 #
-# RELATED_PRS is the output of related-prs.sh: the stack parent, the children and other open
-# PRs of the same author on the same files, with their review threads.
-#
 # CI_STATUS reads the `advisory_checks` key of the screening.json of the PR owner
 # (scripts/lib/owner.sh). Each entry is an extended regular expression that matches a whole
 # check name, without regard to case. A failing advisory check prints as
@@ -329,18 +326,6 @@ else
       echo "hint: a review bot has already commented — a finding on the same file and claim is a duplicate, not a discovery"
     fi
   fi
-fi
-
-# ── Section: related PRs ──────────────────────────────────────────────
-# The PR below this one in a stack, the PRs on top of it, and other open PRs of the same
-# author on the same files, with their review threads (scripts/related-prs.sh).
-echo ""
-echo "=== RELATED_PRS ==="
-if [ -n "$PR_NUMBER" ] && [ -n "${REPO_SLUG:-}" ]; then
-  "$(dirname "${BASH_SOURCE[0]}")/related-prs.sh" --repo "$REPO_SLUG" --pr "$PR_NUMBER" 2>/dev/null \
-    || echo "unavailable: related-prs.sh failed"
-else
-  echo "unavailable: no PR resolved"
 fi
 
 # ── Section: review instructions ──────────────────────────────────────

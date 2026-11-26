@@ -8,7 +8,7 @@ single-plugin marketplace. You install it from a local path. Nothing is publishe
 | Skill | Use it for |
 | --- | --- |
 | `pr-review` | A PR from someone else. Explains it, checks the screening facts, reviews it after you confirm with the agent passes or in one context, then posts only what you select. |
-| `self-review` | Your own branch before you open or update a PR. Three agent passes, A / B / C findings, a `FINDINGS.md` report. Never edits code. |
+| `self-review` | Your own branch before you open or update a PR. Three agent passes, A / B / C findings, a `FINDINGS.md` fix list. Never edits code. |
 | `comment-cleanup` | Deletes and shortens comments in a diff, a file or a package. Edits comment lines only. |
 | `screenshot-diff` | Classifies visual test screenshot diffs. Never updates a baseline. |
 | `work-summary` | A manager summary of your merged PRs for a period. |
@@ -34,9 +34,8 @@ Restart the session so that the skills load.
 /agent-skills:pr-review 9042                    # walkthrough, screening, review, optional posting
 /agent-skills:pr-review 9042 --quick            # the same, with a single-context review
 /agent-skills:self-review                       # current branch, type detected
-/agent-skills:self-review --fix --no-coverage   # force type, skip the coverage check
+/agent-skills:self-review --fix                 # force the change type
 /agent-skills:self-review --rounds 3            # up to 3 rounds, stops when one adds no new A or B
-/agent-skills:self-review --fresh               # ignore the findings file of the last run
 /agent-skills:comment-cleanup --commit HEAD
 /agent-skills:screenshot-diff packages/button
 /agent-skills:work-summary menu-bar --since 2026-08-01 --until 2026-09-30
@@ -49,15 +48,16 @@ Restart the session so that the skills load.
 
 `self-review` and `pr-review` share one pipeline:
 
-- `scripts/review-plan.sh` resolves the profile in `scripts/lib/policy.sh` into a plan.
-  It also writes the context file that every pass reads.
-- The three agents in `agents/` run in parallel: change, code and tests.
-- `references/pipeline.md` describes the plan, the fan-out, the roll call and the triage.
-- `references/severity.md` defines the A / B / C tiers and the Conventional Comments labels.
+- `scripts/review-plan.sh` resolves the policy of `scripts/lib/policy.sh` into a plan. It
+  also writes the context file that every pass reads, and the prompt of each pass.
+  `review-plan.sh --help` lists the plan keys.
+- The agents in `agents/` run in parallel: change and tests, plus code in self-review and on
+  a fork PR.
+- `references/review-rules.md` holds the shared steps: facts and leads, the fan-out, the roll
+  call, triage, the A / B / C tiers and the Conventional Comments labels.
 
-`docs/contracts.md` lists the plan keys and the contracts of the extension points: fact
-packs, owner directories, the findings file and the prompt block. The rest of `docs/` holds the
-design history. No skill loads it.
+`docs/lessons.md` holds the lessons that real runs measured, and the mechanisms that were
+tried and removed. `docs/retrospective.md` records each run. No skill loads them.
 
 The review core works on a repository of any owner. It supports JavaScript and TypeScript
 projects with a root `package.json`, and Java projects with a root `pom.xml`. It reads these
@@ -85,14 +85,12 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `diff-facts.sh` | The git-only facts of a diff: diff noise, new test files, and the facts of each fact pack |
 | `owners/vaadin/facts/web-components.sh` | Fact pack of a web component monorepo: reach, Flow counterpart, CSS unit assertions, shadow DOM reads |
 | `owners/vaadin/facts/flow-components.sh` | Fact pack of a Flow repository: the web component declaration of each synced property and called method, also when it is newer than the pinned version |
-| `get-pr-context.sh` | PR metadata, anchor SHAs, CI state, related PRs and diffs for `review-plan.sh` |
-| `related-prs.sh` | The stack parent, the children and other open PRs of the author on the same files, with their threads |
+| `get-pr-context.sh` | PR metadata, anchor SHAs, CI state, threads and diffs for `review-plan.sh` |
 | `dev-server.sh` | Start, check, restart or stop `web-dev-server` on one port |
 | `test-summary.sh` | One line per test suite, with the names of failing tests |
 | `probe.cjs` | A probe module against a dev page, per theme and direction |
 | `probe-compare.cjs` | A diff of two probe result files |
 | `ab.sh` | One command on the current tree and on paths from another ref, then a diff |
-| `mutant.sh` | The tests against one mutant, then the restore and a clean tree check |
 | `fixup-into.sh` | Folds changes into an earlier branch commit |
 | `float-to-tip.sh` | Moves one branch commit to the tip |
 | `visual-diffstat.cjs` | Pixel metrics and a contact sheet for failed screenshots |
@@ -102,7 +100,7 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 
 An owner directory holds what applies only to the repositories of one GitHub owner:
 
-- `facts/*.sh`: fact packs that `diff-facts.sh` runs, per the provider contract in `docs/contracts.md`
+- `facts/*.sh`: fact packs that `diff-facts.sh` runs. `diff-facts.sh --help` gives the contract of a pack
 - `screening.json`: the screening labels, the team allowlist and the advisory CI checks. `pr-screen.sh --help` lists the screening keys. `get-pr-context.sh --help` describes `advisory_checks`
 - `rules.md`: review rules. The context file quotes them for the passes, and triage reads them
 
@@ -121,10 +119,6 @@ in the config dir replaces the directory of the same owner in this plugin.
 acts only on the three reviewer agents. It denies commands that write. While a fork review
 runs, it allows read commands only. `review-plan.sh` writes the fork marker for a fork PR.
 The marker expires after 3 hours, and a review of a same-repo PR removes it.
-
-`hooks/hooks.json` also registers `scripts/hooks/notes-guard.py` before every Agent call. The
-guard acts only on a prompt of the plan. It denies the launch of a pass while the notes file
-of that prompt does not exist. A pass that starts earlier reviews without the Settled facts.
 
 `scripts/hooks/question-guard.py` runs before every AskUserQuestion call. It denies the
 `Review` question of pr-review without the Problem and Change lines, and the `Post` question

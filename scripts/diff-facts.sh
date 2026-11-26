@@ -17,7 +17,7 @@
 # Otherwise it prints `<key>: <value>` lines. A `rule: <sentence>` line tells the passes
 # how to judge the fact lines above it. A pack may print `reach_max: <n>`, the most other
 # packages that import one changed module. The default is 0. The line `fact_packs:` names
-# each pack that printed a line, or `none`. docs/contracts.md holds the provider contract.
+# each pack that printed a line, or `none`.
 #
 # Exit codes: 0 ok · 1 git could not answer · 2 usage error.
 set -euo pipefail

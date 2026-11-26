@@ -42,7 +42,7 @@ output contract (finding-line format, cap, `NO FINDINGS` rule), a **Verify befor
 section, and the closing delivery sentence.
 
 See `agents/test-reviewer.md` for the single-category example. See `agents/code-reviewer.md`
-for an example that carries eight categories. A pass takes another question when that
+for an example that carries four categories. A pass takes another question when that
 question shares the inputs of the first question. Each question still reports under its own
 category.
 
@@ -57,6 +57,6 @@ restate the contract in the prompt. One source, no drift.
 ## Fallback clause
 
 Skills reference agents by type. A skill must also survive a copy out of the plugin. Use the
-convention of `references/pipeline.md` §3: "only when the plugin agents are
+convention of `references/review-rules.md` §3: "only when the plugin agents are
 unavailable: use `general-purpose` and paste the body of the corresponding `agents/<name>.md`
 into the prompt."

@@ -80,14 +80,14 @@ plan_classify() {
 
   if [ -z "$TYPE" ]; then
     TYPE="undetermined"
-    TYPE_SIGNAL="none resolved — decide from the diff shape (see references/pipeline.md)"
+    TYPE_SIGNAL="none resolved — decide from the diff shape (see references/review-rules.md §1)"
   fi
 
   # ── Scale
   # The tiers: trivial is 10 production lines or less in 2 production files or less. lite is
   # 150 lines or less in 8 production files or less. full is above. A risk override forces
   # full at any size.
-  # Sized by PRODUCTION lines and files: tests never enter the mutant or deep budgets, and
+  # Sized by PRODUCTION lines and files: tests never enter the budgets, and
   # a 30-line fix with 80 lines of tests is a lite review, not a full one. FILES counts all
   # files for the scale_counts line only.
   LINES=0

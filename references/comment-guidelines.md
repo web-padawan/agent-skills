@@ -6,7 +6,7 @@ you write any finding text.
 ## Shape
 
 Every comment is a [Conventional Comment](https://conventionalcomments.org).
-[`severity.md`](severity.md) (*Rendering*) holds the labels, the decorations and the rules of
+[`review-rules.md`](review-rules.md) §6 holds the labels, the decorations and the rules of
 each label. Render each comment from the frozen list in this shape:
 
 ```
@@ -15,25 +15,11 @@ each label. Render each comment from the frozen list in this shape:
 <discussion — the one-line fix, then how it was verified when that is not obvious>
 ```
 
-When Triage kept a failing test, add it after the discussion:
-
-````
-<details><summary>Failing test</summary>
-
-In `<path of the test file>`:
-
-```<language>
-<the test method>
-```
-</details>
-````
-
 - The label line is bold, ends with a colon, and is the first line of the message.
 - The subject is the claim as triage froze it. Do not soften or expand it here.
 - The discussion is one short paragraph at most. It gives the fix, and the verification when a
   reader would otherwise have to trust you (`git show <base>` read, the suite searched, the
   browsers reproduced in). Leave no trace of how you found the finding.
-- Post a failing test only when it ran on the head and failed on its own assertion.
 
 ## Rules
 
@@ -71,58 +57,16 @@ writes the census line, so the summary file holds move 2 only.
 - `**issue (blocking):** This might leak the listener.` (an unverified claim posted as an issue, so it is a `question`)
 - Any suggestion to implement something already shown as added in the diff
 
-## Posting a review with post-review.sh
-
-Post the findings that the user selected as one review.
-Then the author gets one notification, not one for each finding. Call
-`${CLAUDE_PLUGIN_ROOT}/scripts/post-review.sh`:
-
-1. Pass the findings file that Triage wrote, whole. The script selects by `status`, `dup`
-   and the flags, and lists each finding that it does not post.
-2. If the user chose a summary comment, write its move 2 to a markdown file.
-3. Run the script once with `--dry-run`. Read the bodies that it prints.
-4. Run it again without `--dry-run`.
-
-```bash
-post-review.sh --pr <number> --head <head SHA of the review> \
-  --findings <scratchpad>/pr-<number>-post.json \
-  [--summary <scratchpad>/pr-<number>-summary.md] [--body-only] [--dry-run]
-```
-
-```json
-{"findings": [
-  {"file": "path/to/file.ext", "line": 42, "message": "**issue (logic, blocking):** <claim>\n\n<fix>"},
-  {"file": "path/to/file.ext", "line": 60, "message": "**question (logic):** <what the review found instead>?\n\n<what was checked>",
-   "status": "already raised (bot, 123)", "dup": {"id": 123, "verdict": "contradicts"}}
-]}
-```
-
-- The script refuses the whole batch when one message has no valid label, or when a
-  `status` or a `dup.verdict` is outside its vocabulary.
-- A `confirms` verdict never posts. A `contradicts` or `not fixed` verdict posts the message
-  as a reply into that thread, in the same review. A `dismissed`, `fixed` or `dropped`
-  status never posts.
-- `--body-only` puts every finding in the review body. A reply still goes into its thread.
-- Pass the full head SHA that the review read as `--head`. The plan prints it as `head:`.
-- If the PR head moved after the review and a commented file changed, the script refuses.
-  Then re-run the review on the new head.
-- Each finding goes on its line. When GitHub refuses the line, the finding goes on the file.
-  When GitHub refuses the file, the finding goes in the review body.
-- A finding within two lines of an existing thread is skipped. Triage that thread, set
-  `dup` on the finding, and run again. Set `"allow_nearby": true` only for a different claim.
-- The review body holds the reviewed head SHA, a census line by label and the summary. It
-  also holds each finding that GitHub refused to anchor. It does not
-  repeat a finding that has a thread.
-
 ## Posting with post-comment.sh
 
-Use `post-comment.sh` for a reply into an existing thread, and for a single comment outside
-a review run. Call the script by its full path,
+Post a review with `post-review.sh`, as the Present step of pr-review describes. Use
+`post-comment.sh` for a reply into an existing thread, and for a single comment outside a
+review run. Call the script by its full path,
 `${CLAUDE_PLUGIN_ROOT}/scripts/post-comment.sh`. The examples below abbreviate the path.
 
 - The script puts `:robot: AI-generated` above every comment.
 - The script refuses a message whose first line is not a bold label from the closed vocabulary
-  in [`severity.md`](severity.md) (*Rendering*).
+  of [`review-rules.md`](review-rules.md) §6.
 - Use `--no-label` for a plain reply or for the summary comment.
 - If GitHub rejects the position, the script posts a labeled general comment.
 

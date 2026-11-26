@@ -7,7 +7,7 @@
 #   post-review.sh [--pr <number-or-url>] --head <sha> --findings <file.json> [--summary <file.md>]
 #                  [--body-only] [--dry-run]
 #
-# <file.json>: the frozen list of triage (pipeline.md §5.7), one object per finding:
+# <file.json>: the frozen list of triage (references/review-rules.md §5), one object per finding:
 #   {"findings": [{"file": "path/in/diff", "line": 42, "message": "**issue (logic, blocking):** ...",
 #                  "status": "confirmed", "dup": {"id": 123, "verdict": "contradicts"},
 #                  "summary_only": false, "allow_nearby": false}]}
@@ -45,7 +45,7 @@
 # large file) is not checked.
 #
 # A line finding within two lines of an existing thread root on the same file is
-# skipped and listed. Triage the thread first (pipeline.md §5.2), then reply into it with
+# skipped and listed. Triage the thread first (references/review-rules.md §5), then reply into it with
 # `post-comment.sh --reply <id>`, or set "allow_nearby": true when the claim is genuinely different.
 #
 # The :robot: AI-generated prefix opens the body and every thread.
@@ -224,7 +224,7 @@ if [ "$BODY_ONLY" != true ]; then
     if [ -n "$OUTSIDE" ]; then
       echo "error: GitHub would move these line anchors to the file:" >&2
       printf '%s' "$OUTSIDE" >&2
-      echo "re-anchor each one on a line of a hunk, or set \"summary_only\": true (pipeline.md §5.6); nothing posted" >&2
+      echo "re-anchor each one on a line of a hunk, or set \"summary_only\": true (references/review-rules.md §5); nothing posted" >&2
       exit 2
     fi
   fi
@@ -283,7 +283,7 @@ add_reply() {  # add_reply <comment id> <body>
 }
 
 # census — "4 issues (**2 blocking**), 7 suggestions" from one "<label> [blocking]"
-# line per posted finding, in the order of the closed vocabulary (references/severity.md).
+# line per posted finding, in the order of the closed vocabulary (references/review-rules.md §6).
 census() {
   printf '%s\n' "$1" | awk '
     NF { n[$1]++; if ($2 == "blocking") b[$1]++ }
@@ -365,7 +365,7 @@ for i in $ORDER; do
   if [ "${DISP[i]}" = thread ] && [ "$BODY_ONLY" != true ] && [ -n "$file" ] && [ -n "$line" ] && [ "$allow" != true ]; then
     near=$(nearby "$file" "$line")
     if [ -n "$near" ]; then
-      echo "skipped: $where (existing thread ${near% } — triage it first: verify its claim, then set dup on the finding, pipeline.md §5.2)"
+      echo "skipped: $where (existing thread ${near% } — triage it first: verify its claim, then set dup on the finding, references/review-rules.md §5)"
       SKIPPED=$((SKIPPED + 1))
       continue
     fi

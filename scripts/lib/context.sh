@@ -1,27 +1,23 @@
-# context.sh: sourced by review-plan.sh. The context file that every pass reads
-# (references/pipeline.md §2): the section list, the marked blocks, the diff forms and the
+# context.sh: sourced by review-plan.sh. The context file that every pass reads: the
+# section list, the marked blocks of references/review-rules.md, the diff forms and the
 # patch files beside the context file.
 #
 # Reads: MODE, PR, BRANCH, HEAD0, BASE, HEAD, BASE_BRANCH, FORK, HEAD_REPO, GUARD, CTX,
 #        CONTEXT_OUT, NO_WRITE, REPORT_DIR, REPO_ROOT, PLUGIN_ROOT, SCRIPT_DIR, GH_ARGS,
 #        PR_TITLE, TYPE, TYPE_SIGNAL, SCALE, LINES, TOTAL_LINES, FILES, PROD_FILE_COUNT,
-#        SCALE_REASON, DEEP_ROW, DEEP_SOURCE, EFFORT, BRANCH_COMMITS, PROD_FILES,
-#        TEST_FILES, BINARY_FILES, COMMENT_FILES, CONVENTIONS, CONVENTIONS_WHOLE_MAX,
-#        DIFF_FACTS, EARLIER_MODE, EARLIER_HEAD, EARLIER_LIST,
-#        FINDINGS_FILE, OWNER, OWNER_RULES
-# Sets: CONTEXT_PATH, CONTEXT_NOTE, NOTES_PATH, NOTES_KEPT, PROD_DIFF_WHERE, TESTS_DIFF_WHERE,
-#       CONTEXT_LINES, PR_NUMBER, PR_URL, CI_SECTION, COMMENTS_SECTION, RELATED_SECTION
+#        SCALE_REASON, EFFORT, BRANCH_COMMITS, PROD_FILES, TEST_FILES, BINARY_FILES,
+#        COMMENT_FILES, CONVENTIONS, CONVENTIONS_WHOLE_MAX, DIFF_FACTS, OWNER, OWNER_RULES
+# Sets: CONTEXT_PATH, CONTEXT_NOTE, PROD_DIFF_WHERE, TESTS_DIFF_WHERE, CONTEXT_LINES,
+#       PR_NUMBER, PR_URL, CI_SECTION, COMMENTS_SECTION
 #
-# A section is a function section_<name> below, or a file scripts/sections/<name>.sh that
-# the composer sources. SECTIONS names them in order. A section prints nothing when its
+# A section is a function section_<name> below. SECTIONS names them in order. A section prints nothing when its
 # condition fails. Otherwise it starts with an empty line, except the title.
-SECTIONS="title framing identity rules rubric pr-body changed-files conventions smells comment-policy settled-facts already-on-pr related-prs earlier-findings diff notes"
+SECTIONS="title framing identity rules rubric pr-body changed-files conventions comment-policy settled-facts already-on-pr diff"
 
-# Everything deterministic about the shared context file (references/pipeline.md §2):
-# the framing, identity, rules and rubric copied from the reference docs by marker,
-# the PR body, the lanes, the diff (inline when small), the conventions doc when it is
-# short, and the Settled facts this script can prove. The
-# orchestrator appends only what it verified itself.
+# Everything deterministic about the shared context file: the framing, identity, rules and
+# rubric copied from references/review-rules.md by marker, the PR body, the lanes, the diff
+# (inline when small), the conventions docs, and the Settled facts that this script can
+# prove. The orchestrator puts what it verified itself into the prompts.
 block() {  # block <doc> <name> — print one marked block from a reference doc, headings demoted
   awk -v name="$2" '
     index($0, "<!-- block:" name " -->") == 1 { f = 1; next }
@@ -47,7 +43,7 @@ section_title() {
 
 section_framing() {
   echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" framing
+  block "$PLUGIN_ROOT/references/review-rules.md" framing
   return 0
 }
 
@@ -75,7 +71,6 @@ section_identity() {
   echo "- checked_out: $CHECKED_OUT — the working tree $( [ "$CHECKED_OUT" = yes ] && echo "is the head" || echo "is NOT the head (\`$HEAD0\`); read post-change content with \`git show $HEAD:<path>\`")"
   echo "- type: $TYPE (signal: $TYPE_SIGNAL)"
   echo "- scale: $SCALE ($LINES production lines, $TOTAL_LINES with tests, $FILES files, $PROD_FILE_COUNT production; $SCALE_REASON)"
-  echo "- deep budget: $DEEP_ROW ($DEEP_SOURCE)"
   echo "- effort ceiling: ~$EFFORT tool calls per pass"
   if [ -n "${BRANCH_COMMITS:-}" ]; then
     echo "- commits (oldest first):"
@@ -88,11 +83,11 @@ section_rules() {
   echo
   echo "## Rules"
   echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" scope-rule
+  block "$PLUGIN_ROOT/references/review-rules.md" scope-rule
   echo
   echo "### Read discipline"
   echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" read-discipline
+  block "$PLUGIN_ROOT/references/review-rules.md" read-discipline
   return 0
 }
 
@@ -100,11 +95,11 @@ section_rubric() {
   echo
   echo "## Severity rubric"
   echo
-  block "$PLUGIN_ROOT/references/severity.md" rubric
+  block "$PLUGIN_ROOT/references/review-rules.md" rubric
   echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" rule-report
+  block "$PLUGIN_ROOT/references/review-rules.md" rule-report
   echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" c-rule
+  block "$PLUGIN_ROOT/references/review-rules.md" c-rule
   echo
   echo 'Findings come back one per line: `<category> | <file>:<line> | <A|B|C> | <claim>[ | src:<file>:<line>]`.'
   return 0
@@ -142,7 +137,7 @@ section_conventions() {
   echo
   echo "## Conventions excerpt"
   echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" conventions-header
+  block "$PLUGIN_ROOT/references/review-rules.md" conventions-header
   echo
   if [ -n "$CONVENTIONS" ]; then
     # Quote the docs in lookup order while the total stays at the budget. Name the others.
@@ -189,7 +184,7 @@ section_settled_facts() {
   echo
   echo "## Settled facts"
   echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" settled-header
+  block "$PLUGIN_ROOT/references/review-rules.md" settled-header
   echo
   if [ -n "$CI_SECTION" ]; then
     echo "- CI (authoritative for lint, test and baseline state at the head; a green check retires that class of finding):"
@@ -208,40 +203,12 @@ section_already_on_pr() {
   echo
   echo "## Already on the PR"
   echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" existing-comments-header
+  block "$PLUGIN_ROOT/references/review-rules.md" existing-comments-header
   echo
   case "$COMMENTS_SECTION" in
     ""|none|unavailable:*) echo "(no comments on the PR yet — every finding is new)" ;;
     *) printf '%s\n' "$COMMENTS_SECTION" | grep -v '^hint:' | sed 's/^/    /' ;;
   esac
-  return 0
-}
-
-section_related_prs() {
-  printf '%s\n' "$RELATED_SECTION" | grep -q '^pr: ' || return 0
-  echo
-  echo "## Already on related PRs"
-  echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" related-prs-header
-  echo
-  printf '%s\n' "$RELATED_SECTION" | sed 's/^/    /'
-  return 0
-}
-
-section_earlier_findings() {
-  [ "$EARLIER_MODE" = "same" ] || return 0
-  echo
-  echo "## Earlier findings"
-  echo
-  block "$PLUGIN_ROOT/references/skeleton-blocks.md" earlier-findings-same
-  echo
-  echo "Source: \`$FINDINGS_FILE\`, reviewed head \`${EARLIER_HEAD:0:10}\`. Each line: id | status | category | file:line | tier | claim. A \`Merged:\` entry after a claim is a finding that triage merged into it."
-  echo
-  if [ -n "$EARLIER_LIST" ]; then
-    printf '%s\n' "$EARLIER_LIST" | sed '/^$/d; s/^/- /'
-  else
-    echo "- none: the review of \`${EARLIER_HEAD:0:10}\` had no finding"
-  fi
   return 0
 }
 
@@ -269,24 +236,12 @@ section_diff() {
   return 0
 }
 
-section_notes() {
-  echo
-  echo "## Orchestrator notes — \`$NOTES_PATH\`"
-  echo
-  echo "The orchestrator writes that file after this skeleton, before any pass starts: Settled facts it verified (authoritative, under the same rule as above), Open leads with one owner pass each, and corrections to this skeleton. Read it once, after this file, if it exists. Nothing is ever appended here. An Open lead tagged with your pass is yours to close: it ends as a finding line or as a \`lead cleared: <lead> — <how>\` line after your findings, never in silence."
-  echo
-  return 0
-}
-
 context_section() {  # context_section <name> — print one section of the context file
   local fn="section_${1//-/_}"
   if declare -F "$fn" >/dev/null; then
     "$fn"
-  elif [ -f "$SCRIPT_DIR/sections/$1.sh" ]; then
-    # shellcheck source=/dev/null
-    . "$SCRIPT_DIR/sections/$1.sh"
   else
-    echo "error: no section $1 (no function $fn, no file scripts/sections/$1.sh)" >&2
+    echo "error: no section $1 (no function $fn)" >&2
   fi
   return 0
 }
@@ -302,13 +257,6 @@ plan_context() {
   [ "$GUARD" != "ok" ] && { CONTEXT_PATH=""; CONTEXT_NOTE="not written — the guard refused this run"; }
   [ -z "$BASE" ] || [ -z "$HEAD" ] && { CONTEXT_PATH=""; CONTEXT_NOTE="not written — anchors unresolved"; }
 
-  # The orchestrator's own additions go in a sibling file it creates with Write. Editing the
-  # skeleton would need a Read first, and that Read pulls the inline diff through the
-  # orchestrator's context — the one cost the skeleton exists to remove.
-  NOTES_PATH=""
-  [ -n "$CONTEXT_PATH" ] && NOTES_PATH="${CONTEXT_PATH%.md}-notes.md"
-  NOTES_KEPT=false
-
   PROD_DIFF_WHERE="none"
   TESTS_DIFF_WHERE="none"
   CONTEXT_LINES=0
@@ -317,16 +265,7 @@ plan_context() {
     PROD_PATCH="$PATCH_STEM-prod.patch"
     TESTS_PATCH="$PATCH_STEM-tests.patch"
     mkdir -p "$(dirname "$CONTEXT_PATH")"
-    # The notes path is the same for every branch, so an earlier notes file can hold the
-    # facts of another head. Keep it only when the earlier context names the same head: a
-    # plan run again for that head, for example with --type, must not drop the notes.
-    OLD_HEAD=""
-    [ -f "$CONTEXT_PATH" ] && OLD_HEAD=$(sed -n 's/^- head: `\([0-9a-f]*\)`$/\1/p' "$CONTEXT_PATH" | head -1)
-    if [ -n "$OLD_HEAD" ] && [ "$OLD_HEAD" = "$HEAD" ] && [ -f "$NOTES_PATH" ]; then
-      NOTES_KEPT=true
-    else
-      rm -f "$NOTES_PATH"
-    fi
+    # The patches of an earlier context can hold the diff of another head.
     rm -f "$PROD_PATCH" "$TESTS_PATCH"
 
     # PR fields for the identity section and the body. gh's own --jq, never grep on JSON.
@@ -411,7 +350,6 @@ plan_context() {
 
     CI_SECTION=$(printf '%s\n' "$CTX" | awk '/^=== CI_STATUS ===$/ { f = 1; next } /^=== / { f = 0 } f' | sed '/^$/d')
     COMMENTS_SECTION=$(printf '%s\n' "$CTX" | awk '/^=== EXISTING_COMMENTS ===$/ { f = 1; next } /^=== / { f = 0 } f' | sed '/^$/d')
-    RELATED_SECTION=$(printf '%s\n' "$CTX" | awk '/^=== RELATED_PRS ===$/ { f = 1; next } /^=== / { f = 0 } f' | sed '/^$/d')
     {
       local name
       for name in $SECTIONS; do context_section "$name"; done

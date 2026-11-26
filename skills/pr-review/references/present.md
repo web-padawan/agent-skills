@@ -1,10 +1,8 @@
-# Present findings and gate
+# Present and post
 
 Read [`../../../references/comment-guidelines.md`](../../../references/comment-guidelines.md)
-first. Then run `${CLAUDE_PLUGIN_ROOT}/scripts/pr-refresh.sh --context <context file>`
-and act on each `action:` line. An author can push after the plan ran, and a bot can add
-threads. Then give the review below. Render each finding of the frozen list (the findings
-that triage kept) as a Conventional Comment:
+first. Then give the review below. Render each finding of the frozen list as a Conventional
+Comment:
 
 ```
 ## Review: <PR title> (#<number>)
@@ -19,11 +17,6 @@ that triage kept) as a Conventional Comment:
 [A] `path/to/file.ext:42`
 **issue (behavior, blocking):** <the frozen claim>
 <the one-line fix; verification when not obvious>
-Failing test in `<test file>`: <the test method, in a fenced block>
-
-[B] `path/to/other.ext:17`
-**issue (behavior, non-blocking):** <the frozen claim>
-<the one-line fix>
 
 [B] `path/to/third.ext:88`
 **question (behavior):** <the frozen claim, worded as a question?>
@@ -32,58 +25,57 @@ Failing test in `<test file>`: <the test method, in a fenced block>
 ### Already on the PR
 
 <N> findings match existing threads (<K> bot, <M> human) and are not offered for posting.
-confirms: <thread ids, or "path:line by author", comma-separated>
-contradicts: <one line each — the thread, and what the review found instead>
-not reproduced: <open threads no pass matched, each with your verdict>
+confirms: <thread ids>
+contradicts: <one line each: the thread, and what the review found instead>
+not reproduced: <open threads that no pass matched, each with your verdict>
 
 ### Dropped at triage
 
-<one line: N findings dropped, and the single reason class — pre-existing, unverified,
-answered by a green check. Names only, no claims.>
+<one line: N findings dropped, and the reason classes. Names only, no claims.>
 ```
 
-Every finding carries its decoration. Example: a confirmed B that shows wrong behavior is
-`issue (<category>, non-blocking)`, not a bare `issue (<category>)`. The rendering table in
-severity.md gives the full set.
+- Every finding carries its decorations, per the table of review-rules.md §6.
+- The census counts only findings that are not `already raised` and not `dropped`. Omit
+  **Already on the PR** when the plan said `existing_comments: none`.
+- Give `Needs attention` whenever any `issue` exists, blocking or not. Give `Looks good` only
+  when every finding is a `suggestion`, `question`, `nitpick` or `thought`. Then say that the
+  code looks good.
+- Name the `summary-only` findings. They go in the review body.
 
-Show each failing test in full, because the reviewer posts it. If Triage gave a `behavior`,
-`fix`, `logic` or `impact` issue no test, give the reason in one line. Example:
-`no test: the head is not checked out`.
+## Post question
 
-The findings file of Triage holds the detail of each dropped finding. Do not list them in
-the chat.
-
-The census line under the result counts only findings that are not `already raised` and not
-`dropped`. If
-the plan said `existing_comments: none`, omit the **Already on the PR** block.
-
-Give `Needs attention` whenever any `issue` exists, blocking or not. An `issue` says that wrong
-behavior exists. `Looks good` above an `issue` tells the reader that the review found no
-problem, which is false. Give `Looks good` only when every finding is `suggestion`,
-`question`, `nitpick` or `thought`. In that case, say explicitly that the code looks
-good.
-
-Before the post gate, say which findings are `summary-only` (pipeline.md §5.6).
-`Yes — post all` puts them in the review body.
-
-On a fork PR, put `One summary review` first. The author then gets one list of changes.
-
-Send the review as text in a message of its own. Ask the post question in the next message.
-The open question dialog can cover the text above it, and a message can lose its text. So the
-question text carries the census and the label and anchor of each finding that can post:
+Send the review as text in a message of its own. Ask the post question in the next message,
+as one `AskUserQuestion` with the header `Post`. The open dialog can hide the text above it.
+So the question text carries the census, and the label and anchor of each finding that can
+post:
 
 ```
 Post these as comments on the PR? 1 issue (1 blocking), 1 nitpick:
 issue (behavior, blocking) `Foo.java:42`; nitpick `Bar.java:17`.
 ```
 
-Ask it as one `AskUserQuestion` with the header `Post`. Drop an option that would post
-nothing. The options:
+The options. Drop an option that would post nothing:
 
-- `Yes — post all`: one review, with a thread per finding and the summary of
-  comment-guidelines.md in its body.
-- `One summary review`: every finding in the review body, blocking first (`--body-only`).
+- `Yes — post all`: one review, with a thread per finding.
+- `One summary review`: every finding in the review body, blocking first. List it first on a
+  fork PR, so that the author gets one list of changes.
 - `No — chat only`.
 
-With each option, the script posts a `contradicts` or `not fixed` finding as a reply into its
-thread. It never posts a `confirms` finding, because agreement is not a comment.
+A free answer wins over the options. When it excludes findings, set their status to
+`dropped excluded by reviewer`.
+
+## Post
+
+Call `${CLAUDE_PLUGIN_ROOT}/scripts/post-review.sh` with the findings file of Triage and the
+`head:` SHA of the plan. Add `--body-only` for `One summary review`.
+
+1. When the reviewer asked for a summary, write what clearing the findings earns to a file,
+   and pass it as `--summary`. The script writes the census line itself.
+2. Run the script once with `--dry-run`. Read the bodies that it prints.
+3. Run it again without `--dry-run`. Give the link of each posted thread and of the review.
+
+The script posts no `confirms` verdict, and posts a `contradicts` or `not fixed` verdict as a
+reply into its thread. It refuses the whole batch on a bad label, status or anchor, and when
+the head moved and a commented file changed. Then fix the batch, or review the new head. A
+finding within two lines of an existing thread is skipped: triage that thread, then set `dup`
+on the finding.
