@@ -31,7 +31,7 @@ code review is worth it now. Each flag reads a label, a marker or the author:
 The label rules and the team allowlist come from the config that `screening_config:` names.
 Without a config, only the generic rules apply. For a team author, the script prints the
 contributor flags in `skipped_flags:`. The evidence behind each flag is in
-`docs/rationale.md`.
+`docs/lessons.md`.
 
 The flags read only labels, markers and the author. When another fact matters at the gate,
 add a line to the card:
