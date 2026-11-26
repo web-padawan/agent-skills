@@ -106,9 +106,6 @@ Passes: <pass name> ✅ · <pass name> ⚠️ self-run · <pass name> ❌ missin
 ## Not deep-reviewed
 - <file>:<line-range> — <reason it ranked below the line, or `covered by <block name>`>
 
-## Follow-ups
-- [B] F13 <file>:<line> — **<label> (<category>, non-blocking):** <one-line claim>
-
 ## Next steps
 Fix the A findings, then re-run. Coverage gaps: write the test that each survivor names.
 ````
@@ -144,13 +141,6 @@ Fix the A findings, then re-run. Coverage gaps: write the test that each survivo
   `N mutants, K killed, S survived, skipped: <hunks or none>`. On a **fix**, prefix it with
   the whole-fix revert result:
   `regression test: <name> fails without the fix | none fails without the fix`.
-- **Follow-ups** indexes every `confirmed` B and C finding as a paste-ready list for the
-  follow-up issue. Each line holds the id, `file:line`, the Conventional Comments label and
-  decorations of the finding from the frozen list
-  ([`../../../references/severity.md`](../../../references/severity.md), *Rendering*), and
-  the one-line claim. Do not include the fix, because it is above, under its category. When
-  you paste the list into an issue, each line already reads as a review comment. A findings
-  are not follow-ups. They belong in `## Next steps`.
 - On a **fix**, a finding that the change reverses a behavior that an existing test asserts
   on purpose leads the report. That finding questions the diff, not a line of it.
 - Never commit the report. It lives in the git directory, at the path that the plan named.
@@ -226,8 +216,8 @@ with Write as one JSON object:
 - the `change` or `code` pass is `missing`. Then what the change does, or how the diff reads,
   went unexamined, so there is no basis for a verdict.
 
-Otherwise **ready for PR**. Confirmed B and C findings never block. They live under
-Follow-ups. The verdict describes `HEAD` as it stands. You changed nothing to reach it.
+Otherwise **ready for PR**. Confirmed B and C findings never block. The verdict describes
+`HEAD` as it stands. You changed nothing to reach it.
 
 ## Chat reply
 
