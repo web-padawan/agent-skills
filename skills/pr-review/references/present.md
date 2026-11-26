@@ -66,8 +66,7 @@ good.
 Before the post gate, say which findings are `summary-only` (pipeline.md §5.6).
 `Yes — post all` puts them in the review body.
 
-On a fork PR, or on a `redirect` verdict, put `One summary review` first. The author then gets
-one list of changes, as in *Replies by verdict* of comment-guidelines.md.
+On a fork PR, put `One summary review` first. The author then gets one list of changes.
 
 Send the review as text in a message of its own. Ask the post question in the next message.
 The open question dialog can cover the text above it, and a message can lose its text. So the
