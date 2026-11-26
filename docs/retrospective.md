@@ -2,7 +2,7 @@
 
 What each real review run exposed, and what changed because of it. Newest first. Each bullet
 reads `what the run showed → what changed (commit)`. No skill, agent or script loads this
-file. The principles are in [`rationale.md`](rationale.md), one line each.
+file. The lessons are in [`lessons.md`](lessons.md), one line each.
 
 ## 2026-11-26 — PR review 20: flow-components #10839, vendor tool call limits
 

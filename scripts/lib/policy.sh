@@ -1,7 +1,7 @@
 # policy.sh: sourced by review-plan.sh. The review policy: the pass registry, the passes and
 # budgets of a mode and a change type, the caps of each scale tier, the model and the
 # effort ceiling of each pass. The plan prints what this file resolves, so no skill
-# restates it. Why the numbers look like this: docs/rationale.md.
+# restates it. Why the numbers look like this: docs/lessons.md.
 #
 # Reads: MODE, TYPE, SCALE, PLUGIN_NAME, BASE, HEAD, CHANGED, PROD_FILES, TEST_FILES,
 #        BINARY_FILES, CODE_RE, ROUNDS_FLAG, NO_COVERAGE
