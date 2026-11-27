@@ -67,8 +67,8 @@ Do not build a `references/` tree before you need it.
 ## Step 3 — Write the body
 
 1. Open with one or two sentences on what the skill does and what it assumes.
-   Write the body in Simplified Technical English. `.claude/rules/writing-style.md`
-   gives the limits: 20 words per instruction, imperative steps, no semicolons or dashes.
+   Write the body in Simplified Technical English. `references/writing.md` at the plugin
+   root gives the limits: 20 words per instruction, imperative steps, no semicolons or dashes.
 2. **Lead with the gotchas.** The highest-signal content is what the agent gets wrong by
    default. Prefer concrete "X is actually Y" facts over generic advice. Grow this
    section as new edge cases surface.
@@ -118,9 +118,9 @@ clause) are in [references/agents.md](references/agents.md).
    not. Read only the `description` and predict the result. Adjust until correct.
 2. **Cold-read test:** can an agent with no prior context follow the body without a
    guess at paths or commands? Resolve every relative path.
-3. **Style test:** read each new or changed paragraph against
-   `.claude/rules/writing-style.md`. Count the words in the longest sentence. Search the
-   diff for `;` and `—` outside code blocks.
+3. **Style test:** run `scripts/prose-check.sh` on each changed file, and fix each `ban`
+   hit. Then read each new or changed paragraph against `references/writing.md`. Count
+   the words in the longest sentence.
 4. **Live test:** start a new session. The plugin loads from this checkout. Run the skill
    once on a real case before you rely on it.
 

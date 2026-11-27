@@ -10,8 +10,10 @@ and how to install and use the plugin. Do not repeat that content here.
 - `agents/`: the reviewer subagents that the review skills launch. Their contract is static.
 - `hooks/`: the plugin hooks. `hooks.json` runs `scripts/hooks/bash-guard.py` before each Bash call,
   and `scripts/hooks/question-guard.py` before each AskUserQuestion call.
-- `references/`: the documents that the review skills share. `review-rules.md` holds the
+- `references/`: the documents that the skills share. `review-rules.md` holds the
   shared steps and the blocks that the plan script copies. They are tuned prompts.
+  `writing.md` holds the writing standard, and `banned-patterns.md` holds the patterns of
+  `scripts/prose-check.sh`.
 - `docs/`: `lessons.md`, the measured lessons and the removed mechanisms, and
   `retrospective.md`, the record of each run. No skill loads them.
 - `owners/<owner>/`: the fact packs, screening config and rules of one GitHub owner, for example `owners/vaadin/`.
@@ -24,7 +26,9 @@ and how to install and use the plugin. Do not repeat that content here.
 ## Conventions
 
 - Write every markdown file in Simplified Technical English. The rule in
-  `.claude/rules/writing-style.md` loads in every session and lists the criteria and the exempt text.
+  `.claude/rules/writing-style.md` loads in every session and lists the exempt text.
+  `references/writing.md` holds the criteria. This line imports it:
+  @references/writing.md
 - Create or change a skill with the `authoring-skills` skill. It holds the description,
   body and frontmatter conventions. Agent conventions are in `skills/authoring-skills/references/agents.md`.
 - Keep `SKILL.md` under 150 lines. Move depth into `references/`.

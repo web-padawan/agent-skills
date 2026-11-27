@@ -81,5 +81,6 @@ is pinned per commit, so these fields are noise. Do not add them.
       externally.
 - [ ] `argument-hint` present if the skill takes arguments.
 - [ ] No secrets or machine-specific absolute paths in frontmatter.
-- [ ] The body obeys `.claude/rules/writing-style.md`. The `description` field is
-      exempt. It follows the trigger conventions in `descriptions.md`.
+- [ ] The body obeys `references/writing.md`, and `scripts/prose-check.sh` reports no
+      `ban` hit. The `description` field is exempt. It follows the trigger conventions
+      in `descriptions.md`.

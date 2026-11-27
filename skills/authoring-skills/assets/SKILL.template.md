@@ -11,7 +11,7 @@ description: <one trigger-shaped sentence — lead with the verbs/phrases a user
 
 # my-skill-name
 
-<!-- Write the body in Simplified Technical English. See .claude/rules/writing-style.md.
+<!-- Write the body in Simplified Technical English. See references/writing.md.
      Use no more than 20 words in an instruction. Use the imperative for steps.
      Do not use semicolons or em-dashes. -->
 
