@@ -3,12 +3,11 @@
 This file holds the writing rules of this plugin. The rules adapt ASD-STE100 Issue 9, the
 standard for Simplified Technical English. No STE dictionary is enforced.
 
-A skill that writes text for a person reads this file before it writes. The rule in
+The `issue-draft` skill reads this file before it writes. The rule in
 `.claude/rules/writing-style.md` applies this file to the markdown of this repository.
 `scripts/prose-check.sh` finds the patterns of [`banned-patterns.md`](banned-patterns.md).
 The rules below need judgment.
 
-<!-- block:ste -->
 ## Words
 
 - Use familiar words. Explain an unfamiliar word where you first use it.
@@ -66,9 +65,6 @@ The rules below need judgment.
 - Use connecting words to show how sentences relate. Use the same words for the same relation.
 - Put an instruction in the main text. Use a note only to give information.
 - If word changes do not make a sentence clear, write a different sentence.
-<!-- /block -->
-
-<!-- block:tone -->
 ## Tone
 
 - Put the claim, the problem or the goal in the first sentence.
@@ -81,15 +77,12 @@ The rules below need judgment.
 - Link a related issue or document. Do not copy its content.
 - Put each code element in backticks, for example a method, a property or a file name.
   A backtick also prevents an accidental user mention.
-- Leave no trace of how you found a fact. Do not write `While I worked on X, I saw Y`.
+- Do not describe how you found a fact. Do not write `While I worked on X, I saw Y`.
 - Do not write a greeting, thanks, praise, an apology, a preamble or a closing summary.
 - Do not use an emoji or an exclamation mark.
-<!-- /block -->
-
-<!-- block:tells -->
 ## Patterns of generated text
 
-Readers use these patterns to identify generated text. The script cannot find all of them.
+Readers use these patterns to identify generated text. `prose-check.sh` cannot find all of them.
 
 - Do not open with broad context. Start with the specific fact.
 - Do not end with a sentence that repeats the text. End with the next step, or stop.
@@ -97,4 +90,3 @@ Readers use these patterns to identify generated text. The script cannot find al
 - Do not write a set of adjectives that adds no fact, for example `fast, reliable and simple`.
 - Write a heading as a statement, not as a question.
 - Use one note at most in a document.
-<!-- /block -->

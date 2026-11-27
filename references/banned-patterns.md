@@ -19,12 +19,13 @@ patterns that a script can find.
 
 ## Sources
 
+- A phrase that opens or closes a text matches only at the start of a sentence, before a comma.
 - The words and the phrases come from the GitLab skill `natural-writing-style` and from the
   emphasis examples of the Simplified Technical English rules.
 - The punctuation rows and the Latin abbreviation rows enforce the Simplified Technical English
   rules in prose. A code comment follows the form of its file, so these rows do not apply to
-  it. In the comments of the same monorepo, `e.g.` occurs on 130 lines and `for example` on 20.
-- The `comment` rows come from a count over the comments of a JavaScript monorepo on 2026-11-27.
+  it. In the comments of web-components, `e.g.` occurs on 130 lines and `for example` on 20.
+- The `comment` rows come from a count over the comments of web-components on 2026-11-27.
   The counts were `ensure` 65, `in order to` 32, `make sure` 25, `note that` 20, `properly` 18
   and `correctly` 8.
 
@@ -40,8 +41,6 @@ Add a row when a real draft or a real comment used the pattern.
 | `streamlin` | ban | simplify | all |
 | `endeavo` | ban | try, work | all |
 | `bolster` | ban | strengthen | all |
-| `tapestry` | ban | delete it, state the fact | all |
-| `realm` | ban | area | all |
 | `multifaceted` | ban | name the parts | all |
 | `pivotal` | ban | important, or delete it | all |
 | `synerg` | ban | state the effect | all |
@@ -68,15 +67,11 @@ Add a row when a real draft or a real comment used the pattern.
 | `a wide range of` | ban | many, or name them | all |
 | `pave the way` | ban | allow | all |
 | `unlock the potential` | ban | allow | all |
-| `at the end of the day` | ban | delete it | all |
 | `feel free to` | ban | delete it, give the instruction | all |
 | `hope this helps` | ban | delete it | prose |
 | `thanks so much` | ban | delete it | prose |
-| `moving forward` | ban | delete it | prose |
 | `when it comes to` | ban | for, or start with the subject | prose |
-| `in conclusion` | ban | delete it, end with the next step | prose |
-| `to summarize` | ban | delete it, end with the next step | prose |
-| `in summary` | ban | delete it, end with the next step | prose |
+| `/(?:^\|(?<=[.:?] ))(in conclusion\|to summarize\|in summary\|moving forward\|at the end of the day),/` | ban | delete it, end with the next step | prose |
 | `/\b(could\|might\|may) (potentially\|possibly)\b/` | ban | name the condition, or state the fact | all |
 | `potentially` | flag | name the condition | all |
 | `note that` | flag | state the fact | all |
@@ -99,5 +94,5 @@ Add a row when a real draft or a real comment used the pattern.
 | `/[“”‘’]/` | ban | a straight quote | prose |
 | `/·/` | ban | a comma | prose |
 | `/!(?!\S)/` | ban | a period | prose |
-| `/[\U0001F300-\U0001FAFF☀-➿]/` | ban | delete it | prose |
+| `/[\U0001F000-\U0001FAFF\u2300-\u23FF\u25A0-\u27BF\u2B00-\u2BFF\uFE0F]/` | ban | delete it | prose |
 <!-- /block -->

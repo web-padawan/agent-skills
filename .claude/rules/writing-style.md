@@ -5,8 +5,8 @@ That includes `SKILL.md` files, agent definitions, references, templates, `READM
 `CLAUDE.md`. It does not apply to chat replies.
 
 The criteria are in `references/writing.md`. `CLAUDE.md` imports that file, so the criteria
-load in every session. Run `scripts/prose-check.sh` on each changed file. Change the text at
-each `ban` hit.
+load in every session. If a changed file is not in the exempt list below, run
+`scripts/prose-check.sh` on it. Change the text at each `ban` hit.
 
 ## Exempt text
 

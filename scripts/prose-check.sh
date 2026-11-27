@@ -10,16 +10,19 @@
 #   flag   a smell. Judge it in context, and change the text only when it adds no fact.
 # A row of scope `all` applies to both scopes.
 #
-# --scope prose (default) reads markdown. It skips the frontmatter, fenced code, headings,
-#   table rows, quote lines, HTML comment lines and each line that holds <!-- prose-ok -->.
-#   It removes code spans, URLs and link targets before the match.
+# --scope prose (default) reads markdown. It joins the lines of each paragraph and each list
+#   item, so a phrase that wraps still matches. It skips the frontmatter, fenced code,
+#   headings, table rows, quote lines, HTML comments and each line that holds
+#   <!-- prose-ok -->. It removes code spans, URLs and link targets before the match.
 # --scope comment reads the output lines of list-comments.sh, `<file>:<line> | <kind> | <text>`,
-#   and checks the text field. It removes code spans and URLs before the match.
+#   and checks the text field. It removes the comment markers, code spans and URLs before the
+#   match. A multi-line comment is one line, with its lines joined by ` / `.
 #
 # Output, one line per hit:
 #   <file>:<line> | <tier> | <matched text> | <use instead>
 #
-# Exit codes: 0 no ban hit (flag hits can print), 1 one or more ban hits, 2 a usage error.
+# Exit codes: 0 no ban hit (flag hits can print), 1 one or more ban hits, 2 a usage error, a
+# bad pattern row, a comment line in the wrong format, or an input that cannot be read.
 
 set -euo pipefail
 
@@ -30,10 +33,12 @@ INPUTS=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --scope) SCOPE="${2:-}"; shift ;;
-    --help|-h) sed -n '2,22p' "$0"; exit 0 ;;
+    --scope)
+      [ $# -ge 2 ] || { echo "refuse: --scope needs a value" >&2; exit 2; }
+      SCOPE="$2"; shift ;;
+    --help|-h) sed -n '2,25p' "$0"; exit 0 ;;
     -) INPUTS+=("-") ;;
-    --*) echo "unknown flag: $1" >&2; exit 2 ;;
+    --*) echo "refuse: unknown flag $1" >&2; exit 2 ;;
     *) INPUTS+=("$1") ;;
   esac
   shift
@@ -49,111 +54,162 @@ import sys
 
 patterns_path, scope, *inputs = sys.argv[1:]
 
-def fail(msg):
-    print("refuse: " + msg, file=sys.stderr)
-    sys.exit(2)
+class Refuse(Exception):
+    pass
 
-rows = []
-in_block = False
-with open(patterns_path, encoding="utf-8") as f:
-    for raw in f:
-        line = raw.strip()
-        if line == "<!-- block:patterns -->":
-            in_block = True
-            continue
-        if line == "<!-- /block -->":
-            in_block = False
-            continue
-        if not in_block or not line.startswith("|"):
-            continue
-        cells = [c.strip().replace("\\|", "|") for c in re.split(r"(?<!\\)\|", line)[1:-1]]
-        if len(cells) != 4 or cells[0] == "Pattern" or set(cells[0]) <= set("-: "):
-            continue
-        pat, tier, instead, row_scope = cells
-        if tier not in ("ban", "flag") or row_scope not in ("all", "prose", "comment"):
-            fail("bad row in banned-patterns.md: " + line)
-        if row_scope not in ("all", scope):
-            continue
-        if len(pat) > 1 and pat[0] == "`" and pat[-1] == "`":
-            pat = pat[1:-1]
-        try:
-            if len(pat) > 2 and pat[0] == "/" and pat[-1] == "/":
-                rx = re.compile(pat[1:-1], re.IGNORECASE)
-            else:
-                rx = re.compile(r"(?<![\w-])" + re.escape(pat) + r"\w*", re.IGNORECASE)
-        except re.error as e:
-            fail("bad pattern " + pat + ": " + str(e))
-        rows.append((rx, tier, instead))
-if not rows:
-    fail("no pattern rows in " + patterns_path)
+def load_rows():
+    rows = []
+    in_block = False
+    with open(patterns_path, encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if line == "<!-- block:patterns -->":
+                in_block = True
+                continue
+            if line == "<!-- /block -->":
+                in_block = False
+                continue
+            if not in_block or not line.startswith("|"):
+                continue
+            cells = [c.strip().replace("\\|", "|") for c in re.split(r"(?<!\\)\|", line)[1:-1]]
+            if cells and (cells[0] == "Pattern" or set(cells[0]) <= set("-: ")):
+                continue
+            if len(cells) != 4:
+                raise Refuse("pattern row without 4 cells: " + line)
+            pat, tier, instead, row_scope = cells
+            if tier not in ("ban", "flag") or row_scope not in ("all", "prose", "comment"):
+                raise Refuse("bad tier or scope: " + line)
+            if row_scope not in ("all", scope):
+                continue
+            if len(pat) > 1 and pat[0] == "`" and pat[-1] == "`":
+                pat = pat[1:-1]
+            try:
+                if len(pat) > 2 and pat[0] == "/" and pat[-1] == "/":
+                    rx = re.compile(pat[1:-1], re.IGNORECASE)
+                else:
+                    # A one-word pattern matches the start of a word. A phrase matches whole words.
+                    tail = r"\w*" if " " not in pat else r"\b"
+                    rx = re.compile(r"(?<![\w-])" + re.escape(pat) + tail, re.IGNORECASE)
+            except re.error as e:
+                raise Refuse("bad pattern " + pat + ": " + str(e))
+            rows.append((rx, tier, instead))
+    if not rows:
+        raise Refuse("no pattern rows in " + patterns_path)
+    return rows
 
 CODE_SPAN = re.compile(r"(`+)(.+?)\1")
 URL = re.compile(r"https?://\S+")
 LINK_TARGET = re.compile(r"\]\([^)]*\)")
+MARKER = re.compile(r"(?:(?<=\s)|^)(?:/\*\*?|\*+/|//+|\*+)(?=\s|$)")
+SEPARATOR = re.compile(r"\s/\s")
 
 def clean(text):
     text = CODE_SPAN.sub(" x ", text)
     text = LINK_TARGET.sub("]", text)
     return URL.sub(" ", text)
 
-bans = 0
+def run():
+    rows = load_rows()
+    bans = 0
 
-def check(loc, text):
-    global bans
-    text = clean(text)
-    for rx, tier, instead in rows:
-        for m in rx.finditer(text):
-            print(f"{loc} | {tier} | {m.group(0)} | {instead}")
-            if tier == "ban":
-                bans += 1
+    def check(locs, parts):
+        # parts: the text of each source line, in order. locs: the location of each part.
+        nonlocal bans
+        starts, text = [], ""
+        for p in parts:
+            starts.append(len(text))
+            text += p + " "
+        for rx, tier, instead in rows:
+            for m in rx.finditer(text):
+                i = max(k for k, s in enumerate(starts) if s <= m.start())
+                print(f"{locs[i]} | {tier} | {m.group(0)} | {instead}")
+                if tier == "ban":
+                    bans += 1
 
-FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
-HEADING = re.compile(r"^\s{0,3}#{1,6}(\s|$)")
-HTML_COMMENT = re.compile(r"^\s*<!--.*-->\s*$")
+    FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
+    HEADING = re.compile(r"^\s{0,3}#{1,6}(\s|$)")
+    ITEM = re.compile(r"^\s*([-*+]|\d+[.)])\s")
 
-def prose(name, lines):
-    fence = None
-    front = bool(lines) and lines[0].rstrip("\n") == "---"
-    for i, raw in enumerate(lines, 1):
-        line = raw.rstrip("\n")
-        if front:
-            if i > 1 and line == "---":
-                front = False
-            continue
-        m = FENCE.match(line)
-        if fence:
-            if m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence):
-                fence = None
-            continue
-        if m:
-            fence = m.group(1)
-            continue
-        if (HEADING.match(line) or line.lstrip().startswith(("|", ">"))
-                or HTML_COMMENT.match(line) or "<!-- prose-ok -->" in line):
-            continue
-        check(f"{name}:{i}", line)
+    def prose(name, lines):
+        lines = [l.rstrip("\r\n") for l in lines]
+        front = bool(lines) and lines[0] == "---" and "---" in lines[1:]
+        fence, in_html = None, False
+        locs, parts = [], []
 
-def comments(lines):
-    for raw in lines:
-        parts = raw.rstrip("\n").split(" | ", 2)
-        if len(parts) == 3:
-            check(parts[0], parts[2])
+        def flush():
+            if parts:
+                check(list(locs), list(parts))
+            locs.clear()
+            parts.clear()
 
-for path in inputs:
-    if path == "-":
-        name, lines = "stdin", sys.stdin.readlines()
-    else:
-        try:
-            with open(path, encoding="utf-8") as f:
-                name, lines = path, f.readlines()
-        except OSError as e:
-            fail("cannot read " + path + ": " + e.strerror)
-    if scope == "comment":
-        comments(lines)
-    else:
-        prose(name, lines)
+        for i, line in enumerate(lines, 1):
+            if front:
+                if i > 1 and line == "---":
+                    front = False
+                continue
+            m = FENCE.match(line)
+            if fence:
+                if m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence):
+                    fence = None
+                continue
+            if m:
+                flush()
+                fence = m.group(1)
+                continue
+            if in_html:
+                if "-->" in line:
+                    in_html = False
+                continue
+            stripped = line.strip()
+            if stripped.startswith("<!--") and "-->" not in stripped:
+                flush()
+                in_html = True
+                continue
+            if (not stripped or HEADING.match(line) or stripped.startswith(("|", ">", "<!--"))
+                    or "<!-- prose-ok -->" in line):
+                flush()
+                continue
+            if ITEM.match(line):
+                flush()
+            locs.append(f"{name}:{i}")
+            parts.append(clean(line))
+        flush()
 
-sys.exit(1 if bans else 0)
+    def comments(lines):
+        for raw in lines:
+            line = raw.rstrip("\r\n")
+            if not line.strip():
+                continue
+            fields = line.split(" | ", 2)
+            if len(fields) != 3:
+                raise Refuse("not a list-comments.sh line: " + line)
+            text = clean(fields[2])
+            text = MARKER.sub(" ", SEPARATOR.sub(" ", " " + text + " "))
+            check([fields[0]], [" ".join(text.split())])
+
+    for path in inputs:
+        if path == "-":
+            name, lines = "stdin", sys.stdin.readlines()
+        else:
+            try:
+                with open(path, encoding="utf-8") as f:
+                    name, lines = path, f.readlines()
+            except (OSError, UnicodeDecodeError) as e:
+                raise Refuse("cannot read " + path + ": " + str(e))
+        if scope == "comment":
+            comments(lines)
+        else:
+            prose(name, lines)
+    return 1 if bans else 0
+
+try:
+    sys.exit(run())
+except Refuse as e:
+    print("refuse: " + str(e), file=sys.stderr)
+    sys.exit(2)
+except Exception as e:
+    print("refuse: internal error: " + repr(e), file=sys.stderr)
+    sys.exit(2)
 EOF
 )
 

@@ -700,8 +700,8 @@ OWNER_HITS=$(cd "$ROOT" && grep -rn -i -w -E 'vaadin|lumo|aura' \
 expect "the review core names an owner only in an owner/repo citation" "" "$OWNER_HITS"
 
 echo "== prose-check.sh"
-# The fixture holds one ban hit and one flag hit. Each other line holds a banned word in a
-# place that the check skips.
+# Lines 6, 7, 10 and 11 hold the hits. Each other line holds a banned word in a place that the
+# check skips. Lines 10 and 11 hold a phrase that wraps.
 PF="$WORK/prose.md"
 cat > "$PF" <<'EOF'
 ---
@@ -713,31 +713,46 @@ The script runs in order to check the text.
 It handles the input properly.
 Use `in order to` in a code span, and read [the guide](https://example.com/robust).
 A robust line with a marker. <!-- prose-ok -->
-Make sure that the branch exists.
+Make sure that the branch exists. It is worth
+noting that it's done; really!
 > A robust quote.
 
 | robust | table |
 
-```js
+<!--
+robust
+-->
+~~~js
 // in order to
-```
+~~~
 EOF
 check "prose-check.sh exits 1 on a ban hit" 1 "$SCRIPTS/prose-check.sh" "$PF"
-expect "prose-check.sh reports only the ban hit and the flag hit of the prose fixture" \
-  "$PF:6 | ban | in order to | to|$PF:7 | flag | properly | name the behavior" \
+expect "prose-check.sh reports only the hits of the prose fixture" \
+  "$PF:6 | ban | in order to | to|$PF:7 | flag | properly | name the behavior|$PF:10 | ban | It is worth noting | state the fact|$PF:11 | ban | ; | a period, or two sentences|$PF:11 | ban | it's | the full form, for example \`it is\`|$PF:11 | ban | ! | a period" \
   "$("$SCRIPTS/prose-check.sh" "$PF" | paste -sd '|' -)"
-expect "prose-check.sh checks the text field of list-comments.sh lines" \
-  "src/a.js:3 | flag | make sure | name the result, or delete the clause|src/a.js:9 | ban | in order to | to" \
-  "$(printf 'src/a.js:3 | inline | make sure the list is sorted\nsrc/a.js:9 | docblock | e.g. `in order to` code, in order to sync\n' \
+expect "prose-check.sh checks only the text field of list-comments.sh lines, across joined lines" \
+  "src/robust.js:3 | flag | make sure | name the result, or delete the clause|src/a.js:9 | ban | in order to | to" \
+  "$(printf 'src/robust.js:3 | inline | make sure the list is sorted\nsrc/a.js:9 | docblock | /** / * e.g. `in order to` code, in order / * to sync / */\n' \
     | "$SCRIPTS/prose-check.sh" --scope comment - | paste -sd '|' -)"
+check "prose-check.sh refuses a comment line in another format" 2 \
+  sh -c "printf 'in order to\n' | '$SCRIPTS/prose-check.sh' --scope comment -"
+check "prose-check.sh refuses an unknown scope" 2 "$SCRIPTS/prose-check.sh" --scope bogus "$PF"
+check "prose-check.sh refuses a missing input" 2 "$SCRIPTS/prose-check.sh"
+mkdir -p "$WORK/pc/scripts" "$WORK/pc/references"
+cp "$SCRIPTS/prose-check.sh" "$WORK/pc/scripts/"
+printf '<!-- block:patterns -->\n| Pattern | Tier | Use instead | Scope |\n| --- | --- | --- | --- |\n| `/a|b/` | ban | x | all |\n<!-- /block -->\n' \
+  > "$WORK/pc/references/banned-patterns.md"
+check "prose-check.sh refuses a pattern row without 4 cells" 2 "$WORK/pc/scripts/prose-check.sh" "$PF"
 
 # Every markdown file of this plugin obeys the ban tier, except the exempt files of the
-# writing rule.
-PROSE_HITS=$(cd "$ROOT" && find agents references skills owners docs .claude/rules README.md CLAUDE.md \
+# writing rule. A refusal or a crash of the check fails this check too.
+PROSE_OUT=$(cd "$ROOT" && find agents references skills owners docs .claude/rules README.md CLAUDE.md \
   -name '*.md' -not -path docs/retrospective.md -not -path references/banned-patterns.md \
   -not -path references/comment-guidelines.md -not -path skills/work-summary/assets/TEMPLATE.md \
-  -print0 2>/dev/null | xargs -0 "$SCRIPTS/prose-check.sh" | grep ' | ban | ' || true)
-expect "the markdown of this plugin has no ban hit" "" "$PROSE_HITS"
+  -print0 2>/dev/null | xargs -0 "$SCRIPTS/prose-check.sh" 2>&1)
+PROSE_RC=$?
+expect "the markdown of this plugin has no ban hit" "0|" \
+  "$PROSE_RC|$(printf '%s\n' "$PROSE_OUT" | grep -E ' \| ban \| |^refuse:' || true)"
 
 if [ "$FAILED" = 0 ]; then
   echo "RESULT: ok"

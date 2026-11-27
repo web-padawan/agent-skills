@@ -16,8 +16,7 @@ the start. If that read fails, use `${CLAUDE_PLUGIN_ROOT}/references/comments.md
 pass of the review skills judges against the same policy, so a cleanup run and a later review
 agree. The smell table, the rewrite recipes and the manifest check are in
 [`references/comment-slop.md`](references/comment-slop.md). A smell is a wording pattern
-that marks a comment for a DROP or a REWRITE. `scripts/prose-check.sh` finds the smells that
-[`../../references/banned-patterns.md`](../../references/banned-patterns.md) lists.
+that marks a comment for a DROP or a REWRITE. `prose-check.sh` finds the banned words.
 
 ## When to use
 
@@ -90,17 +89,18 @@ is `refactor:`. The gate offers them as separate options.
    a test directory and a `.d.ts` file. If the request names neither a diff nor a path, ask
    the user which mode to use. Then read the JSDoc chapter of the conventions document.
    Note each rule that names a docblock form.
-2. **Extract.** Run the script in one call, then the same extraction through the check:
+2. **Extract.** Run each of these two commands in one call:
 
    ```
    ${CLAUDE_PLUGIN_ROOT}/skills/comment-cleanup/scripts/list-comments.sh <flag> [path]
    ${CLAUDE_PLUGIN_ROOT}/skills/comment-cleanup/scripts/list-comments.sh <flag> [path] | ${CLAUDE_PLUGIN_ROOT}/scripts/prose-check.sh --scope comment -
    ```
 
-   It prints one line per comment block, as `<file>:<line> | <kind> | <text>`. The kind is
-   `docblock`, `inline` or `html`. It omits a docblock that holds only tags. It prints nothing
-   when nothing matches. If it prints nothing, stop. Work only from what the script prints. A
-   `refuse:` line ends the run. Say the reason in one line and stop.
+   `list-comments.sh` prints one line per comment block, as `<file>:<line> | <kind> | <text>`.
+   The kind is `docblock`, `inline` or `html`. It omits a docblock that holds only tags. If it
+   prints nothing, stop. Work only from what it prints. A `refuse:` line ends the run. Say the
+   reason in one line and stop. `prose-check.sh` prints one line per banned word, with the
+   replacement. Its exit 1 means a `ban` hit, not a failure.
 
    A whole-source run over a package returns many blocks. If the script prints more than about
    40 blocks, print the count per file and ask which files to run. Each verdict needs a read of
@@ -108,11 +108,12 @@ is `refactor:`. The gate offers them as separate options.
 3. **Classify.** Give each block one verdict from the policy, and name the row or the
    carve-out that decided it. Read the code around the block first. The table asks what the
    code already shows, and only the code answers that. For a REWRITE, name the smell from the
-   smell table and write the new text. A block that you cannot place is a DROP. A block with a
-   `ban` hit is a DROP or a REWRITE, unless a carve-out makes it a RETAIN.
-4. **Gate.** Print one table with `file:line`, the kind, the verdict, the row or the smell,
-   and the new wording of each REWRITE. List every verdict on its own row. Check the new
-   wording first, as the smell reference shows. Then ask one
+   smell table and write the new text. A block that you cannot place is a DROP. A `ban` hit
+   marks its word for a REWRITE inside the verdict of the policy. A `flag` hit marks it only
+   when the word adds no fact. If the word is the name that the code uses, keep it and report it.
+4. **Gate.** Before you print the table, check each new wording, as `references/comment-slop.md` shows.
+   Print one table with `file:line`, the kind, the verdict, the row or the smell,
+   and the new wording of each REWRITE. List every verdict on its own row. Then ask one
    `AskUserQuestion` before any edit. Offer these options:
    - apply all
    - apply the DROP verdicts only

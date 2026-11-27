@@ -21,10 +21,9 @@ Each example comes from the `time-picker` run of 2026-09-19, or from the comment
 | Shorthand link | `see #6397` | REWRITE | the full URL when the issue is open, delete when closed |
 | Misplaced why | `// Open dropdown only when clicking label` inside `_onHostClick` | REWRITE | move into the leading line of the override docblock |
 | Typo in a mandated line | `to handle Escape pres..` | REWRITE | fix the typo, change nothing else |
-| Filler | `for better UX experience`, `i.e.`, `e.g.` | REWRITE | the replacement that `prose-check.sh` prints, else the shortest form, sync the `.d.ts` when the member is public |
-| Purpose filler | `Wait for the drawer CSS transition in order to restore focus` | REWRITE | delete `in order to`, `to ensure` or `make sure`, keep the result: `Wait for the drawer CSS transition to restore focus` |
+| Filler | `for better UX experience` | REWRITE | the replacement that `prose-check.sh` prints, else the shortest form, sync the `.d.ts` when the member is public |
+| Purpose filler | `Wait for the drawer CSS transition in order to restore focus` | REWRITE | replace `in order to` with `to`, delete `to ensure` or `make sure` and name the result: `Wait for the drawer CSS transition to restore focus` |
 | Vague result | ``Use document listener to ensure `active` attribute is removed correctly`` | REWRITE | name the case that fails without the code, or delete `correctly` and `properly` |
-| Long inline | an inline block over 15 words | REWRITE | cut it to the reason, in 15 words or less |
 
 ## Recipes for a docblock rewrite
 
@@ -44,7 +43,7 @@ When a REWRITE produces or changes a tag, apply these rules.
 ## Check the new wording
 
 Before the gate, run the new wording of each REWRITE through the check. Give one line for each
-REWRITE, in the format of `list-comments.sh`:
+REWRITE, in the format of `list-comments.sh`. Join the lines of a multi-line comment with ` / `.
 
 ```
 ${CLAUDE_PLUGIN_ROOT}/scripts/prose-check.sh --scope comment - <<'EOF'
@@ -52,7 +51,8 @@ src/vaadin-x.js:42 | inline | Wait for the drawer CSS transition to restore focu
 EOF
 ```
 
-Change the wording at each `ban` hit. Keep a `flag` hit only when the word adds a fact.
+Change the wording at each `ban` hit, unless the word is the name that the code uses. Keep a
+`flag` hit only when the word adds a fact. Exit 2 means a line in the wrong format.
 
 ## Style facts for web-components
 

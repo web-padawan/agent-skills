@@ -63,10 +63,10 @@ Take the headings from the first source in this table that exists:
 ## Stage 4 — Write
 
 - **Standard**: read [`../../references/writing.md`](../../references/writing.md) before you write.
-  If that read fails, use `${CLAUDE_PLUGIN_ROOT}/references/writing.md`.
+  If that read fails, use `${CLAUDE_PLUGIN_ROOT}/references/writing.md`. Copy the form labels as they are.
 - **Relations**: put them on the first lines of the first section, one per line, without a bullet.
   Use `Part of`, `Depends on`, `Follow-up to`, `Related to` or `Requested in`.
-  Put the problem or the goal in the first sentence after them.
+  Put the problem or the goal in the first sentence after the relations, or in the first sentence.
 - **Title**: for a bug, state the symptom. For a feature or a refactor, start with a verb.
   Put an identifier in backticks. Use 12 words or less. Do not end with a period.
 - **Body**: keep it under 250 words of prose. Code blocks and links do not count.
@@ -97,8 +97,9 @@ Run `mkdir -p /tmp/issue-drafts`. Write the body to `/tmp/issue-drafts/<repo>-<s
 - **References**: run `gh issue view <n> --repo <owner/name> --json title,state` for each issue or PR.
   Check that the relation word fits the title.
 - **Labels**: each label is in the list of Stage 2.
-- **Prose**: run `${CLAUDE_PLUGIN_ROOT}/scripts/prose-check.sh <file>`. Change the text at each `ban` hit.
-  Keep a `flag` hit only when the word adds a fact. Run the check again until it exits 0.
+- **Prose**: run `${CLAUDE_PLUGIN_ROOT}/scripts/prose-check.sh <file>`. Run it again with the title on stdin, as `-`.
+  Change the text at each `ban` hit. Keep a `flag` hit only when the word adds a fact.
+  If a hit is a UI label or an exact term, put it in backticks. Exit 2 is a failure of the check, not a hit.
 
 ## Stage 6 — Deliver
 
