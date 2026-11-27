@@ -727,8 +727,8 @@ expect "prose-check.sh reports only the ban hit and the flag hit of the prose fi
   "$PF:6 | ban | in order to | to|$PF:7 | flag | properly | name the behavior" \
   "$("$SCRIPTS/prose-check.sh" "$PF" | paste -sd '|' -)"
 expect "prose-check.sh checks the text field of list-comments.sh lines" \
-  "src/a.js:3 | flag | make sure | name the result, or delete the clause|src/a.js:9 | ban | e.g. | for example" \
-  "$(printf 'src/a.js:3 | inline | make sure the list is sorted\nsrc/a.js:9 | docblock | `e.g.` code, e.g. prose\n' \
+  "src/a.js:3 | flag | make sure | name the result, or delete the clause|src/a.js:9 | ban | in order to | to" \
+  "$(printf 'src/a.js:3 | inline | make sure the list is sorted\nsrc/a.js:9 | docblock | e.g. `in order to` code, in order to sync\n' \
     | "$SCRIPTS/prose-check.sh" --scope comment - | paste -sd '|' -)"
 
 # Every markdown file of this plugin obeys the ban tier, except the exempt files of the

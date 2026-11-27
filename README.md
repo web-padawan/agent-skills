@@ -68,7 +68,9 @@ stays at 400 lines or less. Rules, facts and screening labels for the repositori
 owner live in an owner directory (see Config). `owners/vaadin/` holds those of Vaadin.
 
 Other skills share files with the review pipeline. `comment-cleanup` reads
-`references/comments.md`, and `work-summary` calls `gh-context.sh`.
+`references/comments.md`, and `work-summary` calls `gh-context.sh`. `issue-draft` reads the
+writing standard in `references/writing.md`. `issue-draft` and `comment-cleanup` run
+`prose-check.sh` against `references/banned-patterns.md`.
 
 ## Scripts
 

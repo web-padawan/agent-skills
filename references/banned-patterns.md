@@ -21,8 +21,9 @@ patterns that a script can find.
 
 - The words and the phrases come from the GitLab skill `natural-writing-style` and from the
   emphasis examples of the Simplified Technical English rules.
-- The punctuation rows enforce the Simplified Technical English rules in prose. A code comment
-  follows the form of its file, so these rows do not apply to it.
+- The punctuation rows and the Latin abbreviation rows enforce the Simplified Technical English
+  rules in prose. A code comment follows the form of its file, so these rows do not apply to
+  it. In the comments of the same monorepo, `e.g.` occurs on 130 lines and `for example` on 20.
 - The `comment` rows come from a count over the comments of a JavaScript monorepo on 2026-11-27.
   The counts were `ensure` 65, `in order to` 32, `make sure` 25, `note that` 20, `properly` 18
   and `correctly` 8.
@@ -87,8 +88,8 @@ Add a row when a real draft or a real comment used the pattern.
 | `basically` | flag | delete it | all |
 | `essentially` | flag | delete it | all |
 | `/\bthere are (two\|three\|four\|five\|several) \w+/` | flag | delete the count, show the items | prose |
-| `/\be\.g\./` | ban | for example | all |
-| `/\bi\.e\./` | ban | that is | all |
+| `/\be\.g\./` | ban | for example | prose |
+| `/\bi\.e\./` | ban | that is | prose |
 | `/\betc\./` | ban | name the items | prose |
 | `/[—–]/` | ban | a comma, or two sentences | prose |
 | `/;(?!\S)/` | ban | a period, or two sentences | prose |

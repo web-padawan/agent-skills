@@ -2,7 +2,7 @@
 name: comment-cleanup
 description: Delete, rewrite and shorten comments against a DROP / REWRITE / RETAIN policy - drops restated behavior, history, closed tickets and decision records, border conditions the code already shows, and invariants the types already state. Converts prose docblocks on private and protected members to `@param` and `@return` tags, moves an inline override note into the docblock leading line, expands a `#NNNN` shorthand to a full link, and rewrites each kept comment to its shortest form. Scopes to a branch diff, one commit, the index, the working tree, one file, or one package. Use when asked to clean up comments, de-slop comments, strip AI slop or AI-written comments, remove comment noise, drop redundant or obsolete comments, convert JSDoc prose to tags, or trim the comments a branch added. Edits comment lines only and never changes code. Not for code slop such as duplication, dead code or wrappers, which is ai-slop-cleaner. Not for a review that reports and does not edit, which is self-review or pr-review. Not for a general cleanup of an uncommitted diff, which is simplify.
 argument-hint: "[--diff|--commit <sha>|--staged|--working|--all <path>|--package <name>] [path]"
-allowed-tools: Read, Edit, Glob, Grep, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(cp:*), Bash(diff:*), Bash(*/scripts/list-comments.sh:*)
+allowed-tools: Read, Edit, Glob, Grep, AskUserQuestion, Bash(git:*), Bash(gh:*), Bash(yarn:*), Bash(npm:*), Bash(npx:*), Bash(cp:*), Bash(diff:*), Bash(*/scripts/list-comments.sh:*), Bash(*/scripts/prose-check.sh:*)
 ---
 
 # Comment Cleanup
@@ -16,7 +16,8 @@ the start. If that read fails, use `${CLAUDE_PLUGIN_ROOT}/references/comments.md
 pass of the review skills judges against the same policy, so a cleanup run and a later review
 agree. The smell table, the rewrite recipes and the manifest check are in
 [`references/comment-slop.md`](references/comment-slop.md). A smell is a wording pattern
-that marks a comment for a DROP or a REWRITE.
+that marks a comment for a DROP or a REWRITE. `scripts/prose-check.sh` finds the smells that
+[`../../references/banned-patterns.md`](../../references/banned-patterns.md) lists.
 
 ## When to use
 
@@ -89,10 +90,11 @@ is `refactor:`. The gate offers them as separate options.
    a test directory and a `.d.ts` file. If the request names neither a diff nor a path, ask
    the user which mode to use. Then read the JSDoc chapter of the conventions document.
    Note each rule that names a docblock form.
-2. **Extract.** Run the script in one call:
+2. **Extract.** Run the script in one call, then the same extraction through the check:
 
    ```
    ${CLAUDE_PLUGIN_ROOT}/skills/comment-cleanup/scripts/list-comments.sh <flag> [path]
+   ${CLAUDE_PLUGIN_ROOT}/skills/comment-cleanup/scripts/list-comments.sh <flag> [path] | ${CLAUDE_PLUGIN_ROOT}/scripts/prose-check.sh --scope comment -
    ```
 
    It prints one line per comment block, as `<file>:<line> | <kind> | <text>`. The kind is
@@ -106,9 +108,11 @@ is `refactor:`. The gate offers them as separate options.
 3. **Classify.** Give each block one verdict from the policy, and name the row or the
    carve-out that decided it. Read the code around the block first. The table asks what the
    code already shows, and only the code answers that. For a REWRITE, name the smell from the
-   smell table and write the new text. A block that you cannot place is a DROP.
+   smell table and write the new text. A block that you cannot place is a DROP. A block with a
+   `ban` hit is a DROP or a REWRITE, unless a carve-out makes it a RETAIN.
 4. **Gate.** Print one table with `file:line`, the kind, the verdict, the row or the smell,
-   and the new wording of each REWRITE. List every verdict on its own row. Then ask one
+   and the new wording of each REWRITE. List every verdict on its own row. Check the new
+   wording first, as the smell reference shows. Then ask one
    `AskUserQuestion` before any edit. Offer these options:
    - apply all
    - apply the DROP verdicts only
