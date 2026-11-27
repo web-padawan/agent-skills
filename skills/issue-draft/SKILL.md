@@ -2,7 +2,7 @@
 name: issue-draft
 description: Draft a GitHub issue (a bug report, a feature request, a refactor or a follow-up) in the issue form of the target repository, short and INVEST-shaped (one independent change, a motivation, a testable outcome). Use when asked to draft, write, file, report, open or create an issue, turn the findings of a session, a branch or a review into issues, split an issue into smaller ones, or draft a new body, new relations or new labels for an existing issue. Reads the issue form, the labels and the title convention of the repository. Writes a local draft file, prints it and posts nothing. Not for a comment on an issue, not for a pull request description, not for a review of a PR (pr-review), and not for a work report (work-summary).
 argument-hint: "[bug|feature] [--repo owner/name] [issue number to update]"
-allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion, Bash(git rev-parse:*), Bash(git show:*), Bash(git log:*), Bash(git ls-remote:*), Bash(gh repo view:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh search issues:*), Bash(gh label list:*), Bash(mkdir:*), Bash(diff:*)
+allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion, Bash(git rev-parse:*), Bash(git show:*), Bash(git log:*), Bash(git ls-remote:*), Bash(gh repo view:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh search issues:*), Bash(gh label list:*), Bash(mkdir:*), Bash(diff:*), Bash(*/scripts/prose-check.sh:*)
 ---
 
 # Issue Draft
@@ -21,7 +21,6 @@ issue. The user posts the draft. The tool list allows read commands only.
 - **Find the existing pattern first.** Search how the sibling modules solve the same problem before
   you propose a solution.
 - **One change, one issue.** A side fix that can merge alone gets its own issue. Link the two with `Related to`.
-- **State what you did not verify.** Write `Not verified on a device yet` instead of a claim without evidence.
 - **The agent cannot attach media.** If a video or a screenshot helps, tell the user to attach it.
 
 ## Stage 1 — Resolve the target
@@ -63,15 +62,18 @@ Take the headings from the first source in this table that exists:
 
 ## Stage 4 — Write
 
+- **Standard**: read [`../../references/writing.md`](../../references/writing.md) before you write.
+  If that read fails, use `${CLAUDE_PLUGIN_ROOT}/references/writing.md`.
 - **Relations**: put them on the first lines of the first section, one per line, without a bullet.
   Use `Part of`, `Depends on`, `Follow-up to`, `Related to` or `Requested in`.
+  Put the problem or the goal in the first sentence after them.
 - **Title**: for a bug, state the symptom. For a feature or a refactor, start with a verb.
   Put an identifier in backticks. Use 12 words or less. Do not end with a period.
 - **Body**: keep it under 250 words of prose. Code blocks and links do not count.
   Omit an optional section that has no content.
 - **Extra sections**: `Note`, `Out of scope` and `Open questions` can follow the form fields.
 - **Permalink**: put it on its own line, so that GitHub shows the code.
-- **Voice**: write facts as bullets, in plain English and short sentences. Name the module, the property and the file.
+- **Voice**: write facts as bullets. Name the module, the property and the file.
   In a bug, give the cause a `**Cause**:` label. Copy numbers from a test run or a measurement.
 
 Then check the draft against each letter of INVEST:
@@ -95,6 +97,8 @@ Run `mkdir -p /tmp/issue-drafts`. Write the body to `/tmp/issue-drafts/<repo>-<s
 - **References**: run `gh issue view <n> --repo <owner/name> --json title,state` for each issue or PR.
   Check that the relation word fits the title.
 - **Labels**: each label is in the list of Stage 2.
+- **Prose**: run `${CLAUDE_PLUGIN_ROOT}/scripts/prose-check.sh <file>`. Change the text at each `ban` hit.
+  Keep a `flag` hit only when the word adds a fact. Run the check again until it exits 0.
 
 ## Stage 6 — Deliver
 
@@ -117,4 +121,4 @@ Run `mkdir -p /tmp/issue-drafts`. Write the body to `/tmp/issue-drafts/<repo>-<s
 3. Use a bare `#N` in the same repository and a full URL for another repository.
 4. Use the headings of one source. Do not mix form labels with other headings.
 5. Do not invent a version, a browser or an OS. Use the facts of the session, or ask.
-6. Do not write a preamble, a closing summary, bold text for emphasis or an AI attribution line.
+6. Do not write an AI attribution line.
