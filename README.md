@@ -88,6 +88,7 @@ The exit codes are 0 for success, 1 for failed work, and 2 for a usage or guard 
 | `get-pr-context.sh` | PR metadata, anchor SHAs, CI state, threads and diffs for `review-plan.sh` |
 | `dev-server.sh` | Start, check, restart or stop `web-dev-server` on one port |
 | `test-summary.sh` | One line per test suite, with the names of failing tests |
+| `prose-check.sh` | The banned words, phrases and punctuation of `references/banned-patterns.md` in markdown or in code comments |
 | `probe.cjs` | A probe module against a dev page, per theme and direction |
 | `probe-compare.cjs` | A diff of two probe result files |
 | `ab.sh` | One command on the current tree and on paths from another ref, then a diff |

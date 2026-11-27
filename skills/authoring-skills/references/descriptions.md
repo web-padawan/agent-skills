@@ -57,13 +57,13 @@ Well-written skills open with a present-tense verb phrase. Examples are
 
 ### Example A — summary → trigger (under-triggering fix)
 
-❌ **Before (summary):**
+**Before (summary):**
 > `description: A tool for checking test quality.`
 
 Problems: no trigger words that a user types, no situations, and it reads like docs. A
 prompt "why did these screenshots fail" may not match "checking test quality".
 
-✅ **After (trigger-shaped, the real `screenshot-diff`):**
+**After (trigger-shaped, the real `screenshot-diff`):**
 > `description: Classify a visual test screenshot change as sub-pixel
 > rendering, transition or animation flakiness, browser update rasterization
 > noise, or a real content change. Use when a visual baseline changed or is
@@ -73,13 +73,13 @@ Now the verbs and the screenshot vocabulary match the phrasing of the request.
 
 ### Example B — too broad → bounded (over-triggering fix)
 
-❌ **Before (over-broad):**
+**Before (over-broad):**
 > `description: Reviews code changes and posts feedback.`
 
 This fires on *any* review request, which includes your own unpushed branch. A PR-comment
 skill cannot handle that branch.
 
-✅ **After (bounded):**
+**After (bounded):**
 > `description: Review a GitHub pull request against a rubric and post findings
 > as inline comments after confirmation. Use for a full reviewer pass on
 > someone else's PR. Not for your own branch before it has a PR
@@ -89,13 +89,13 @@ The explicit "not for…" clause stops the false positives.
 
 ### Example C — mechanics → situations (breadth fix)
 
-❌ **Before (mechanics):**
+**Before (mechanics):**
 > `description: Runs three review agents with structured field contracts.`
 
 A user who asks "is this API change safe to ship?" will not match "runs three review
 agents".
 
-✅ **After (situation enumeration):**
+**After (situation enumeration):**
 > `description: Self-review the current branch before opening or updating a
 > PR — scope, behavior and compatibility, fix correctness, boundary and impact
 > of the significant changes, code quality, tests. Use on your own branch; not
