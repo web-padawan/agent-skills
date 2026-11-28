@@ -40,13 +40,13 @@ Ask only for facts that the session and the code cannot give.
   If the target repository has no checkout, use the default headings and report that.
 - **Labels**: run `gh label list --repo <owner/name> --limit 200`. Use only labels of that list.
   Add the labels that the form sets in its `labels` key. `gh issue create` does not add them.
-- **Titles**: run `gh issue list --repo <owner/name> --limit 20 --json title,labels`.
-  Copy the title convention, for example a `[package]` prefix.
+- **Titles**: run `gh issue list --repo <owner/name> --limit 20 --json title,labels`. Copy the title convention, for example a `[package]` prefix.
 
 Take the headings from the first source in this table that exists:
 
 | Source | Headings |
 | --- | --- |
+| Owner `vaadin`, `feature` | Motivation, Proposed solution, Alternatives considered, Additional context |
 | A YAML form | The `label` of each field as `### <label>`, in form order. Skip `markdown` blocks. Fill each `required` field. |
 | A markdown template | The headings of the template, in the same order. |
 | Default, `bug` | Description, Expected outcome, Steps to reproduce, Environment |
@@ -63,17 +63,17 @@ Take the headings from the first source in this table that exists:
 ## Stage 4 — Write
 
 - **Standard**: read [`../../references/writing.md`](../../references/writing.md) before you write.
-  If that read fails, use `${CLAUDE_PLUGIN_ROOT}/references/writing.md`. Copy the form labels as they are.
+  If that read fails, use `${CLAUDE_PLUGIN_ROOT}/references/writing.md`. Copy the headings of Stage 2 as they are.
 - **Relations**: put them on the first lines of the first section, one per line, without a bullet.
   Use `Part of`, `Depends on`, `Follow-up to`, `Related to` or `Requested in`.
   Put the problem or the goal in the first sentence after the relations, or in the first sentence.
 - **Title**: for a bug, state the symptom. For a feature or a refactor, start with a verb.
   Put an identifier in backticks. Use 12 words or less. Do not end with a period.
-- **Body**: keep it under 250 words of prose. Code blocks and links do not count.
-  Omit an optional section that has no content.
+- **Body**: keep it under 150 words of prose. Code blocks and links do not count.
+  Omit an optional section that has no content. Do not copy the code of the solution.
 - **Extra sections**: `Note`, `Out of scope` and `Open questions` can follow the form fields.
-- **Permalink**: put it on its own line, so that GitHub shows the code.
-- **Voice**: write facts as bullets. Name the module, the property and the file.
+- **Permalink**: link the one line that shows the problem, on its own line.
+- **Voice**: write short prose. Use bullets only for a list. Name the module, the property and the file.
   In a bug, give the cause a `**Cause**:` label. Copy numbers from a test run or a measurement.
 
 Then check the draft against each letter of INVEST:
@@ -81,18 +81,18 @@ Then check the draft against each letter of INVEST:
 | Letter | The draft passes when |
 | --- | --- |
 | Independent | It covers one change that can merge alone. An order between issues is a `Depends on` line. |
-| Negotiable | It proposes and does not dictate. Choices go to Open questions. The release choice goes to Note. |
-| Valuable | It names who has the problem: users, developers or maintainers. |
+| Negotiable | It proposes and does not dictate. Choices go to Open questions. The release choice is an open fact. |
+| Valuable | The problem sentence names who has the problem: users, developers or maintainers. |
 | Estimable | It names the files, the cause, permalinks and a prototype branch if one exists. |
-| Small | The body has 250 words of prose or less. Above 400 words, cut the cause detail or split the issue. |
-| Testable | The expected outcome or the requirements are statements that a test or a reviewer can check. |
+| Small | The body has 150 words of prose or less. Above 250 words, cut the cause detail or split the issue. |
+| Testable | Each solution bullet is a change that a reviewer can check. Only a bug has an expected outcome. |
 
 ## Stage 5 — Check
 
 Run `mkdir -p /tmp/issue-drafts`. Write the body to `/tmp/issue-drafts/<repo>-<slug>.md`. Then check each fact:
 
 - **Headings**: they match the source of Stage 2, in the same order. Each `required` field has content.
-- **Permalinks**: each one pins a SHA of 40 characters. The line range exists in the file at that SHA.
+- **Permalinks**: each one pins a SHA of 40 characters and one line that exists in the file at that SHA.
 - **Branch links**: `git ls-remote --heads origin <branch>` prints the branch. If not, record the push as an open fact.
 - **References**: run `gh issue view <n> --repo <owner/name> --json title,state` for each issue or PR.
   Check that the relation word fits the title.
